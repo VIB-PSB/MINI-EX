@@ -10,12 +10,12 @@ The paths to the folders containing the different input files need to be stated 
 
 ```
 params {
-	expressionMatrix = "/mini-scrna/example/INPUTS/*_matrix.txt"
-	markersOut = "/mini-scrna/example/INPUTS/*_allMarkers.txt"
-	cell2clusters = "/mini-scrna/example/INPUTS/*_cells2clusters.txt"
-	cluster2ident = "/mini-scrna/example/INPUTS/*_identities.txt"
-	TF_list = "/mini-scrna/example/INPUTS/TF_list.txt"
-	termsOfInterest = "/example/INPUTS/GOsIwant.txt"
+	expressionMatrix = "./example/INPUTS/*_matrix.txt"
+	markersOut = "./example/INPUTS/*_allMarkers.txt"
+	cell2clusters = "./example/INPUTS/*_cells2clusters.txt"
+	cluster2ident = "./example/INPUTS/*_identities.txt"
+	TF_list = "./example/INPUTS/TF_list.txt"
+	termsOfInterest = "./example/INPUTS/GOsIwant.txt"
 //	termsOfInterest = null
 ```
 

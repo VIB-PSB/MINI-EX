@@ -10,6 +10,9 @@ executor {
     name = 'sge'
     queueSize = 5
 }
+
+process.container = "vibpsb/mini-ex:latest"
+singularity.enabled = true
 ```
 
 **name**, **queueSize** and [optional settings](https://www.nextflow.io/docs/latest/config.html) can be changed according to resource availability. 
@@ -20,12 +23,12 @@ The **first block** of parameters defines the paths to the [input files](docs/da
 
 ```
 params {
-	expressionMatrix = "/mini-ex/example/INPUTS/*_matrix.txt"
-	markersOut = "/mini-ex/example/INPUTS/*_allMarkers.txt"
-	cell2clusters = "/mini-ex/example/INPUTS/*_cells2clusters.txt"
-	cluster2ident = "/mini-ex/example/INPUTS/*_identities.txt"
-	TF_list = "/mini-ex/example/INPUTS/TF_list.txt"
-	termsOfInterest = "/example/INPUTS/GOsIwant.txt"
+	expressionMatrix = "./example/INPUTS/*_matrix.txt"
+	markersOut = "./example/INPUTS/*_allMarkers.txt"
+	cell2clusters = "./example/INPUTS/*_cells2clusters.txt"
+	cluster2ident = "./example/INPUTS/*_identities.txt"
+	TF_list = "./example/INPUTS/TF_list.txt"
+	termsOfInterest = "./example/INPUTS/GOsIwant.txt"
 //	termsOfInterest = null
 ```
 
@@ -40,27 +43,27 @@ Note: all ancestral terms are included
 * gene-alias file downloaded from [TAIR](https://www.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FPublic_Data_Releases%2FTAIR_Data_20140331) and [funRiceGenes](https://funricegenes.github.io/)
 
 ```	
-	featureFile_motifs = "/mini-ex/data_ath/ath_featureFile_ensemble_top4000top7000.out"
-	infoTF = "/mini-ex/data_ath/ath_TF2fam2mot_n.txt"
-	GOfile = "/mini-ex/data_ath/ath_full_BP_expcur_ext_names.txt"
-	alias = "/mini-ex/data_ath/ath_gene_aliases.txt"
+	featureFile_motifs = "./data_ath/ath_featureFile_ensemble_top4000top7000.out"
+	infoTF = "./data_ath/ath_TF2fam2mot_n.txt"
+	GOfile = "./data_ath/ath_full_BP_expcur_ext_names.txt"
+	alias = "./data_ath/ath_gene_aliases.txt"
 ```
 The **third block** of parameters consists in all the scripts used in the pipeline  
  
 ```	
-	script_enricher = "/mini-ex/bin/enricherv2.4"
-	script_grnboost = "/mini-ex/bin/MINIEX_grnboostMultiprocess.py"
-	script_motifs = "/mini-ex/bin/MINIEX_filterForMotifs.py"
-	script_topDEGs = "/mini-ex/bin/MINIEX_selectTopDEGs.py"
-	script_expTFs = "/mini-ex/bin/MINIEX_filterForTFExp.py"
-	script_clustermap = "/mini-ex/bin/MINIEX_clustermap.py"
-	script_networkCentrality = "/mini-ex/bin/MINIEX_network_analysis.py"
-	script_filesEnrichment = "/mini-ex/bin/MINIEX_makeFilesEnrichment.py"	
-	script_makedfRef = "/mini-ex/bin/MINIEX_makeRankingDf_ref.py"
-	script_makedfStd = "/mini-ex/bin/MINIEX_makeRankingDf_std.py"
-	script_makebordaRef = "/mini-ex/bin/MINIEX_makeBorda_ref.py"
-	script_makebordaStd = "/mini-ex/bin/MINIEX_makeBorda_std.py"
-	script_heatmapTops = "/mini-ex/bin/MINIEX_visual_heatmap_top150.py"
+	script_enricher = "./bin/enricherv2.4"
+	script_grnboost = "./bin/MINIEX_grnboostMultiprocess.py"
+	script_motifs = "./bin/MINIEX_filterForMotifs.py"
+	script_topDEGs = "./bin/MINIEX_selectTopDEGs.py"
+	script_expTFs = "./bin/MINIEX_filterForTFExp.py"
+	script_clustermap = "./bin/MINIEX_clustermap.py"
+	script_networkCentrality = "./bin/MINIEX_network_analysis.py"
+	script_filesEnrichment = "./bin/MINIEX_makeFilesEnrichment.py"	
+	script_makedfRef = "./bin/MINIEX_makeRankingDf_ref.py"
+	script_makedfStd = "./bin/MINIEX_makeRankingDf_std.py"
+	script_makebordaRef = "./bin/MINIEX_makeBorda_ref.py"
+	script_makebordaStd = "./bin/MINIEX_makeBorda_std.py"
+	script_heatmapTops = "./bin/MINIEX_visual_heatmap_top150.py"
 ```
 
 The **last block** of parameters defines the filters used along the GRN inferece.  
