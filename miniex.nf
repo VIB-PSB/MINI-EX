@@ -16,10 +16,10 @@ log.info """\
          """
          .stripIndent()
 		 
-grnboostOutput = "/mini-ex/example/OUTPUTS/GRNBoost2_output"
-regOutput = "/mini-ex/example/OUTPUTS/regulons_output"
-GOenrichmentOutput = "/mini-ex/example/OUTPUTS/GOenrichment_output"
-figs = "/mini-ex/example/OUTPUTS/figures"
+grnboostOutput = "/MINI-EX/example/OUTPUTS/GRNBoost2_output"
+regOutput = "/MINI-EX/example/OUTPUTS/regulons_output"
+GOenrichmentOutput = "/MINI-EX/example/OUTPUTS/GOenrichment_output"
+figs = "/MINI-EX/example/OUTPUTS/figures"
 
 
 process run_grnboost {
@@ -51,6 +51,7 @@ process run_enricher_motifs {
 	tuple val("${dataset_id}"), path("${dataset_id}_enricherRegulons.txt")
 
     """
+	
     $script_enricher $ff_motifs "$modules" -f 0.001 --print-hits -o "${dataset_id}_enricherRegulons.txt"
     """
 }
