@@ -40,11 +40,25 @@ process run_grnboost {
     """
 }
 
+process unzip_motifMappings {
+	
+    input:
+	path ff_motifs
+
+	output:
+	path "MotifMappings.csv"
+
+    """
+    gunzip -c $ff_motifs > "MotifMappings.csv"
+	
+    """
+}
+
 process run_enricher_motifs {
 	
     input:
 	path script_enricher
-	path ff_motifs
+	path ff_motifs_unzipped
 	tuple val(dataset_id), path(modules)
 
 	output:
@@ -52,7 +66,7 @@ process run_enricher_motifs {
 
     """
 	
-    $script_enricher $ff_motifs "$modules" -f 0.001 --print-hits -o "${dataset_id}_enricherRegulons.txt"
+    $script_enricher $ff_motifs_unzipped "$modules" -f 0.001 --print-hits -o "${dataset_id}_enricherRegulons.txt"
     """
 }
 
@@ -278,7 +292,6 @@ process makeBorda {
 }
 
 
-
 process heatmap_tops {
 
 	module 'python/x86_64/3.6.5'
@@ -298,14 +311,14 @@ process heatmap_tops {
 }
 
 
-
 workflow {
 
 	matrix_ch = Channel.fromPath(params.expressionMatrix).map { n -> [ n.baseName.split("_")[0], n ] }	
 	matrix_ch.view()
 	run_grnboost(params.script_grnboost,params.TF_list,matrix_ch)
 
-	run_enricher_motifs(params.script_enricher,params.featureFile_motifs,run_grnboost.out)
+	unzip_motifMappings(params.featureFile_motifs)
+	run_enricher_motifs(params.script_enricher,unzip_motifMappings.out,run_grnboost.out)
 	
 	filter_motifs(params.script_motifs,params.infoTF,params.motifFilter,run_enricher_motifs.out)
 	
