@@ -3,7 +3,8 @@
 The config file of MINI-EX is composed by **three main sections**:
 
 ## **Exectutor scope**
-MINI-EX is built to run on a SGE computer cluster as specified in the executor configuration scope at the top of the config file.
+MINI-EX is built to run on a SGE computer cluster as specified in the executor configuration scope at the top of the config file.  
+It uses a Singularity container built on Docker image with the necessary Python 3.6 moduels.
 
 ```
 executor {
@@ -43,7 +44,7 @@ Note: all ancestral terms are included
 * gene-alias file downloaded from [TAIR](https://www.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FPublic_Data_Releases%2FTAIR_Data_20140331) and [funRiceGenes](https://funricegenes.github.io/)
 
 ```	
-	featureFile_motifs = "./data_ath/ath_featureFile_ensemble_top4000top7000.out"
+	featureFile_motifs = "./data_ath/ath_featureFile_ensemble_top4000top7000.out.gz"
 	infoTF = "./data_ath/ath_TF2fam2mot_n.txt"
 	GOfile = "./data_ath/ath_full_BP_expcur_ext_names.txt"
 	alias = "./data_ath/ath_gene_aliases.txt"
