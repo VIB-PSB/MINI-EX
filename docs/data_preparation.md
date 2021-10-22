@@ -10,12 +10,12 @@ The paths to the folders containing the different input files need to be stated 
 
 ```
 params {
-	expressionMatrix = "./example/INPUTS/*_matrix.txt"
-	markersOut = "./example/INPUTS/*_allMarkers.txt"
-	cell2clusters = "./example/INPUTS/*_cells2clusters.txt"
-	cluster2ident = "./example/INPUTS/*_identities.txt"
-	TF_list = "./example/INPUTS/TF_list.txt"
-	termsOfInterest = "./example/INPUTS/GOsIwant.txt"
+	expressionMatrix = "$baseDir/example/INPUTS/*_matrix.txt"
+	markersOut = "$baseDir/example/INPUTS/*_allMarkers.txt"
+	cell2clusters = "$baseDir/example/INPUTS/*_cells2clusters.txt"
+	cluster2ident = "$baseDir/example/INPUTS/*_identities.txt"
+	TF_list = "$baseDir/example/INPUTS/TF_list.txt"
+	termsOfInterest = "$baseDir/example/INPUTS/GOsIwant.txt"
 //	termsOfInterest = null
 ```
 

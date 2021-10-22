@@ -24,12 +24,12 @@ The **first block** of parameters defines the paths to the [input files](docs/da
 
 ```
 params {
-	expressionMatrix = "./example/INPUTS/*_matrix.txt"
-	markersOut = "./example/INPUTS/*_allMarkers.txt"
-	cell2clusters = "./example/INPUTS/*_cells2clusters.txt"
-	cluster2ident = "./example/INPUTS/*_identities.txt"
-	TF_list = "./example/INPUTS/TF_list.txt"
-	termsOfInterest = "./example/INPUTS/GOsIwant.txt"
+	expressionMatrix = "$baseDir/example/INPUTS/*_matrix.txt"
+	markersOut = "$baseDir/example/INPUTS/*_allMarkers.txt"
+	cell2clusters = "$baseDir/example/INPUTS/*_cells2clusters.txt"
+	cluster2ident = "$baseDir/example/INPUTS/*_identities.txt"
+	TF_list = "$baseDir/example/INPUTS/TF_list.txt"
+	termsOfInterest = "$baseDir/example/INPUTS/GOsIwant.txt"
 //	termsOfInterest = null
 ```
 
@@ -44,27 +44,27 @@ Note: all ancestral terms are included
 * gene-alias file downloaded from [TAIR](https://www.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FPublic_Data_Releases%2FTAIR_Data_20140331) and [funRiceGenes](https://funricegenes.github.io/)
 
 ```	
-	featureFile_motifs = "./data_ath/ath_featureFile_ensemble_top4000top7000.out.gz"
-	infoTF = "./data_ath/ath_TF2fam2mot_n.txt"
-	GOfile = "./data_ath/ath_full_BP_expcur_ext_names.txt"
-	alias = "./data_ath/ath_gene_aliases.txt"
+	featureFile_motifs = "$baseDir/data_ath/ath_featureFile_ensemble_top4000top7000.out.gz"
+	infoTF = "$baseDir/data_ath/ath_TF2fam2mot_n.txt"
+	GOfile = "$baseDir/data_ath/ath_full_BP_expcur_ext_names.txt"
+	alias = "$baseDir/data_ath/ath_gene_aliases.txt"
 ```
 The **third block** of parameters consists in all the scripts used in the pipeline  
  
 ```	
-	script_enricher = "./bin/enricherv2.4"
-	script_grnboost = "./bin/MINIEX_grnboostMultiprocess.py"
-	script_motifs = "./bin/MINIEX_filterForMotifs.py"
-	script_topDEGs = "./bin/MINIEX_selectTopDEGs.py"
-	script_expTFs = "./bin/MINIEX_filterForTFExp.py"
-	script_clustermap = "./bin/MINIEX_clustermap.py"
-	script_networkCentrality = "./bin/MINIEX_network_analysis.py"
-	script_filesEnrichment = "./bin/MINIEX_makeFilesEnrichment.py"	
-	script_makedfRef = "./bin/MINIEX_makeRankingDf_ref.py"
-	script_makedfStd = "./bin/MINIEX_makeRankingDf_std.py"
-	script_makebordaRef = "./bin/MINIEX_makeBorda_ref.py"
-	script_makebordaStd = "./bin/MINIEX_makeBorda_std.py"
-	script_heatmapTops = "./bin/MINIEX_visual_heatmap_top150.py"
+	script_enricher = "$baseDir/bin/enricherv2.4"
+	script_grnboost = "$baseDir/bin/MINIEX_grnboostMultiprocess.py"
+	script_motifs = "$baseDir/bin/MINIEX_filterForMotifs.py"
+	script_topDEGs = "$baseDir/bin/MINIEX_selectTopDEGs.py"
+	script_expTFs = "$baseDir/bin/MINIEX_filterForTFExp.py"
+	script_clustermap = "$baseDir/bin/MINIEX_clustermap.py"
+	script_networkCentrality = "$baseDir/bin/MINIEX_network_analysis.py"
+	script_filesEnrichment = "$baseDir/bin/MINIEX_makeFilesEnrichment.py"	
+	script_makedfRef = "$baseDir/bin/MINIEX_makeRankingDf_ref.py"
+	script_makedfStd = "$baseDir/bin/MINIEX_makeRankingDf_std.py"
+	script_makebordaRef = "$baseDir/bin/MINIEX_makeBorda_ref.py"
+	script_makebordaStd = "$baseDir/bin/MINIEX_makeBorda_std.py"
+	script_heatmapTops = "$baseDir/bin/MINIEX_visual_heatmap_top150.py"
 ```
 
 The **last block** of parameters defines the filters used along the GRN inferece.  
