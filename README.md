@@ -52,6 +52,6 @@ How to run it:
 * Define paths in the [config file](docs/configuration.md) to all the required imputs
 
 ```
-nextflow -C miniex.config run miniex.nf -with-singularity python_miniex.sif
+nextflow -C miniex.config run miniex.nf
 ```
 

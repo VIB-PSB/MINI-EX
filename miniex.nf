@@ -16,10 +16,10 @@ log.info """\
          """
          .stripIndent()
 		 
-grnboostOutput = "./example/OUTPUTS/GRNBoost2_output"
-regOutput = "./example/OUTPUTS/regulons_output"
-GOenrichmentOutput = "./example/OUTPUTS/GOenrichment_output"
-figs = "./example/OUTPUTS/figures"
+grnboostOutput = "$baseDir/example/OUTPUTS/GRNBoost2_output"
+regOutput = "$baseDir/example/OUTPUTS/regulons_output"
+GOenrichmentOutput = "$baseDir/example/OUTPUTS/GOenrichment_output"
+figs = "$baseDir/example/OUTPUTS/figures"
 
 
 process run_grnboost {
