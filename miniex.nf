@@ -23,8 +23,6 @@ figs = "$baseDir/example/OUTPUTS/figures"
 
 
 process run_grnboost {
-	
-	module 'python/x86_64/3.6.5'
 	publishDir grnboostOutput, mode: 'copy'
 
     input:
@@ -71,8 +69,6 @@ process run_enricher_motifs {
 }
 
 process filter_motifs {
-	
-	module 'python/x86_64/3.6.5'
 
     input:
 	path script_motifs
@@ -89,8 +85,6 @@ process filter_motifs {
 }
 
 process get_topDEGs {
-
-	module 'python/x86_64/3.6.5'
 	
     input:
 	path script_topDEGs
@@ -120,8 +114,6 @@ process run_enricher_cluster {
 }
 
 process filter_expression {
-	
-	module 'python/x86_64/3.6.5'
 	publishDir regOutput, mode: 'copy'
 
     input:
@@ -141,8 +133,6 @@ process filter_expression {
 }
 
 process clustermap_regs {
-
-	module 'python/x86_64/3.6.5'
 	publishDir figs, mode: 'copy'
 	
     input:
@@ -161,8 +151,6 @@ process clustermap_regs {
 
 
 process network_centrality {
-
-	module 'python/x86_64/3.6.5'
 	
     input:
 	path script_networkCentrality
@@ -179,8 +167,6 @@ process network_centrality {
 }
 
 process getFiles_enrichment {
-
-	module 'python/x86_64/3.6.5'
 	
     input:
 	path script_filesEnrichment
@@ -215,8 +201,6 @@ process GO_enricher {
 }
 
 process check_reference {
-
-	module 'python/x86_64/3.6.5'
 	
     input:
 	path script_checkReference
@@ -234,8 +218,6 @@ process check_reference {
 }
 
 process ranking_df_ref {
-
-	module 'python/x86_64/3.6.5'
 	
     input:
 	path script_makedfRef
@@ -254,8 +236,6 @@ process ranking_df_ref {
 }
 
 process ranking_df_std {
-
-	module 'python/x86_64/3.6.5'
 	
     input:
 	path script_makedfStd	
@@ -274,7 +254,6 @@ process ranking_df_std {
 
 process makeBorda {
 
-	module 'python/x86_64/3.6.5'
 	publishDir regOutput, mode: 'copy'
 	echo true
 	
@@ -294,7 +273,6 @@ process makeBorda {
 
 process heatmap_tops {
 
-	module 'python/x86_64/3.6.5'
 	publishDir figs, mode: 'copy'
 	
     input:
