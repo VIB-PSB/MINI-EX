@@ -45,7 +45,7 @@ Note: all ancestral terms are included
 
 ```	
 	featureFile_motifs = "$baseDir/data_ath/ath_featureFile_ensemble_top4000top7000.out.gz"
-	infoTF = "$baseDir/data_ath/ath_TF2fam2mot_n.txt"
+	infoTF = "$baseDir/data_ath/ath_TF2fam2mot.txt"
 	GOfile = "$baseDir/data_ath/ath_full_BP_expcur_ext_names.txt"
 	alias = "$baseDir/data_ath/ath_gene_aliases.txt"
 ```
