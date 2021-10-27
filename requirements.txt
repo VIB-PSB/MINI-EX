@@ -7,3 +7,4 @@ networkx==2.5.1
 tqdm==4.40.0
 fsspec>=0.3.3
 openpyxl==3.0.9
+xlrd==2.0.1
