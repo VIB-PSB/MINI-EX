@@ -5,3 +5,4 @@ arboreto==0.1.5
 scipy==1.5.4 
 networkx==2.5.1
 tqdm==4.40.0
+fsspec>=0.3.3
