@@ -2,7 +2,7 @@
 
 import sys
 import time
-import pandas as pd
+import pandas
 from multiprocessing import Pool, cpu_count
 import tqdm
 
@@ -13,8 +13,8 @@ from arboreto.core import to_tf_matrix, target_gene_indices, infer_partial_netwo
 
 
 
-tfs_fname = sys.argv[1]
-expression_mtx_fname = sys.argv[2]
+tfsList = sys.argv[1]
+expressionMatrix = sys.argv[2]
 num_workers = int(sys.argv[3])
 output = sys.argv[4]
 
@@ -41,12 +41,12 @@ def run_infer_partial_network(target_gene_index):
 if __name__ == '__main__':
 
     start_time = time.time()
-    ex_matrix = pd.read_csv(expression_mtx_fname, sep='\t', header=0, index_col=0).T
+    ex_matrix = pandas.read_csv(expressionMatrix, sep='\t', header=0, index_col=0).T
     gene_names = ex_matrix.columns
     
     end_time = time.time()
     print(f'Loaded expression matrix of {ex_matrix.shape[0]} cells and {ex_matrix.shape[1]} genes in {end_time - start_time} seconds...')
-    tf_names = load_tf_names(tfs_fname)
+    tf_names = load_tf_names(tfsList)
     print(f'Loaded {len(tf_names)} TFs...')
 
     ex_matrix, gene_names, tf_names = _prepare_input(ex_matrix, gene_names, tf_names)
@@ -60,7 +60,7 @@ if __name__ == '__main__':
                                      ),
                               total=len(gene_names)))
 
-    adj = pd.concat(adjs).sort_values(by='importance', ascending=False)
+    adj = pandas.concat(adjs).sort_values(by='importance', ascending=False)
 
     end_time = time.time()
     print(f'Done in {end_time - start_time} seconds.')
