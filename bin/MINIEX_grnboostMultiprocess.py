@@ -1,3 +1,5 @@
+### adapted from aertslab/pySCENIC/src/pyscenic/cli/arboreto_with_multiprocessing.py
+
 import sys
 import time
 import pandas as pd
