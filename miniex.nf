@@ -13,6 +13,10 @@ Motif-Informed Network Inference from gene EXpression
 log.info """\
          Motif-Informed Network Inference from gene EXpression
          =====================================================
+		 Running TF motif enrichment filtering on  ${params.motifFilter}
+         Running single-cell cluster enrichment using the top ${params.tops} upregulated genes per cluster
+         Filtering out regulons of single-cell clusters where the TF is expressed in less than ${params.expressionFilter} % of the cells
+		 Plotting expression specificity and DE calls for the top ${params.topRegs} regulons
          """
          .stripIndent()
 		 
