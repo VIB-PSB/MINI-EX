@@ -5,7 +5,7 @@ Motif-Informed Network Inference using single-cell EXpression data
 The pipeline is built using Nextflow DSL2 and has the purpose of infering cell-type specific gene regulatory network using scRNA-Seq data in plants.  
 
 ## **Pipeline summary**
-1. Run expression based GRN inference (GRNBoost2) given a list of TFs and a gene-to-cell count matrix
+1. Run expression based GRN inference [GRNBoost2](https://arboreto.readthedocs.io/en/latest/algorithms.html#grnboost2) given a list of TFs and a gene-to-cell count matrix
 2. Run TF motif enrichment on the expression-based regulons  
 3. Filter the motif-enriched regulons for TF or TF-Family motifs (default TF-Family)
 4. Filter the previously identified regulons by target genes' expression among the defined cell clusters
