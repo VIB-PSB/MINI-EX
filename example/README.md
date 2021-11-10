@@ -21,7 +21,7 @@ The [OUTPUTS folder](OUTPUTS/) contains four sub-folders:
 	- miniexExample_rankedRegulons.xlsx, an excel file containing metadata for each of the inferred regulons. The different columns are explained below:    
 		- TF: TF gene name (i.e. AT1G71930) 
 		- alias: TF alias (i.e. VND7)  
-		- hasTFrelevantGOterm: 'relevant_known_TF' if the TF is associated to a relevant GO term (relative to [GOIwant.txt](INPUTS/GOIwant.txt)), 'known_TF' if the TF is associated to another experimentally validated and/or manually curated GO term, 'unknown_TF' when the TF is uncharacterized.   
+		- hasTFrelevantGOterm: 'relevant_known_TF' if the TF is associated to a relevant GO term (relative to [GOIwant.txt](https://github.com/VIB-PSB/MINI-EX/tree/main/example/INPUTS/GOIwant.txt)), 'known_TF' if the TF is associated to another experimentally validated and/or manually curated GO term, 'unknown_TF' when the TF is uncharacterized.   
 		- GO: the GO term(s) the TF is associated with.     
 		- GOdescription: the description of the GO term(s) associated with the TF.  
 		- cluster: the cell cluster the TF acts in.    
@@ -33,7 +33,7 @@ The [OUTPUTS folder](OUTPUTS/) contains four sub-folders:
 		- closeness: closeness-centrality.  
 		- betweenness: betweenness-centrality.    
 		- GO_enrich_qval: FDR-corrected pvalue of functional enrichment of the regulon's TGs (Functional specificity).  
-		- GO_enrich_term: relevant GO terms (relative to [GOIwant.txt](INPUTS/GOIwant.txt)) for which the regulon's TGs are enriched for.    
+		- GO_enrich_term: relevant GO terms (relative to [GOIwant.txt](https://github.com/VIB-PSB/MINI-EX/tree/main/example/INPUTS/GOIwant.txt)) for which the regulon's TGs are enriched for.    
 		- GO_enrich_desc: description of the GO term(s)for which the regulon's TGs are enriched for.    
 		- #TGs_withGO: number of TGs enriched for the relevant GO terms.    
 		- borda_rank: global Borda ranking of the regulon.  
