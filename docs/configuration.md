@@ -20,7 +20,7 @@ singularity.enabled = true
 
 ## **Params scope**
 The params section is meant to define parameters and paths that will be used by the pipeline scripts.  
-The **first block** of parameters defines the paths to the [input files](docs/data_preparation.md) required and provided by the user.
+The **first block** of parameters defines the paths to the [input files](example/INPUTS/) required and provided by the user.
 
 ```
 params {
