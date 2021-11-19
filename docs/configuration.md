@@ -37,9 +37,9 @@ The **second block** of parameters is composed by files provided and necessary f
 There are currently three directory, one for each species supported by MINI-EX: *Arabidopsis thaliana* (data_ath), *Oryza sativa* (data_osa), and *Zea mays* (data_zma).
 
 This consists in:
-* Ensemble motif-mapping file obtained by selecting the top motif matches for [Cluster Buster](https://github.com/weng-lab/cluster-buster) and [FIMO](https://meme-suite.org/meme/doc/fimo.html) matches for a collection of motifs mapped to the promoter region of the species   
-* TF-motif Family file linking each TF to its TF family and reporting wheather direct motif information are available or not
-* gene-GO links for BP (biological process) supported by experimental evidence ("EXP", "IMP", "IDA", "IPI", "IGI", "IEP") and manually curated ("TAS", "NAS", "IC").  
+* Ensemble motif-mapping file obtained by selecting the top motif matches for [Cluster Buster](https://github.com/weng-lab/cluster-buster) and [FIMO](https://meme-suite.org/meme/doc/fimo.html) matches for a collection of motifs mapped to the regulatory regions of the species   
+* TF-motif Family file linking each TF to its TF family and reporting wheather direct motif information is available or not, and the motifs directly associated to the TF
+* gene-GO links for BP (biological process) supported by experimental evidence ("EXP", "IMP", "IDA", "IPI", "IGI", "IEP") and manually curated ("TAS", "NAS", "IC")  
 Note: all ancestral terms are included
 * gene-alias file downloaded from [TAIR](https://www.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FPublic_Data_Releases%2FTAIR_Data_20140331) and [funRiceGenes](https://funricegenes.github.io/)
 
@@ -69,7 +69,7 @@ The **third block** of parameters consists in all the scripts used in the pipeli
 
 The **last block** of parameters defines the filters used along the GRN inferece.  
   
-The first two filters have been chosen by benchmarking different filters against a root gold standard of known protein-DNA interactions.  
+The first two filters (tops and expressionFilter) have been chosen by benchmarking different filters against a root gold standard of known protein-DNA interactions. The first refers to number of upregulated genes (sorted by q-value) per cluster to use during the cell cluster enrichment, while the second refers to the percentage of cells that need to express the TF to retain the regulon for the specific cell cluster    
   
 * motifFilter can be set to **TF_motifs** if the user wishes not to extend the retention of regulons enriched for family motifs, but only to direct TF-motifs.  
 * topRegs defines the top regulons to show in the two output heatmaps. It can be changed according to the user needs.
