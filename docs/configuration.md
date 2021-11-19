@@ -44,7 +44,7 @@ Note: all ancestral terms are included
 * gene-alias file downloaded from [TAIR](https://www.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FPublic_Data_Releases%2FTAIR_Data_20140331) and [funRiceGenes](https://funricegenes.github.io/)
 
 ```	
-	featureFile_motifs = "$baseDir/data_ath/ath_featureFile_ensemble_top4000top7000.out.gz"
+	featureFile_motifs = "$baseDir/data_ath/ath_2021.1_motifMapping.out.gz"
 	infoTF = "$baseDir/data_ath/ath_TF2fam2mot.txt"
 	GOfile = "$baseDir/data_ath/ath_full_BP_expcur_ext_names.txt"
 	alias = "$baseDir/data_ath/ath_gene_aliases.txt"
