@@ -8,7 +8,7 @@ The pipeline is built using Nextflow DSL2 and has the purpose of infer cell-type
 1. Run expression-based GRN inference ([GRNBoost2](https://arboreto.readthedocs.io/en/latest/algorithms.html#grnboost2)) given a list of TFs and a gene-to-cell count matrix
 2. Run TFBS enrichment on the expression-based regulons  
 3. Filter the TFBS-enriched regulons for TF or TF-Family motifs (default TF-Family)
-4. Filter the previously identified regulons by target genes' expression among the defined cell clusters
+4. Filter the previously identified regulons by target genes' expression among the defined cell clusters (cell cluster enrichment)
 5. Filter the cell cluster specific regulons by TF expression 
 6. Calculate network centrality measures (out-degree, betweenness, closeness)
 7. Calculate functional enrichment of the target genes of each regulon (if a list of expected GO terms is provided)

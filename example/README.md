@@ -29,7 +29,7 @@ The [OUTPUTS folder](OUTPUTS/) contains four sub-folders:
 		- isTF_DE: 1 if the TF is upregulated in the cell cluster it acts in, 0 if the TF is expressed (by at least 10% of the cells within the cell cluster) in the cell cluster it acts in.    
 		- totRegInCluster: number of total regulons within the cell cluster.     
 		- #TGs: number of TGs controlled by the regulon.    
-		- qval_cluster: FDR-corrected p-value of cell cluster enrichment (expression specificity).    
+		- qval_cluster: FDR-corrected p-value of cell cluster enrichment (cluster specificity).    
 		- closeness: closeness-centrality.  
 		- betweenness: betweenness-centrality.    
 		- GO_enrich_qval: FDR-corrected p-value of functional enrichment of the regulon's TGs (functional specificity - reporting only the lowest p-value among the relevant terms).  
