@@ -1,6 +1,6 @@
 # MINI-EX
 
-Motif-Informed Network Inference using single-cell EXpression data  
+Motif-Informed Network Inference based on single-cell EXpression data  
 
 The pipeline is built using Nextflow DSL2 and has the purpose of infer cell-type specific gene regulatory network using scRNA-Seq data in plants.  
 
@@ -30,7 +30,7 @@ else:
 * (Optional) List of GO terms of interest
 
 As the pipeline can be run in parallel for multiple datasets all the inputs can be provided as a path to the dedicated directories.  
-All input files should have specific extensions and names as shown in [here](docs/data_preparation.md)  
+All input files should have specific extensions and names as shown in [here](docs/data_preparation.md).  
 
 ## **Outputs**
 * **regulons_output folder** containing a tab-separated file with the inferred regulons and an excel file with the ranked regulons and relative metadata
@@ -39,7 +39,7 @@ All input files should have specific extensions and names as shown in [here](doc
 * **GRNBoost2_output folder** containing a TF-TG tab-separated file resulted from the GRNBoost2 run   
 
 ##   
-A detailed overview on necessary input files and expected output files can be found [here](example/)
+A detailed overview on necessary input files and expected output files can be found [here](example/).
 ## 
 Requirements:
 

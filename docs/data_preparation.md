@@ -1,6 +1,6 @@
 # Prepare your files
 
-A detailed example of the necessary input files can be found [here](https://github.com/VIB-PSB/MINI-EX/tree/main/example/)  
+A detailed example of the necessary input files can be found [here](https://github.com/VIB-PSB/MINI-EX/tree/main/example/).  
 
 MINI-EX has been designed to run on multiple datasets at once.  
   
@@ -96,7 +96,7 @@ AT1G21340
 
 The **termsOfInterest** parameter can be set to null - if we do not expect specific functions popping up in our regulons - or alternatively a list of expected terms can be provided.  
   
-In the example dataset we analyzed Arabidopsis's root samples and therefore we looked for terms related to root and vasculature
+In the example dataset we analyzed Arabidopsis's root samples and therefore we looked for terms related to root and vasculature:
 
 ```
 xylem

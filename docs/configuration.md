@@ -4,7 +4,7 @@ The config file of MINI-EX is composed by **three main sections**:
 
 ## **Exectutor scope**
 MINI-EX is built to run on a SGE computer cluster as specified in the executor configuration scope at the top of the config file.  
-It uses a Singularity container built on Docker image with the necessary Python 3.6 moduels.
+It uses a Singularity container built on Docker image with the necessary Python 3.6 modules.
 
 ```
 executor {
@@ -49,7 +49,7 @@ Note: all ancestral terms are included
 	GOfile = "$baseDir/data_ath/ath_full_BP_expcur_ext_names.txt"
 	alias = "$baseDir/data_ath/ath_gene_aliases.txt"
 ```
-The **third block** of parameters consists in all the scripts used in the pipeline  
+The **third block** of parameters consists in all the scripts used in the pipeline:  
  
 ```	
 	script_enricher = "$baseDir/bin/enricherv2.4"
@@ -70,10 +70,10 @@ The **third block** of parameters consists in all the scripts used in the pipeli
 The **last block** of parameters defines the filters used along the GRN inferece.  
   
 The first two filters (tops and expressionFilter) have been chosen by benchmarking different filters against a root gold standard of known protein-DNA interactions.  
-The first refers to the number of upregulated genes per cluster (sorted by q-value) to use during the cell cluster enrichment, while the second refers to the percentage of cells that need to express the TF to retain the regulon for the specific cell cluster    
+The first refers to the number of upregulated genes per cluster (sorted by q-value) to use during the cell cluster enrichment, while the second refers to the percentage of cells that need to express the TF to retain the regulon for the specific cell cluster:    
   
-* motifFilter can be set to **TF_motifs** if the user wishes not to extend the retention of regulons enriched for family motifs, but only to direct TF-motifs.  
-* topRegs defines the top regulons to show in the two output heatmaps. It can be changed according to the user needs.
+* motifFilter can be set to **TF_motifs** if the user wishes not to extend the retention of regulons enriched for family motifs, but only to direct TF-motifs  
+* topRegs defines the top regulons to show in the two output heatmaps. It can be changed according to the user needs
 
 ```	
 	tops = "700"
