@@ -3,6 +3,8 @@
 Motif-Informed Network Inference based on single-cell EXpression data  
 
 The pipeline is built using Nextflow DSL2 and has the purpose of infer cell-type specific gene regulatory network using scRNA-Seq data in plants.  
+  
+MINI-EX uses a GNU GENERAL PUBLIC LICENSE version 3 within a dual license to offer the distribution of the software under a proprietary model as well as an open source model.  
 
 ## **Pipeline summary**
 1. Run expression-based GRN inference ([GRNBoost2](https://arboreto.readthedocs.io/en/latest/algorithms.html#grnboost2)) given a list of TFs and a gene-to-cell count matrix
