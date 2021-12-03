@@ -55,6 +55,3 @@ How to run it:
 ```
 nextflow -C miniex.config run miniex.nf
 ```
-
-##  
-MINI-EX uses a GNU GENERAL PUBLIC LICENSE version 3 within a dual license  
