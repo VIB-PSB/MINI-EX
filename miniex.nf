@@ -136,6 +136,24 @@ process filter_expression {
     """
 }
 
+process make_info_file {
+	publishDir regOutput, mode: 'copy'
+
+    input:
+	path script_info
+	tuple val(dataset_id), path (expMatrix), path (grnboostRegulons), path (motenrichRegulons), path (finalRegulons), path (cellClusters), path (identClust)
+	path infoTF
+
+	output:
+    tuple val("${dataset_id}"), path("${dataset_id}_TF_info_file.txt")
+	
+
+    """
+    python3 $script_info "$expMatrix" "$grnboostRegulons" "$motenrichRegulons" "$finalRegulons" $infoTF $cellClusters $identClust "${dataset_id}_TF_info_file.txt"
+
+    """
+}
+
 process clustermap_regs {
 	publishDir figs, mode: 'copy'
 	
@@ -315,8 +333,15 @@ workflow {
 	filter_combined_ch = matrix_ch.join(cluster_ch).join(run_enricher_cluster.out)
 	
 	filter_expression(params.script_expTFs,params.infoTF,params.expressionFilter,filter_combined_ch)
-		
+	
 	cluster_ids_ch = Channel.fromPath(params.cluster2ident).map { n -> [ n.baseName.split("_")[0], n ] }
+	
+	info_ch = matrix_ch.join(run_grnboost.out).join(filter_motifs.out).join(filter_expression.out).join(cluster_ch).join(cluster_ids_ch)
+	info_ch.view()
+	make_info_file(params.script_info,info_ch,params.infoTF)
+	make_info_file.out.view()
+	
+	
 	regulons_ident_ch = cluster_ids_ch.join(filter_expression.out)
 	clustermap_regs(params.script_clustermap,regulons_ident_ch)
 	
