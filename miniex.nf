@@ -314,7 +314,7 @@ process heatmap_tops {
 
 workflow {
 
-	matrix_ch = Channel.fromPath(params.expressionMatrix).map { n -> [ n.baseName.split("_")[0], n ] }	
+	matrix_ch = Channel.fromPath(params.expressionMatrix).map { n -> [ n.baseName.split("_")[0], n ] }.ifEmpty { error "Check your matrix file, it's either missing or wrongly named!" }
 	matrix_ch.view()
 	run_grnboost(params.script_grnboost,params.TF_list,matrix_ch)
 
@@ -323,7 +323,7 @@ workflow {
 	
 	filter_motifs(params.script_motifs,params.infoTF,params.motifFilter,run_enricher_motifs.out)
 	
-	deg_ch = Channel.fromPath(params.markersOut).map { n -> [ n.baseName.split("_")[0], n ] }
+	deg_ch = Channel.fromPath(params.markersOut).map { n -> [ n.baseName.split("_")[0], n ] }.ifEmpty { error "Check your allMarkers file, it's either missing or wrongly named!" }
 	
 	get_topDEGs(params.script_topDEGs,params.tops,deg_ch)
 
@@ -331,12 +331,12 @@ workflow {
 	
 	run_enricher_cluster(params.script_enricher,cluster_enrich_ch)	
 
-	cluster_ch = Channel.fromPath(params.cell2clusters).map { n -> [ n.baseName.split("_")[0], n ] }
+	cluster_ch = Channel.fromPath(params.cell2clusters).map { n -> [ n.baseName.split("_")[0], n ] }.ifEmpty { error "Check your cells2clusters file, it's either missing or wrongly named!" }
 	filter_combined_ch = matrix_ch.join(cluster_ch).join(run_enricher_cluster.out)
 	
 	filter_expression(params.script_expTFs,params.infoTF,params.expressionFilter,filter_combined_ch)
 	
-	cluster_ids_ch = Channel.fromPath(params.cluster2ident).map { n -> [ n.baseName.split("_")[0], n ] }
+	cluster_ids_ch = Channel.fromPath(params.cluster2ident).map { n -> [ n.baseName.split("_")[0], n ] }.ifEmpty { error "Check your identities file, it's either missing or wrongly named!" }
 	
 	info_ch = matrix_ch.join(run_grnboost.out).join(filter_motifs.out).join(filter_expression.out).join(cluster_ch).join(cluster_ids_ch)
 	make_info_file(params.script_info,info_ch,params.infoTF)	
