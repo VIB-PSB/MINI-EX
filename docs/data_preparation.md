@@ -1,10 +1,10 @@
 # Prepare your files
 
-A detailed example of the necessary input files can be found [here](https://github.com/VIB-PSB/MINI-EX/tree/main/example/).  
+A detailed example of the necessary input files can be found [here](example/).  
 
 MINI-EX has been designed to run on multiple datasets at once.  
   
-The paths to the folders containing the different input files need to be stated in the [config file](https://github.com/VIB-PSB/MINI-EX/blob/main/docs/configuration.md).  
+The paths to the folders containing the different input files need to be stated in the [config file](docs/configuration.md).  
   
 **Note:** different files from the same dataset **MUST have the same prefix** (i.e. dataset1_matrix.txt, dataset1_allMarkers.txt, dataset1_cells2clusters.txt, dataset1_identities.txt)
 
@@ -34,6 +34,8 @@ The **markersOut** points to the output obtained by [Seurat](https://satijalab.o
 
 ```
 ath_markers_all <- FindAllMarkers(SEURAT_OBEJCT, only.pos=TRUE)
+write.table(ath_markers_all, "./dataset1_allMarkers.txt", sep = "\t", quote=FALSE)
+
 ```
 
 ```
@@ -52,7 +54,8 @@ AT5G15470	6.73638999455266e-12	0.323992721599046	0.054	0.223	1.53394336565959e-0
 The **cell2clusters** points to a tab-separated file containing the cluster annotation for each cell in the expression matrix. It can be obtained using the [Seurat](https://satijalab.org/seurat/) command [FetchData](https://www.rdocumentation.org/packages/Seurat/versions/3.1.2/topics/FetchData) as shown below:  
 
 ```
-object <-FetchData(SEURAT_OBEJCT, vars = 'ident') 
+object <-FetchData(SEURAT_OBEJCT, vars = 'ident')
+write.table(object,"./dataset1_cell2cluster.txt", sep='\t',quote=FALSE,col.names = FALSE) 
 ```
 
 ```
@@ -78,7 +81,7 @@ The **cluster2ident** points to a tab-separated file containing the cell type an
 
 The **TF_list** is a list of TFs which is used in the GRNBoost2 run.  
   
-The [TF_list.txt](https://github.com/VIB-PSB/MINI-EX/tree/main/example/INPUTS/TF_list.txt) contained in the [INPUTS](https://github.com/VIB-PSB/MINI-EX/tree/main/example/INPUTS/) folder contains 1879 TFs collected from [PlantRegMap/PlantTFDB v5.0](http://planttfdb.gao-lab.org/), [PlnTFDB v3.0](http://plntfdb.bio.uni-potsdam.de/v3.0/) and [TF2Network](http://bioinformatics.psb.ugent.be/webtools/TF2Network/) for which either direct TF-motif information was available or motif information related to the TF family.
+The [TF_list.txt](example/TF_list.txt) contained in the [INPUTS](example/INPUTS) folder contains 1879 TFs collected from [PlantRegMap/PlantTFDB v5.0](http://planttfdb.gao-lab.org/), [PlnTFDB v3.0](http://plntfdb.bio.uni-potsdam.de/v3.0/) and [TF2Network](http://bioinformatics.psb.ugent.be/webtools/TF2Network/) for which either direct TF-motif information was available or motif information related to the TF family.
 
 ```
 AT1G18790
