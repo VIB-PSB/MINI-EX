@@ -7,7 +7,7 @@ MINI-EX has been designed to run on multiple datasets at once.
 The paths to the folders containing the different input files need to be stated in the [config file](docs/configuration.md).  
   
 **Note:** different files from the same dataset **MUST have the same prefix** (i.e. dataset1_matrix.txt, dataset1_allMarkers.txt, dataset1_cells2clusters.txt, dataset1_identities.txt)
-
+**Note bis:** if GRNBoost2 was previously run separately, the output can be specified in the configuration file and the first MINI-EX's step will be skipped.   
 ```
 params {
 	expressionMatrix = "$baseDir/example/INPUTS/*_matrix.txt"
@@ -17,6 +17,10 @@ params {
 	TF_list = "$baseDir/example/INPUTS/TF_list.txt"
 	termsOfInterest = "$baseDir/example/INPUTS/GOsIwant.txt"
 //	termsOfInterest = null
+
+	grnboostOut = null
+//	grnboostOut = "/$baseDir/example/OUTPUTS/GRNBoost2_output/*_grnboost2.txt"
+
 ```
 
 The **expressionMatrix** points to the gene-to-cell count matrix.

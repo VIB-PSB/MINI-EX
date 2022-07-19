@@ -316,10 +316,19 @@ workflow {
 
 	matrix_ch = Channel.fromPath(params.expressionMatrix).map { n -> [ n.baseName.split("_")[0], n ] }.ifEmpty { error "Check your matrix file, it's either missing or wrongly named!" }
 	matrix_ch.view()
-	run_grnboost(params.script_grnboost,params.TF_list,matrix_ch)
-
+	
+	if (params.grnboostOut == null){	
+		run_grnboost(params.script_grnboost,params.TF_list,matrix_ch)
+		grnboost_out = run_grnboost.out
+		grnboost_out.view()
+	}
+	if (params.grnboostOut != null){	
+		grnboost_out = Channel.fromPath(params.grnboostOut).map { n -> [ n.baseName.split("_")[0], n ] }.ifEmpty { error "Check your GRNBoost2 output, it's either missing or wrongly named!" }
+		grnboost_out.view()
+	}	
+	
 	unzip_motifMappings(params.featureFile_motifs)
-	run_enricher_motifs(params.script_enricher,unzip_motifMappings.out,run_grnboost.out)
+	run_enricher_motifs(params.script_enricher,unzip_motifMappings.out,grnboost_out)
 	
 	filter_motifs(params.script_motifs,params.infoTF,params.motifFilter,run_enricher_motifs.out)
 	
@@ -338,7 +347,7 @@ workflow {
 	
 	cluster_ids_ch = Channel.fromPath(params.cluster2ident).map { n -> [ n.baseName.split("_")[0], n ] }.ifEmpty { error "Check your identities file, it's either missing or wrongly named!" }
 	
-	info_ch = matrix_ch.join(run_grnboost.out).join(filter_motifs.out).join(filter_expression.out).join(cluster_ch).join(cluster_ids_ch)
+	info_ch = matrix_ch.join(grnboost_out).join(filter_motifs.out).join(filter_expression.out).join(cluster_ch).join(cluster_ids_ch)
 	make_info_file(params.script_info,info_ch,params.infoTF)	
 	
 	regulons_ident_ch = cluster_ids_ch.join(filter_expression.out)
