@@ -2,6 +2,7 @@ import pandas,sys
 
 CLUSTERS=sys.argv[1]
 df=pandas.read_csv(CLUSTERS,sep='\t',dtype={'cluster': str})
+df = df.astype({"p_val_adj": float})
 df=df[df['p_val_adj']< 0.05]
 
 def select_topDEGs(t,o):       
