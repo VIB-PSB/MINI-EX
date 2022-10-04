@@ -17,7 +17,7 @@ The [OUTPUTS folder](OUTPUTS/) contains four sub-folders:
 - **GRNBoost2_output** containing the output of GRNBoost2  
 - **GOenrichment_output** containing the output of the functional enrichment of the inferred regulons    
 - **regulons_output** containing three files:  
-	- miniexExample_TF_info_file.txt, a tab-separated file containing, for each TF, information about the TF expression, whether it was retained or not in the final regulons list, if not at which step it was discarded, and the percentage of cells for each cluster expressing the TF. It can be useful for adjusting the **expressionFilter** parameter in the last block of the config file.       
+	- miniexExample_TF_info_file.txt, a tab-separated file containing, for each TF, information about the TF's expression, whether it was retained or not in the final regulons list, and if not, at which step it was discarded. It also reports the percentage of cells for each cluster expressing the TF. This can be useful for adjusting the **expressionFilter** parameter in the last block of the [config file](https://github.com/VIB-PSB/MINI-EX/tree/main/docs/configuration.md).         
 	- miniexExample_regulons.txt, a tab-separated file with TF, cell cluster and list of TGs for each of the inferred regulons  
 	- miniexExample_rankedRegulons.xlsx, an excel file containing metadata for each of the inferred regulons. The different columns are explained below:    
 		- TF: TF gene name (i.e. AT1G71930) 
