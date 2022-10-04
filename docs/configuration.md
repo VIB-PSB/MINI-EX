@@ -31,6 +31,9 @@ params {
 	TF_list = "$baseDir/example/INPUTS/TF_list.txt"
 	termsOfInterest = "$baseDir/example/INPUTS/GOsIwant.txt"
 //	termsOfInterest = null
+
+	grnboostOut = null
+//	grnboostOut = "/$baseDir/example/OUTPUTS/GRNBoost2_output/*_grnboost2.txt"
 ```
 
 The **second block** of parameters is composed by files provided and necessary for the pipeline to run.  
