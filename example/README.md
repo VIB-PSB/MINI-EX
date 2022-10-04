@@ -9,7 +9,8 @@ The [INPUTS folder](INPUTS/) contains:
 - **miniexExample_cell2clusters.txt**: the file containing the identity of each cell present in the reduced expression matrix  
 - **miniexExample_identities.txt**: the file containing the identity of each cell cluster  
 - **TF_list.txt**: the file containing 1879 Arabidopsis TFs  
-- **GOIwant.txt**: the file containing terms related to the regulons's expected functions  
+- **GOIwant.txt**: (optional, it can be set to null) the file containing terms related to the regulons's expected functions  
+- ***miniexExample_grnboost2.txt**: (optional, it is set to null by default) if GRNBoost2, or another expression-based network, was already run, the output can be provided here     
   
   
   
