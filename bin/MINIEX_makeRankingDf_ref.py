@@ -15,7 +15,7 @@ OUTFILE=sys.argv[10]
 
 cellTyp_mtx = {}
 for line in open(CELLID):
-    cellTyp_mtx[line.rstrip().rsplit('\t')[0]]=line.rstrip().rsplit('\t')[1]
+    cellTyp_mtx[str(line.rstrip().rsplit('\t')[0])]=line.rstrip().rsplit('\t')[1]
                                            
 ###load final regulons (filtered for TF being expressed in at least 5% of cells in the cluster), #TGs and #TGswithGWAS
 dic_reg={}

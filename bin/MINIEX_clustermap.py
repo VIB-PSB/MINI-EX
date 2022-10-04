@@ -7,7 +7,7 @@ OUT_FIG=sys.argv[3]
 
 cellTyp_mtx = {}
 for line in open(CELLID):
-    cellTyp_mtx[line.rstrip().rsplit('\t')[0]]=line.rstrip().rsplit('\t')[1]
+    cellTyp_mtx[str(line.rstrip().rsplit('\t')[0])]=line.rstrip().rsplit('\t')[1]
 
 dic={}
 with open(REGULONS) as f:

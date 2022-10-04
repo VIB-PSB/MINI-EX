@@ -17,7 +17,7 @@ cell2type={}
 with open(CELLS) as f:
     for line in f:
         if line.strip().split('\t')[0] in cells_inMat:
-            cell2type[line.strip().split('\t')[0]]=line.strip().split('\t')[1]
+            cell2type[line.strip().split('\t')[0]]=str(line.strip().split('\t')[1])
 
 cell2type_counter=collections.Counter(list(cell2type.values()))        
 

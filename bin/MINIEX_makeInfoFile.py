@@ -19,7 +19,7 @@ exp_genes = list(matrix.index)
 cell2type={}
 with open(CELLS) as f:
     for line in f:
-        cell2type[line.strip().split('\t')[0]]=line.strip().split('\t')[1]
+        cell2type[line.strip().split('\t')[0]]=str(line.strip().split('\t')[1])
 cell2type_counter=collections.Counter(list(cell2type.values()))  
 
 tfs_all=list(pandas.read_csv(INFO_TF, header=None, usecols=[0], sep='\t')[0])
@@ -51,7 +51,7 @@ identities={}
 with open(IDS) as f:
     for line in f:
         spl=line.rstrip().rsplit('\t')
-        identities[spl[0]]=spl[1]
+        identities[str(spl[0])]=spl[1]
         
 columns=[identities[i]+'-'+i for i in cell2type_counter.keys()]        
 df_perc=pandas.DataFrame(0.0,index=tfs_exp,columns=sorted(columns))
