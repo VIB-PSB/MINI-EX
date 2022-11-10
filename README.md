@@ -6,6 +6,8 @@ The pipeline is built using Nextflow DSL2 and has the purpose of infer cell-type
   
 MINI-EX uses a GNU GENERAL PUBLIC LICENSE version 3 within a dual license to offer the distribution of the software under a proprietary model as well as an open source model.  
 
+Reference: "[MINI-EX: Integrative inference of single-cell gene regulatory networks in plants](https://www.cell.com/molecular-plant/fulltext/S1674-2052%2822%2900368-9)", Ferrari et al. 2022, Molecular Plant  
+
 ## **Pipeline summary**
 1. Run expression-based GRN inference ([GRNBoost2](https://arboreto.readthedocs.io/en/latest/algorithms.html#grnboost2)) given a list of TFs and a gene-to-cell count matrix
 2. Run TFBS enrichment on the expression-based regulons  
