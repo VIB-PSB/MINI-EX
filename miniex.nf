@@ -137,8 +137,6 @@ process filter_expression {
 }
 
 process make_info_file {
-
-	module 'python/x86_64/3.6.5'
 	publishDir regOutput, mode: 'copy'
 
     input:
