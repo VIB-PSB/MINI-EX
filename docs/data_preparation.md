@@ -8,9 +8,9 @@ Following constrains must be satisfied for the input files:
 5. **Cluster identifiers must correspond** between the "*_cells2clusters" and "*_identities" files.
 6. **Only up-regulated markers** can be provided in the "*_allMarkers" file.
 
-A detailed example of the necessary input files can be found [here](example/).  
+A detailed example of the necessary input files can be found [here](/example/).  
   
-The paths to the folders containing the different input files need to be stated in the [config file](docs/configuration.md).  
+The paths to the folders containing the different input files need to be stated in the [config file](/docs/configuration.md).  
 
 **Note:** if GRNBoost2 was previously run separately, its output can be specified in the configuration file and the corresponding MINI-EX's step will be skipped.   
 ```
@@ -82,7 +82,7 @@ TACTCATAGCAATATG-1	10
 ACTGAACAGTTAAGTG-1	20
 ```
 
-The **cluster2ident** points to a tab-separated file containing the cell type annotation for each cluster. Optionally, this file can contain a third column which specifies a cluster index. This index is used to indicate the position of a cluster along a known developmental trajectory (see [miniexExample_identities_with_idx.txt](example/INPUTS/miniexExample_identities_with_idx.txt) in the [INPUTS](example/INPUTS) folder), and translates to the column index in the regulator heatmaps ([example](example/OUTPUTS/figures/miniexExample_regmap_10.svg)). If this column is not specified, an automatic index is created by sorting the cluster identities alphabetically.
+The **cluster2ident** points to a tab-separated file containing the cell type annotation for each cluster. Optionally, this file can contain a third column which specifies a cluster index. This index is used to indicate the position of a cluster along a known developmental trajectory (see [miniexExample_identities_with_idx.txt](/example/INPUTS/miniexExample_identities_with_idx.txt) in the [INPUTS](/example/INPUTS) folder), and translates to the column index in the regulator heatmaps ([example](/example/OUTPUTS/figures/miniexExample_regmap_8.svg)). If this column is not specified, an automatic index is created by sorting the cluster identities alphabetically.
 
 ```
 13	cortex
@@ -93,7 +93,7 @@ The **cluster2ident** points to a tab-separated file containing the cell type an
 
 The **TF_list** is a list of TFs which is used in the GRNBoost2 run.  
   
-The [TF_list.txt](example/INPUTS/TF_list.txt) contained in the [INPUTS](example/INPUTS) folder contains 1879 TFs collected from [PlantRegMap/PlantTFDB v5.0](http://planttfdb.gao-lab.org/), [PlnTFDB v3.0](http://plntfdb.bio.uni-potsdam.de/v3.0/) and [TF2Network](http://bioinformatics.psb.ugent.be/webtools/TF2Network/) for which either direct TF-motif information was available or motif information related to the TF family.
+The [TF_list.txt](/example/INPUTS/TF_list.txt) contained in the [INPUTS](/example/INPUTS) folder contains 1879 TFs collected from [PlantRegMap/PlantTFDB v5.0](http://planttfdb.gao-lab.org/), [PlnTFDB v3.0](http://plntfdb.bio.uni-potsdam.de/v3.0/) and [TF2Network](http://bioinformatics.psb.ugent.be/webtools/TF2Network/) for which either direct TF-motif information was available or motif information related to the TF family.
 
 ```
 AT1G18790
