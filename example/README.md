@@ -7,7 +7,8 @@ The [INPUTS folder](INPUTS/) contains:
 - **miniexExample_matrix.txt**: a reduced gene-to-count matrix containing 1500 genes and 1542 cells  
 - **miniexExample_allMarkers.txt**: the output of Seurat FindAllMarkers filtered for genes present in the reduced expression matrix  
 - **miniexExample_cell2clusters.txt**: the file containing the identity of each cell present in the reduced expression matrix  
-- **miniexExample_identities.txt**: the file containing the identity of each cell cluster  
+- **miniexExample_identities.txt**: the file containing the identity of each cell cluster
+- **miniexExample_identities_with_idx.txt**: the file containing the identity and index (for sorting clusters in the regulator heatmap) of each cell cluster. Only one of `miniexExample_identities.txt` or `miniexExample_identities_with_idx.txt` should be provided.
 - **TF_list.txt**: the file containing 1879 Arabidopsis TFs  
 - **GOIwant.txt**: (optional, it can be set to null) the file containing terms related to the regulons's expected functions  
 - **miniexExample_grnboost2.txt**: (optional, it is set to null by default) if GRNBoost2, or another expression-based network, was already run, the output can be provided here     
@@ -17,10 +18,11 @@ The [INPUTS folder](INPUTS/) contains:
 The [OUTPUTS folder](OUTPUTS/) contains four sub-folders:   
 - **GRNBoost2_output** containing the output of GRNBoost2  
 - **GOenrichment_output** containing the output of the functional enrichment of the inferred regulons    
-- **regulons_output** containing three files:  
+- **regulons_output** containing four files:  
 	- miniexExample_TF_info_file.txt, a tab-separated file containing, for each TF, information about the TF's expression, whether it was retained or not in the final regulons list, and if not, at which step it was discarded. It also reports the percentage of cells for each cluster expressing the TF. This can be useful for adjusting the **expressionFilter** parameter in the last block of the [config file](https://github.com/VIB-PSB/MINI-EX/tree/main/docs/configuration.md).         
 	- miniexExample_regulons.txt, a tab-separated file with TF, cell cluster and list of TGs for each of the inferred regulons  
-	- miniexExample_rankedRegulons.xlsx, an excel file containing metadata for each of the inferred regulons. The different columns are explained below:    
+	- miniexExample_edgeTable.tsv, a tab-separated file that lists all inferred edges: TF, TG, cell cluster, borda_rank (see below), borda_clusterRank (see below), weight (GRNBoost2 edge weight)  
+	- miniexExample_rankedRegulons.xlsx, an excel file containing metadata for each of the inferred regulons. The different columns are explained below:
 		- TF: TF gene name (i.e. AT1G71930) 
 		- alias: TF alias (i.e. VND7)  
 		- hasTFrelevantGOterm: 'relevant_known_TF' if the TF is associated to a relevant GO term (relative to [GOsIwant.txt](https://github.com/VIB-PSB/MINI-EX/tree/main/example/INPUTS/GOsIwant.txt)), 'known_TF' if the TF is associated to another experimentally validated and/or manually curated GO term, 'unknown_TF' when the TF is uncharacterized   
@@ -34,10 +36,10 @@ The [OUTPUTS folder](OUTPUTS/) contains four sub-folders:
 		- qval_cluster: FDR-corrected p-value of cell cluster enrichment (cluster specificity)    
 		- closeness: closeness-centrality  
 		- betweenness: betweenness-centrality    
-		- GO_enrich_qval: FDR-corrected p-value of functional enrichment of the regulon's TGs (functional specificity - reporting only the lowest p-value among the relevant terms)  
-		- GO_enrich_term: the relevant GO term (relative to [GOsIwant.txt](https://github.com/VIB-PSB/MINI-EX/tree/main/example/INPUTS/GOsIwant.txt)) for which the regulon's TGs showed the most significant enrichment    
-		- GO_enrich_desc: description of the GO term for which the regulon's TGs showed the most significant enrichment    
-		- #TGs_withGO: number of TGs enriched for the most significant relevant GO term    
+		- GO_enrich_qval (only present if 'termsOfInterest' is not null): FDR-corrected p-value of functional enrichment of the regulon's TGs (functional specificity - reporting only the lowest p-value among the relevant terms)  
+		- GO_enrich_term (only present if 'termsOfInterest' is not null): the relevant GO term (relative to [GOsIwant.txt](https://github.com/VIB-PSB/MINI-EX/tree/main/example/INPUTS/GOsIwant.txt)) for which the regulon's TGs showed the most significant enrichment    
+		- GO_enrich_desc (only present if 'termsOfInterest' is not null): description of the GO term for which the regulon's TGs showed the most significant enrichment    
+		- #TGs_withGO (only present if 'termsOfInterest' is not null): number of TGs enriched for the most significant relevant GO term    
 		- borda_rank: global Borda ranking of the regulon  
 		- borda_clusterRank: cluster-specific Borda ranking of the regulon  
 		
@@ -51,4 +53,6 @@ The [OUTPUTS folder](OUTPUTS/) contains four sub-folders:
 	- miniexExample_heatmapDEcalls.svg, a clustermap reporting whether the top 150 TFs are upregulated (blue) or just expressed (by at least 10% of the cells within the cell cluster - white) in the cell cluster they act. Each TF is color coded accoring to the GO terms associated to it, in green for 'relevant_known_TF', in yellow for 'known_TF', and gray for 'unknown_TF'    
 	  
 	![miniexExample_heatmapDEcalls.svg](OUTPUTS/figures/miniexExample_heatmapDEcalls.svg)
-		
+	- miniexExample_regmap_x.svg, a heatmap reporting top x TFs (default x range: 10, 25, 50, 100, "topRegs", all) per cluster, reporting the maximum expression (mean of top 3 cells) per cluster and the respective ranking (borda_clusterRank). Clusters (i.e. columns) are sorted based on the index given in `miniexExample_identities_with_idx.txt`, allowing to track predicted regulators over predefined lineage. If `miniexExample_identities.txt` is provided instead, the clusters will be ordered as provided in this input file. These figures can be easily produced for additional thresholds/settings using the additionally provided `regmap.sh` script. Call `python3 bin/MINIEX_regmap.py -h` for additional parameters
+
+    ![miniexExample_regmap_25.svg](OUTPUTS/figures/miniexExample_regmap_8.svg)	

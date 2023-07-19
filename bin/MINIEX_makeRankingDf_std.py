@@ -50,17 +50,17 @@ termsNOI={}
 genesNOI=[]
 gene2go={}
 
-with open(GOS) as f:
-    for line in f:
-        spl=line.rstrip().rsplit('\t')
-        termsNOI[spl[0]]=spl[3]
-        genesNOI.append(spl[1])
-        if spl[1] in gene2go:
-            gene2go[spl[1]]+=[spl[0]]
-        else:
-            gene2go[spl[1]]=[spl[0]]
-
-genesNOI=list(set(genesNOI))
+if GOS != 'false':
+    with open(GOS) as f:
+        for line in f:
+            spl=line.rstrip().rsplit('\t')
+            termsNOI[spl[0]]=spl[3]
+            genesNOI.append(spl[1])
+            if spl[1] in gene2go:
+                gene2go[spl[1]]+=[spl[0]]
+            else:
+                gene2go[spl[1]]=[spl[0]]
+    genesNOI=list(set(genesNOI))
 
 
 ###load centrality measurments for regulons

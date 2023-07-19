@@ -1,388 +1,509 @@
 #!/usr/bin/env nextflow
 
-nextflow.preview.dsl=2
+nextflow.enable.dsl=2
 /*
 =====================================================
-		MINI-EX
+        MINI-EX
 =====================================================
 Motif-Informed Network Inference from gene EXpression
 
 -----------------------------------------------------
 */
 
-log.info """\
-         Motif-Informed Network Inference from gene EXpression
-         =====================================================
-		 Running TF motif enrichment filtering on  ${params.motifFilter}
+if (params.doMotifAnalysis){
+    motif_log = "Running TF motif enrichment filtering on ${params.motifFilter}"
+} else {
+    motif_log = "Skipping motif enrichment filtering"
+}
+
+log.info"""\
+         Motif-Informed Network Inference from gene EXpression v.2.0
+         ===========================================================
+         ${motif_log}
          Running single-cell cluster enrichment using the top ${params.tops} upregulated genes per cluster
          Filtering out regulons of single-cell clusters where the TF is expressed in less than ${params.expressionFilter} % of the cells
-		 Plotting expression specificity and DE calls for the top ${params.topRegs} regulons
+         Plotting expression specificity and DE calls for the top ${params.topRegs} regulons
          """
          .stripIndent()
-		 
+         
 grnboostOutput = "$baseDir/GRNBoost2_output"
 regOutput = "$baseDir/regulons_output"
 GOenrichmentOutput = "$baseDir/GOenrichment_output"
 figs = "$baseDir/figures"
 
 
-process run_grnboost {
-	publishDir grnboostOutput, mode: 'copy'
+process check_input_files {
+    echo true
 
     input:
-	path script_grnboost
-	path TF_list
-	tuple val(dataset_id), path(matrix)
-	
-	output:
-	tuple val("${dataset_id}"), path("${dataset_id}_grnboost2.txt")
+    path script_checkInput
+    path expressionMatrix
+    path markersOut
+    path cells2clusters
+    path cluster2ident
+    path tfList
+    path termsOfInterest
+    path grnboostOut
+    path featureFileMotifs
+    path infoTf
+    path goFile
+    path alias
 
     """
-    python3 $script_grnboost $TF_list "$matrix" 5 "${dataset_id}_grnboost2.txt"
+    OMP_NUM_THREADS=1 python3 $script_checkInput "$expressionMatrix" "$markersOut" "$cells2clusters" "$cluster2ident" "$tfList" "$termsOfInterest" "$grnboostOut" "$featureFileMotifs" "$infoTf" "$goFile" "$alias"
+    """
+}
+
+
+process get_expressed_genes {
+
+    input:
+    tuple val(dataset_id), path(matrix)
+
+    output:
+    tuple val(dataset_id), path("${dataset_id}_expressedGenes.txt")
+
+    """
+    tail -n +2 "$matrix" | cut -f 1 > "${dataset_id}_expressedGenes.txt"
+    """
+}
+
+
+process run_grnboost {
+    publishDir grnboostOutput, mode: 'copy'
+
+    input:
+    path script_grnboost
+    path TF_list
+    tuple val(dataset_id), path(matrix)
+    
+    output:
+    tuple val("${dataset_id}"), path("${dataset_id}_grnboost2.txt")
+
+    """
+    OMP_NUM_THREADS=1 python3 $script_grnboost $TF_list "$matrix" 5 "${dataset_id}_grnboost2.txt"
     """
 }
 
 process unzip_motifMappings {
-	
+    
     input:
-	path ff_motifs
+    path ff_motifs
 
-	output:
-	path "MotifMappings.csv"
+    output:
+    path "MotifMappings.csv"
 
     """
     gunzip -c $ff_motifs > "MotifMappings.csv"
-	
     """
 }
 
 process run_enricher_motifs {
-	
+    
     input:
-	path script_enricher
-	path ff_motifs_unzipped
-	tuple val(dataset_id), path(modules)
+    path script_enricher
+    path ff_motifs_unzipped
+    tuple val(dataset_id), path(modules), path(expressed_genes)
 
-	output:
-	tuple val("${dataset_id}"), path("${dataset_id}_enricherRegulons.txt")
+    output:
+    tuple val("${dataset_id}"), path("${dataset_id}_enricherRegulons.txt")
 
     """
-	
-    $script_enricher $ff_motifs_unzipped "$modules" -f 0.001 --print-hits -o "${dataset_id}_enricherRegulons.txt"
+    cat "$ff_motifs_unzipped" | grep -f "$expressed_genes" > ff_motifs_filtered.txt
+    $script_enricher ff_motifs_filtered.txt "$modules" -f 0.001 -n \$(cat "$expressed_genes" | wc -l) --min-hits 2 --print-hits -o "${dataset_id}_enricherRegulons.txt"
+
+    # Throw an error if no enrichment is found
+    if [ "\$(head ${dataset_id}_enricherRegulons.txt | grep -P '^[^#]' | wc -l)" -eq 0 ]; then 
+        echo 'ERROR: Enricher output empty!'
+        exit 1
+    fi
     """
 }
 
 process filter_motifs {
 
     input:
-	path script_motifs
-	path infoTF
-	val motifFilter
-	tuple val(dataset_id), path(enrichedModules)
+    path script_motifs
+    path infoTF
+    val motifFilter
+    tuple val(dataset_id), path(enrichedModules)
 
-	output:
-	tuple val("${dataset_id}"), path("${dataset_id}_enrichedRegulons.txt")
-	
+    output:
+    tuple val("${dataset_id}"), path("${dataset_id}_enrichedRegulons.txt")
+    
     """
-    python3 $script_motifs $infoTF "$enrichedModules" "${dataset_id}_enrichedRegulons.txt" "$motifFilter"
+    OMP_NUM_THREADS=1 python3 $script_motifs $infoTF "$enrichedModules" "${dataset_id}_enrichedRegulons.txt" "$motifFilter"
+    """
+}
+
+process filter_motifs_dummy {
+
+    input:
+    tuple val(dataset_id), path(modules)
+
+    output:
+    tuple val("${dataset_id}"), path("${dataset_id}_enrichedRegulons.txt")
+    
+    """
+    cp "$modules" "${dataset_id}_enrichedRegulons.txt"
     """
 }
 
 process get_topDEGs {
-	
+    
     input:
-	path script_topDEGs
-	val tops
-	tuple val(dataset_id), path (allMarkers)
+    path script_topDEGs
+    val tops
+    tuple val(dataset_id), path(allMarkers)
 
-	output:
-	tuple val("${dataset_id}"), path("${dataset_id}_top${tops}cellClusters.out")
-	
+    output:
+    tuple val("${dataset_id}"), path("${dataset_id}_top${tops}cellClusters.out")
+    
     """
-    python3 $script_topDEGs $allMarkers "$tops" "${dataset_id}_top${tops}cellClusters.out"
+    OMP_NUM_THREADS=1 python3 $script_topDEGs $allMarkers "$tops" "${dataset_id}_top${tops}cellClusters.out"
     """
 }
 
 process run_enricher_cluster {
-	
+    
     input:
-	path script_enricher
-	tuple val(dataset_id), path (ff_celltypes), path (filteredRegulons)
+    path script_enricher
+    tuple val(dataset_id), path(ff_celltypes), path(filteredRegulons), path(expressed_genes)
 
-	output:
-	tuple val("${dataset_id}"), path("${dataset_id}_enricherCelltypes.txt") 
+    output:
+    tuple val("${dataset_id}"), path("${dataset_id}_enricherCelltypes.txt") 
 
     """
-    $script_enricher $ff_celltypes "$filteredRegulons" -f 0.001 --print-hits -o "${dataset_id}_enricherCelltypes.txt"
+    cat "$ff_celltypes" | grep -f "$expressed_genes" > ff_celltypes_filtered.txt
+    $script_enricher ff_celltypes_filtered.txt "$filteredRegulons" -f 0.001 -n \$(cat "$expressed_genes" | wc -l) --min-hits 2 --print-hits -o "${dataset_id}_enricherCelltypes.txt"
+
+    # Throw an error if no enrichment is found
+    if [ "\$(head ${dataset_id}_enricherCelltypes.txt | grep -P '^[^#]' | wc -l)" -eq 0 ]; then 
+        echo 'ERROR: Enricher output empty!'
+        exit 1
+    fi
     """
 }
 
 process filter_expression {
-	publishDir regOutput, mode: 'copy'
+    publishDir regOutput, mode: 'copy'
 
     input:
-	path script_expTFs
-	path infoTF
-	val expressionFilter
-	tuple val(dataset_id), path (expMatrix), path (cellClusters), path (regulons)
+    path script_expTFs
+    path infoTF
+    val expressionFilter
+    tuple val(dataset_id), path(expMatrix), path(cellClusters), path(regulons)
 
-	output:
+    output:
     tuple val("${dataset_id}"), path("${dataset_id}_regulons.txt")
-	
-
+    
     """
-    python3 $script_expTFs "$expMatrix" $infoTF $cellClusters "$expressionFilter" "$regulons" "${dataset_id}_regulons.txt"
-
+    OMP_NUM_THREADS=1 python3 $script_expTFs "$expMatrix" $infoTF $cellClusters "$expressionFilter" "$regulons" "${dataset_id}_regulons.txt"
     """
 }
 
 process make_info_file {
-	publishDir regOutput, mode: 'copy'
+    publishDir regOutput, mode: 'copy'
 
     input:
-	path script_info
-	tuple val(dataset_id), path (expMatrix), path (grnboostRegulons), path (motenrichRegulons), path (finalRegulons), path (cellClusters), path (identClust)
-	path infoTF
+    path script_info
+    tuple val(dataset_id), path(expMatrix), path(grnboostRegulons), path(motenrichRegulons), path(finalRegulons), path(cellClusters), path(identClust)
+    path infoTF
 
-	output:
+    output:
     tuple val("${dataset_id}"), path("${dataset_id}_TF_info_file.txt")
-	
-
+    
     """
-    python3 $script_info "$expMatrix" "$grnboostRegulons" "$motenrichRegulons" "$finalRegulons" $infoTF $cellClusters $identClust "${dataset_id}_TF_info_file.txt"
-
+    OMP_NUM_THREADS=1 python3 $script_info "$expMatrix" "$grnboostRegulons" "$motenrichRegulons" "$finalRegulons" $infoTF $cellClusters $identClust "${dataset_id}_TF_info_file.txt"
     """
 }
 
 process clustermap_regs {
-	publishDir figs, mode: 'copy'
-	
+    publishDir figs, mode: 'copy'
+    
     input:
-	path script_clustermap
-	tuple val(dataset_id), path (identClust), path (finalRegulons)
+    path script_clustermap
+    tuple val(dataset_id), path(identClust), path(finalRegulons)
 
-
-	output:
-	tuple val("${dataset_id}"), path("${dataset_id}_clustermap.svg")
-	 
+    output:
+    tuple val("${dataset_id}"), path("${dataset_id}_clustermap.svg")
+     
     """
-	python3 $script_clustermap "$identClust" "$finalRegulons" "${dataset_id}_clustermap.svg"
-
+    OMP_NUM_THREADS=1 python3 $script_clustermap "$identClust" "$finalRegulons" "${dataset_id}_clustermap.svg"
     """
 }
 
 
 process network_centrality {
-	
+    
     input:
-	path script_networkCentrality
-	tuple val(dataset_id), path (finalRegulons)
+    path script_networkCentrality
+    tuple val(dataset_id), path(finalRegulons)
 
-	output:
+    output:
     tuple val("${dataset_id}"), path("${dataset_id}_networkCentrality.txt")
-	
 
     """
-    python3 $script_networkCentrality "$finalRegulons" "${dataset_id}_networkCentrality.txt"
-
+    OMP_NUM_THREADS=1 python3 $script_networkCentrality "$finalRegulons" "${dataset_id}_networkCentrality.txt"
     """
 }
 
 process getFiles_enrichment {
-	
+    
     input:
-	path script_filesEnrichment
-	path GOfile
-	tuple val(dataset_id), path (finalRegulons)
+    path script_filesEnrichment
+    tuple val(dataset_id), path(finalRegulons), path(GOfile)
 
-	output:
-	tuple val("${dataset_id}"), path("${dataset_id}_setFileRegulons.out"), path("${dataset_id}_featureFileGO.out")
+    output:
+    tuple val("${dataset_id}"), path("${dataset_id}_setFileRegulons.out"), path("${dataset_id}_featureFileGO.out")
 
     """
-    python3 $script_filesEnrichment "$finalRegulons" "$GOfile" "${dataset_id}_setFileRegulons.out" "${dataset_id}_featureFileGO.out"
-
+    OMP_NUM_THREADS=1 python3 $script_filesEnrichment "$finalRegulons" "$GOfile" "${dataset_id}_setFileRegulons.out" "${dataset_id}_featureFileGO.out"
     """
 }
 
 process GO_enricher {
-
-	publishDir GOenrichmentOutput, mode: 'copy'
-	
+    publishDir GOenrichmentOutput, mode: 'copy'
+    
     input:
-	path script_enricher
-	tuple val(dataset_id), path (s), path (f)
-	
-	output:
-	tuple val("${dataset_id}"), path("${dataset_id}_enricherGO.txt")
-	 
+    path script_enricher
+    tuple val(dataset_id), path(s), path(f), path(expressed_genes)
+    
+    output:
+    tuple val("${dataset_id}"), path("${dataset_id}_enricherGO.txt")
+     
     """
-    $script_enricher "$f" "$s" -f 0.05 -p -o "${dataset_id}_enricherGO.txt"
-		
+    cat "$f" | grep -f "$expressed_genes" > f_filtered.txt
+    $script_enricher f_filtered.txt "$s" -f 0.05 -n \$(cat "$expressed_genes" | wc -l) --min-hits 2 -p -o "${dataset_id}_enricherGO.txt"
+
+    # Throw an error if no enrichment is found
+    if [ "\$(head ${dataset_id}_enricherGO.txt | grep -P '^[^#]' | wc -l)" -eq 0 ]; then 
+        echo 'ERROR: Enricher output empty!'
+        exit 1
+    fi
     """
 }
 
 process check_reference {
-	
+    
     input:
-	path script_checkReference
-	tuple val(dataset_id), path (finalRegulons)
-	path GOfile
-	path termsOfInterest
+    path script_checkReference
+    tuple val(dataset_id), path(finalRegulons), path(GOfile)
+    path termsOfInterest
 
-	output:
+    output:
     tuple val("${dataset_id}"), stdout
-	
+    
     """
-    python3 $script_checkReference "$finalRegulons" "$GOfile" "$termsOfInterest" 
-
+    OMP_NUM_THREADS=1 python3 $script_checkReference "$finalRegulons" "$GOfile" "$termsOfInterest" 
     """
 }
 
 process ranking_df_ref {
-	
+    
     input:
-	path script_makedfRef
-	path alias
-	path GOfile
-	path termsOfInterest
-	tuple val(dataset_id), path (identClust), path (finalRegulons), path (qvalct), path (netCent), path (enrichGO), path (allMarkers)
+    path script_makedfRef
+    path alias
+    path termsOfInterest
+    tuple val(dataset_id), path(identClust), path(finalRegulons), path(qvalct), path(netCent), path(enrichGO), path(allMarkers), path(GOfile)
 
-	output:
-	tuple val("${dataset_id}"), path("${dataset_id}_dfForRanking.txt")
-	 
-	"""
-	python3 $script_makedfRef "$identClust" "$finalRegulons" "$alias" "$qvalct" "$GOfile" "$termsOfInterest" "$netCent" "$enrichGO" "$allMarkers" "${dataset_id}_dfForRanking.txt"
-	
-	"""	 
+    output:
+    tuple val("${dataset_id}"), path("${dataset_id}_dfForRanking.txt")
+     
+    """
+    OMP_NUM_THREADS=1 python3 $script_makedfRef "$identClust" "$finalRegulons" "$alias" "$qvalct" "$GOfile" "$termsOfInterest" "$netCent" "$enrichGO" "$allMarkers" "${dataset_id}_dfForRanking.txt"
+    """  
 }
 
 process ranking_df_std {
-	
+    
     input:
-	path script_makedfStd	
-	path alias
-	path GOfile
-	tuple val(dataset_id), path (identClust), path (finalRegulons), path (qvalct), path (netCent), path (allMarkers)
+    path script_makedfStd   
+    path alias
+    tuple val(dataset_id), path(identClust), path(finalRegulons), path(qvalct), path(netCent), path(allMarkers), val(GOfile)
 
-	output:
-	tuple val("${dataset_id}"), path("${dataset_id}_dfForRanking.txt")
-	 
-	"""
-	python3 $script_makedfStd "$identClust" "$finalRegulons" "$alias" "$qvalct" "$GOfile" "$netCent" "$allMarkers" "${dataset_id}_dfForRanking.txt"
-	"""	 
+    output:
+    tuple val("${dataset_id}"), path("${dataset_id}_dfForRanking.txt")
+     
+    """
+    OMP_NUM_THREADS=1 python3 $script_makedfStd "$identClust" "$finalRegulons" "$alias" "$qvalct" "$GOfile" "$netCent" "$allMarkers" "${dataset_id}_dfForRanking.txt"
+    """  
 }
 
 
 process makeBorda {
-
-	publishDir regOutput, mode: 'copy'
-	echo true
-	
+    publishDir regOutput, mode: 'copy'
+    echo true
+    
     input:
-	path script_makeborda
-	tuple val(dataset_id), path (regulonsDF), val(metrics), val(ref)
+    path script_makeborda
+    tuple val(dataset_id), path(regulonsDF), val(metrics), val(ref)
 
-	output:
-	tuple val("${dataset_id}"), path("${dataset_id}_rankedRegulons.xlsx")
-	 
+    output:
+    tuple val("${dataset_id}"), path("${dataset_id}_rankedRegulons.xlsx")
+     
     """
-	python3 $script_makeborda "$regulonsDF" "$metrics" "${dataset_id}_rankedRegulons.xlsx" "$ref"
-		
+    OMP_NUM_THREADS=1 python3 $script_makeborda "$regulonsDF" "$metrics" "${dataset_id}_rankedRegulons.xlsx" "$ref"
+    """
+}
+
+
+process scoreEdges {
+    publishDir regOutput, mode: 'copy'
+    
+    input:
+    path script_scoreEdges
+    tuple val(dataset_id), path(regulons), path(rankedRegulons), path(modules)
+    
+    output:
+    tuple val(dataset_id), path("${dataset_id}_edgeTable.tsv")
+     
+    """
+    OMP_NUM_THREADS=1 python3 $script_scoreEdges $regulons $rankedRegulons $modules ${dataset_id}_edgeTable.tsv
     """
 }
 
 
 process heatmap_tops {
-
-	publishDir figs, mode: 'copy'
-	
+    publishDir figs, mode: 'copy'
+    
     input:
-	path script_heatmapTops
-	tuple val(dataset_id), path (rankedRegulons)
-	val topRegs
+    path script_heatmapTops
+    tuple val(dataset_id), path(rankedRegulons)
+    val topRegs
 
-	output:
-	tuple val(dataset_id), path("${dataset_id}_heatmapSpecificity.svg"), path("${dataset_id}_heatmapDEcalls.svg")
-	 
+    output:
+    tuple val(dataset_id), path("${dataset_id}_heatmapSpecificity.svg"), path("${dataset_id}_heatmapDEcalls.svg")
+     
     """
-	python3 $script_heatmapTops "$rankedRegulons" "${dataset_id}_heatmapSpecificity.svg" "${dataset_id}_heatmapDEcalls.svg" "$topRegs"	
+    OMP_NUM_THREADS=1 python3 $script_heatmapTops "$rankedRegulons" "${dataset_id}_heatmapSpecificity.svg" "${dataset_id}_heatmapDEcalls.svg" "$topRegs"  
+    """
+}
+
+
+process regmaps {
+    publishDir figs, mode: 'copy'
+    
+    input:
+    path script_regmaps
+    tuple val(dataset_id), path(expMatrix), path(cellClusters), path(identClust), path(rankedRegulons)
+    val topRegs
+
+    output:
+    tuple val(dataset_id), path("${dataset_id}_regmap_*.svg")
+     
+    """
+    OMP_NUM_THREADS=1 python3 $script_regmaps -c $cellClusters \
+                                              -i $identClust \
+                                              -r $rankedRegulons \
+                                              -m $expMatrix \
+                                              -t 10,25,50,100,$topRegs \
+                                              -d $dataset_id
     """
 }
 
 
 workflow {
+    check_input_files(params.script_checkInput,
+        Channel.fromPath(params.expressionMatrix).collect(),
+        Channel.fromPath(params.markersOut).collect(),
+        Channel.fromPath(params.cell2clusters).collect(),
+        Channel.fromPath(params.cluster2ident).collect(),
+        Channel.fromPath(params.TF_list).collect(),
+        params.termsOfInterest != null ? Channel.fromPath(params.termsOfInterest).collect() : "/dummy_path_tof",
+        params.grnboostOut != null ? Channel.fromPath(params.grnboostOut).collect() : "/dummy_path_grnb",
+        params.doMotifAnalysis == true? Channel.fromPath(params.featureFile_motifs) : "/dummy_path_motif",
+        Channel.fromPath(params.infoTF).collect(),
+        params.GOfile != null ? Channel.fromPath(params.GOfile).collect() : "/dummy_path_go",
+        Channel.fromPath(params.alias).collect())
 
-	matrix_ch = Channel.fromPath(params.expressionMatrix).map { n -> [ n.baseName.split("_")[0], n ] }.ifEmpty { error "Check your matrix file, it's either missing or wrongly named!" }
-	matrix_ch.view()
-	
-	if (params.grnboostOut == null){	
-		run_grnboost(params.script_grnboost,params.TF_list,matrix_ch)
-		grnboost_out = run_grnboost.out
-		grnboost_out.view()
-	}
-	if (params.grnboostOut != null){	
-		grnboost_out = Channel.fromPath(params.grnboostOut).map { n -> [ n.baseName.split("_")[0], n ] }.ifEmpty { error "Check your GRNBoost2 output, it's either missing or wrongly named!" }
-		grnboost_out.view()
-	}	
-	
-	unzip_motifMappings(params.featureFile_motifs)
-	run_enricher_motifs(params.script_enricher,unzip_motifMappings.out,grnboost_out)
-	
-	filter_motifs(params.script_motifs,params.infoTF,params.motifFilter,run_enricher_motifs.out)
-	
-	deg_ch = Channel.fromPath(params.markersOut).map { n -> [ n.baseName.split("_")[0], n ] }.ifEmpty { error "Check your allMarkers file, it's either missing or wrongly named!" }
-	
-	get_topDEGs(params.script_topDEGs,params.tops,deg_ch)
+    matrix_ch = Channel.fromPath(params.expressionMatrix).map { n -> [ n.baseName.split("_")[0], n ] }
+    matrix_ch.view()
+    
+    if (params.grnboostOut == null){
+        run_grnboost(params.script_grnboost,params.TF_list,matrix_ch)
+        grnboost_ch = run_grnboost.out
+        grnboost_ch.view()
+    }
+    if (params.grnboostOut != null){
+        grnboost_ch = Channel.fromPath(params.grnboostOut).map { n -> [ n.baseName.split("_")[0], n ] }
+        grnboost_ch.view()
+    }
 
-	cluster_enrich_ch = get_topDEGs.out.join(filter_motifs.out)
-	
-	run_enricher_cluster(params.script_enricher,cluster_enrich_ch)	
+    expressed_genes_ch = get_expressed_genes(matrix_ch)
+    grnboost_combined_ch = grnboost_ch.join(expressed_genes_ch)
+    
+    if (params.doMotifAnalysis){
+        unzip_motifMappings(params.featureFile_motifs)
+        run_enricher_motifs(params.script_enricher,unzip_motifMappings.out,grnboost_combined_ch)
+        
+        filter_motifs(params.script_motifs,params.infoTF,params.motifFilter,run_enricher_motifs.out)
+        filter_motifs_ch = filter_motifs.out
+    } else {
+        filter_motifs_dummy(grnboost_ch)
+        filter_motifs_ch = filter_motifs_dummy.out
+    }
 
-	cluster_ch = Channel.fromPath(params.cell2clusters).map { n -> [ n.baseName.split("_")[0], n ] }.ifEmpty { error "Check your cells2clusters file, it's either missing or wrongly named!" }
-	filter_combined_ch = matrix_ch.join(cluster_ch).join(run_enricher_cluster.out)
-	
-	filter_expression(params.script_expTFs,params.infoTF,params.expressionFilter,filter_combined_ch)
-	
-	cluster_ids_ch = Channel.fromPath(params.cluster2ident).map { n -> [ n.baseName.split("_")[0], n ] }.ifEmpty { error "Check your identities file, it's either missing or wrongly named!" }
-	
-	info_ch = matrix_ch.join(grnboost_out).join(filter_motifs.out).join(filter_expression.out).join(cluster_ch).join(cluster_ids_ch)
-	make_info_file(params.script_info,info_ch,params.infoTF)	
-	
-	regulons_ident_ch = cluster_ids_ch.join(filter_expression.out)
-	clustermap_regs(params.script_clustermap,regulons_ident_ch)
-	
-	network_centrality(params.script_networkCentrality,filter_expression.out)
+    deg_ch = Channel.fromPath(params.markersOut).map { n -> [ n.baseName.split("_")[0], n ] }
+    cluster_enrich_ch = get_topDEGs(params.script_topDEGs,params.tops,deg_ch)
 
-	getFiles_enrichment(params.script_filesEnrichment,params.GOfile,filter_expression.out)
-	GO_enricher(params.script_enricher,getFiles_enrichment.out)		
+    cluster_enrich_combined_ch = cluster_enrich_ch.join(filter_motifs_ch).join(expressed_genes_ch)
+    run_enricher_cluster(params.script_enricher,cluster_enrich_combined_ch)  
 
-	if (params.termsOfInterest != null){		
+    cluster_ch = Channel.fromPath(params.cell2clusters).map { n -> [ n.baseName.split("_")[0], n ] }
+    filter_combined_ch = matrix_ch.join(cluster_ch).join(run_enricher_cluster.out)
+    filter_expression(params.script_expTFs,params.infoTF,params.expressionFilter,filter_combined_ch)
+    
+    cluster_ids_ch = Channel.fromPath(params.cluster2ident).map { n -> [ n.baseName.split("_")[0], n ] }
+    info_ch = matrix_ch.join(grnboost_ch).join(filter_motifs_ch).join(filter_expression.out).join(cluster_ch).join(cluster_ids_ch)
+    make_info_file(params.script_info,info_ch,params.infoTF)    
+    
+    regulons_ident_ch = cluster_ids_ch.join(filter_expression.out)
+    clustermap_regs(params.script_clustermap,regulons_ident_ch)
+    
+    network_centrality(params.script_networkCentrality,filter_expression.out)
 
-		check_reference(params.script_checkReference,filter_expression.out,params.GOfile,params.termsOfInterest)
-		check_reference_trimmed = check_reference.out.map { n,it -> [ n, it.trim() ] }
-	
-		rankingRef_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(network_centrality.out).join(GO_enricher.out).join(deg_ch)
-		ranking_df_ref(params.script_makedfRef,params.alias,params.GOfile,params.termsOfInterest,rankingRef_combined_ch)
-	
-		metrics_ch = Channel.value('qval_cluster,out-degree,betweenness,closeness,GO_enrich_qval')
-		metrics_combi_ch = ranking_df_ref.out.combine(metrics_ch).join(check_reference_trimmed)
-		}
-		
-	if (params.termsOfInterest == null){
-		
-		rankingStd_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(network_centrality.out).join(deg_ch)
-		ranking_df_std(params.script_makedfStd,params.alias,params.GOfile,rankingStd_combined_ch)
-	
-		metrics_ch = Channel.value('qval_cluster,out-degree,betweenness,closeness')
-		std_ch = Channel.value('std')
-		metrics_combi_ch = ranking_df_std.out.combine(metrics_ch).combine(std_ch)
-		}
-		
-	makeBorda(params.script_makeborda,metrics_combi_ch)
-		
-	heatmap_tops(params.script_heatmapTops,makeBorda.out,params.topRegs)
+    if ( params.GOfile != null ){
+
+        getFiles_enrichment_input_ch = filter_expression.out.combine(Channel.fromPath(params.GOfile))
+        getFiles_enrichment_input_ch.view()
+        getFiles_enrichment_ch = getFiles_enrichment(params.script_filesEnrichment,getFiles_enrichment_input_ch)
+
+        getFiles_enrichment_combined_ch = getFiles_enrichment_ch.join(expressed_genes_ch)
+        GO_enricher(params.script_enricher,getFiles_enrichment_combined_ch)   
+    }
+
+    if ( params.GOfile != null && params.termsOfInterest != null ){        
+
+        check_reference(params.script_checkReference,getFiles_enrichment_input_ch,params.termsOfInterest)
+        check_reference_trimmed = check_reference.out.map { n,it -> [ n, it.trim() ] }
+    
+        rankingRef_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(network_centrality.out).join(GO_enricher.out).join(deg_ch).combine(Channel.fromPath(params.GOfile))
+        ranking_df_ref(params.script_makedfRef,params.alias,params.termsOfInterest,rankingRef_combined_ch)
+    
+        metrics_ch = Channel.value('qval_cluster,out-degree,betweenness,closeness,GO_enrich_qval')
+        metrics_combi_ch = ranking_df_ref.out.combine(metrics_ch).join(check_reference_trimmed)
+    
+    } else {
+        rankingStd_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(network_centrality.out).join(deg_ch).combine(Channel.value(false))
+        ranking_df_std(params.script_makedfStd,params.alias,rankingStd_combined_ch)    
+        
+        metrics_ch = Channel.value('qval_cluster,out-degree,betweenness,closeness')
+        std_ch = Channel.value('std')
+        metrics_combi_ch = ranking_df_std.out.combine(metrics_ch).combine(std_ch)        
+    }
+
+    makeBorda(params.script_makeborda,metrics_combi_ch)
+    
+    scoreEdges_ch = filter_expression.out.join(makeBorda.out).join(grnboost_ch)
+    scoreEdges(params.script_scoreEdges, scoreEdges_ch)
+
+    heatmap_tops(params.script_heatmapTops,makeBorda.out,params.topRegs)
+
+    regmaps_ch = matrix_ch.join(cluster_ch).join(cluster_ids_ch).join(makeBorda.out)    
+    regmaps(params.script_regmaps, regmaps_ch, params.topRegs)
 }
 
 workflow.onComplete {
-	log.info ( workflow.success ? "Done!" : "Oops .. something went wrong" )
+    log.info ( workflow.success ? "Done!" : "Oops .. something went wrong" )
 }

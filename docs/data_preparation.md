@@ -1,13 +1,18 @@
 # Prepare your files
 
-A detailed example of the necessary input files can be found [here](example/).  
+Following constrains must be satisfied for the input files:
+1. MINI-EX has been designed to run on multiple datasets at once. Different files from the same dataset **must have the same prefix followed by an underscore** (i.e. dataset1_matrix.txt, dataset1_allMarkers.txt, dataset1_cells2clusters.txt, dataset1_identities.txt).
+2. **Underscores are not allowed** in cluster names.
+3. **Row names must be unique** in all the input files.
+4. **Quotes are not allowed** in the input files.
+5. **Cluster identifiers must correspond** between the "*_cells2clusters" and "*_identities" files.
+6. **Only up-regulated markers** can be provided in the "*_allMarkers" file.
 
-MINI-EX has been designed to run on multiple datasets at once.  
+A detailed example of the necessary input files can be found [here](example/).  
   
 The paths to the folders containing the different input files need to be stated in the [config file](docs/configuration.md).  
-  
-**Note:** different files from the same dataset **MUST have the same prefix** (i.e. dataset1_matrix.txt, dataset1_allMarkers.txt, dataset1_cells2clusters.txt, dataset1_identities.txt).  
-**Note bis:** if GRNBoost2 was previously run separately, the output can be specified in the configuration file and the first MINI-EX's step will be skipped.   
+
+**Note:** if GRNBoost2 was previously run separately, its output can be specified in the configuration file and the corresponding MINI-EX's step will be skipped.   
 ```
 params {
 	expressionMatrix = "$baseDir/example/INPUTS/*_matrix.txt"
@@ -23,7 +28,12 @@ params {
 
 ```
 
-The **expressionMatrix** points to the gene-to-cell count matrix.
+The **expressionMatrix** points to the gene-to-cell count matrix and can be extracted from the [Seurat](https://satijalab.org/seurat/) object using the command below:
+
+```
+expression.matrix <- as.data.frame(as.matrix(GetAssayData(object = SEURAT_OBJECT, assay = "RNA", slot = "counts")))
+write.table(expression.matrix, "./dataset1_matrix.txt", sep='\t', quote = FALSE)
+```
 
 ```
 geneid	CTACGTCTCGGATGGA-1	TCGGGACGTCGAATCT-1	CGGACTGGTGATGATA-1	GTTCGGGTCACCATAG-1	GACTAACTCGCTGATA-1	GACTAACGTCTCCATC-1	GCCTCTATCTCGCATC-1	TACTCATAGCAATATG-1	ACTGAACAGTTAAGTG-1
@@ -31,15 +41,13 @@ AT1G67265	10	0	0	3	0	0	7	0	1
 AT3G12100	0	0	0	1	0	3	0	1	18
 AT4G03340	14	0	0	0	0	0	0	0	0
 AT2G28360	0	2	0	0	25	0	0	0	0
-
 ```
 
-The **markersOut** points to the output obtained by [Seurat](https://satijalab.org/seurat/) [FindAllMarkers](https://www.rdocumentation.org/packages/Seurat/versions/3.1.2/topics/FindAllMarkers) using the command below:  
+The **markersOut** points to the output obtained by Seurat [FindAllMarkers](https://www.rdocumentation.org/packages/Seurat/versions/3.1.2/topics/FindAllMarkers) using the command below:  
 
 ```
-ath_markers_all <- FindAllMarkers(SEURAT_OBEJCT, only.pos=TRUE)
+ath_markers_all <- FindAllMarkers(SEURAT_OBJECT, only.pos=TRUE)
 write.table(ath_markers_all, "./dataset1_allMarkers.txt", sep = "\t", quote=FALSE)
-
 ```
 
 ```
@@ -58,7 +66,7 @@ AT5G15470	6.73638999455266e-12	0.323992721599046	0.054	0.223	1.53394336565959e-0
 The **cell2clusters** points to a tab-separated file containing the cluster annotation for each cell in the expression matrix. It can be obtained using the [Seurat](https://satijalab.org/seurat/) command [FetchData](https://www.rdocumentation.org/packages/Seurat/versions/3.1.2/topics/FetchData) as shown below:  
 
 ```
-object <-FetchData(SEURAT_OBEJCT, vars = 'ident')
+object <-FetchData(SEURAT_OBJECT, vars = 'ident')
 write.table(object,"./dataset1_cell2cluster.txt", sep='\t',quote=FALSE,col.names = FALSE) 
 ```
 
@@ -74,7 +82,7 @@ TACTCATAGCAATATG-1	10
 ACTGAACAGTTAAGTG-1	20
 ```
 
-The **cluster2ident** points to a tab-separated file containing the cell type annotation for each cluster.
+The **cluster2ident** points to a tab-separated file containing the cell type annotation for each cluster. Optionally, this file can contain a third column which specifies a cluster index. This index is used to indicate the position of a cluster along a known developmental trajectory (see [miniexExample_identities_with_idx.txt](example/INPUTS/miniexExample_identities_with_idx.txt) in the [INPUTS](example/INPUTS) folder), and translates to the column index in the regulator heatmaps ([example](example/OUTPUTS/figures/miniexExample_regmap_10.svg)). If this column is not specified, an automatic index is created by sorting the cluster identities alphabetically.
 
 ```
 13	cortex
@@ -85,7 +93,7 @@ The **cluster2ident** points to a tab-separated file containing the cell type an
 
 The **TF_list** is a list of TFs which is used in the GRNBoost2 run.  
   
-The [TF_list.txt](example/TF_list.txt) contained in the [INPUTS](example/INPUTS) folder contains 1879 TFs collected from [PlantRegMap/PlantTFDB v5.0](http://planttfdb.gao-lab.org/), [PlnTFDB v3.0](http://plntfdb.bio.uni-potsdam.de/v3.0/) and [TF2Network](http://bioinformatics.psb.ugent.be/webtools/TF2Network/) for which either direct TF-motif information was available or motif information related to the TF family.
+The [TF_list.txt](example/INPUTS/TF_list.txt) contained in the [INPUTS](example/INPUTS) folder contains 1879 TFs collected from [PlantRegMap/PlantTFDB v5.0](http://planttfdb.gao-lab.org/), [PlnTFDB v3.0](http://plntfdb.bio.uni-potsdam.de/v3.0/) and [TF2Network](http://bioinformatics.psb.ugent.be/webtools/TF2Network/) for which either direct TF-motif information was available or motif information related to the TF family.
 
 ```
 AT1G18790

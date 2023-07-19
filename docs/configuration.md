@@ -32,8 +32,8 @@ params {
 	termsOfInterest = "$baseDir/example/INPUTS/GOsIwant.txt"
 //	termsOfInterest = null
 
-	grnboostOut = null
 //	grnboostOut = "/$baseDir/example/OUTPUTS/GRNBoost2_output/*_grnboost2.txt"
+	grnboostOut = null
 ```
 
 The **second block** of parameters is composed by files provided and necessary for the pipeline to run.  
@@ -44,9 +44,10 @@ This consists in:
 * TF-motif Family file linking each TF to its TF family and reporting wheather direct motif information is available or not, and the motifs directly associated to the TF
 * gene-GO links for BP (biological process) supported by experimental evidence ("EXP", "IMP", "IDA", "IPI", "IGI", "IEP") and manually curated ("TAS", "NAS", "IC")  
 Note: all ancestral terms are included
-* gene-alias file downloaded from [TAIR](https://www.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FPublic_Data_Releases%2FTAIR_Data_20140331) and [funRiceGenes](https://funricegenes.github.io/)
+* gene-alias file downloaded from [TAIR](https://www.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FPublic_Data_Releases%2FTAIR_Data_20140331), [MaizeGDB](https://www.maizegdb.org/associated_genes?type=all&style=tab) and [funRiceGenes](https://funricegenes.github.io/)
 
 ```	
+    doMotifAnalysis = true // set to <false> if no motif mapping data is available [CAUTION: without motif data MINI-EX is less reliable]
 	featureFile_motifs = "$baseDir/data_ath/ath_2021.1_motifMapping.out.gz"
 	infoTF = "$baseDir/data_ath/ath_TF2fam2mot.txt"
 	GOfile = "$baseDir/data_ath/ath_full_BP_expcur_ext_names.txt"
@@ -56,18 +57,22 @@ The **third block** of parameters consists in all the scripts used in the pipeli
  
 ```	
 	script_enricher = "$baseDir/bin/enricherv2.4"
+	script_checkInput = "$baseDir/bin/MINIEX_checkInput.py"
 	script_grnboost = "$baseDir/bin/MINIEX_grnboostMultiprocess.py"
 	script_motifs = "$baseDir/bin/MINIEX_filterForMotifs.py"
 	script_topDEGs = "$baseDir/bin/MINIEX_selectTopDEGs.py"
 	script_expTFs = "$baseDir/bin/MINIEX_filterForTFExp.py"
+	script_info = "$baseDir/bin/MINIEX_makeInfoFile.py"
 	script_clustermap = "$baseDir/bin/MINIEX_clustermap.py"
 	script_networkCentrality = "$baseDir/bin/MINIEX_network_analysis.py"
+	script_checkReference = "$baseDir/bin/MINIEX_checkRef.py"
 	script_filesEnrichment = "$baseDir/bin/MINIEX_makeFilesEnrichment.py"	
 	script_makedfRef = "$baseDir/bin/MINIEX_makeRankingDf_ref.py"
 	script_makedfStd = "$baseDir/bin/MINIEX_makeRankingDf_std.py"
-	script_makebordaRef = "$baseDir/bin/MINIEX_makeBorda_ref.py"
-	script_makebordaStd = "$baseDir/bin/MINIEX_makeBorda_std.py"
-	script_heatmapTops = "$baseDir/bin/MINIEX_visual_heatmap_top150.py"
+    script_makeborda = "$baseDir/bin/MINIEX_makeBorda.py"
+	script_scoreEdges = "$baseDir/bin/MINIEX_scoreEdges.py"
+    script_heatmapTops = "$baseDir/bin/MINIEX_visual_heatmap_top150.py"
+	script_regmaps = "$baseDir/bin/MINIEX_regmap.py"
 ```
 
 The **last block** of parameters defines the filters used along the GRN inferece.  
@@ -93,8 +98,9 @@ These can be changed according to the resources availabe/needed (i.e. below chan
    
 ```	
 process {
+	...
     withName: run_grnboost {
-        clusterOptions = '-l h_vmem=15G -pe <pe_name> 5'
+        clusterOptions = '-l h_vmem=15G -pe <pe_name> 5' 
     }
 	...
 }
