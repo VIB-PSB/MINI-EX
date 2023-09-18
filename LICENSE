@@ -1,50 +1,133 @@
               Academic Non-commercial Software License Agreement
 
-The Licensed Software is developed by and on behalf of the VIB-UGent Center for Plant Systems Biology and is owned by VIB vzw, located at Rijvisschestraat 120, B-9052 Zwijnaarde, Belgium (hereinafter referred to as "VIB"). By downloading or installing the Licensed Software, the user agrees with the terms and conditions below.
+The Licensed Software is developed by and on behalf of the VIB-UGent Center 
+for Plant Systems Biology and is owned by VIB vzw, located at Rijvisschestraat 
+120, B-9052 Zwijnaarde, Belgium (hereinafter referred to as "VIB"). By 
+downloading or installing the Licensed Software, the user agrees with the terms 
+and conditions below.
 
-Definitions
+                              Definitions
 
 “Licensed Software” shall mean ‘MINI-EX’ as available on GitHub.
 
-"Effective Date" shall mean the date on which you download or install MINI-EX (as available on GitHub) on your system and which provides you access to the MINI-EX tool.
+"Effective Date" shall mean the date on which you download or install MINI-EX 
+(as available on GitHub) on your system and which provides you access to the 
+MINI-EX tool.
 
-“Commercial Purposes” shall include (1) the use of Licensed Software to provide a service, information or data that is directly or indirectly conveyed to any third party against compensation, (2) any type of transfer of the Licensed Software for compensation, and (3) any other use of Licensed Software that supports commercial entities. 
+“Commercial Purposes” shall include (1) the use of Licensed Software to provide 
+a service, information or data that is directly or indirectly conveyed to any 
+third party against compensation, (2) any type of transfer of the Licensed 
+Software for compensation, and (3) any other use of Licensed Software that 
+supports commercial entities. 
 
-License
+                                License
 
-1. Licensed Software is the work of the Vandepoele lab. The copyright in Licensed Software is owned by VIB.
+1. Licensed Software is the work of the Vandepoele lab. The copyright in 
+Licensed Software is owned by VIB.
 
-2. Subject to the terms and conditions of this Agreement, VIB hereby grants and the user accepts a non-exclusive, non-transferable license to use the Licensed Software for academic research use only, on your own behalf or on behalf of your institution, and not for Commercial Purposes. 
+2. Subject to the terms and conditions of this Agreement, VIB hereby grants 
+and the user accepts a non-exclusive, non-transferable license to use the 
+Licensed Software for academic research use only, on your own behalf or on 
+behalf of your institution, and not for Commercial Purposes. 
 
-3. The user confirms to be an academic user. For academic users, there is no license fee.
+3. The user confirms to be an academic user. For academic users, there is 
+no license fee.
 
-4. In case the user wants to use the License Software for Commercial Purposes, they shall contact VIB (klaas.vandepoele@psb.vib-ugent.be) to discuss the terms, conditions and fees of a license for Commercial Purposes.
+4. In case the user wants to use the License Software for Commercial 
+Purposes, they shall contact VIB (klaas.vandepoele@psb.vib-ugent.be) to 
+discuss the terms, conditions and fees of a license for Commercial 
+Purposes.
 
-5. The user shall acknowledge VIB as the provider of Licensed Software and shall include the following reference “Ferrari C, Manosalva Pérez N, Vandepoele K. MINI-EX: Integrative inference of single-cell gene regulatory networks in plants. Mol Plant. 2022 Nov 7;15(11):1807-1824. doi: 10.1016/j.molp.2022.10.016. Epub 2022 Oct 27. PMID: 36307979.” in any manuscript describing data obtained using Licensed Software. 
+5. The user shall acknowledge VIB as the provider of Licensed Software 
+and shall include the following reference “Ferrari C, Manosalva Pérez N, 
+Vandepoele K. MINI-EX: Integrative inference of single-cell gene 
+regulatory networks in plants. Mol Plant. 2022 Nov 7;15(11):1807-1824. 
+doi: 10.1016/j.molp.2022.10.016. Epub 2022 Oct 27. PMID: 36307979.” 
+in any manuscript describing data obtained using Licensed Software. 
 
-6. This license does not entitle the user to receive from VIB hard-copy documentation, technical support, telephone assistance, or enhancements or updates to the Licensed Software, and nothing contained herein shall be interpreted as to require VIB, its faculty, employees or students to provide maintenance, installation services, debugging, consultation or end-user support of any kind.
+6. This license does not entitle the user to receive from VIB hard-copy 
+documentation, technical support, telephone assistance, or enhancements or 
+updates to the Licensed Software, and nothing contained herein shall be 
+interpreted as to require VIB, its faculty, employees or students to 
+provide maintenance, installation services, debugging, consultation or 
+end-user support of any kind.
 
-7. The title and copyright to Licensed Software and any associated programs and documentation shall remain with VIB. The user agrees to preserve the same.
+7. The title and copyright to Licensed Software and any associated programs 
+and documentation shall remain with VIB. The user agrees to preserve the same.
 
-8. The user shall not market or otherwise benefit commercially from any product utilizing any portion of Licensed Software, nor any derivative works of Licensed Software, without first entering into a separate commercial license with VIB.
+8. The user shall not market or otherwise benefit commercially from any 
+product utilizing any portion of Licensed Software, nor any derivative works 
+of Licensed Software, without first entering into a separate commercial 
+license with VIB.
 
-9. The user shall grant to VIB a non-exclusive, non-transferable license to use the Licensed Software any derivative works of the Licensed Software for academic research use only
+9. The user shall grant to VIB a non-exclusive, non-transferable license 
+to use the Licensed Software any derivative works of the Licensed Software 
+for academic research use only
 
 10. The user acknowledges that the Licensed Software is proprietary to VIB. 
 
-11. The user acknowledges that Licensed Software is a research tool and provided free of charge, it is only provided “as is”. VIB makes no representations or warranties of any type whatsoever, express or implied, regarding the Licensed Software. VIB expressly disclaims all representations and warranties regarding the Licensed Software, including but not limited to any representations or warranties of merchantability or fitness for any particular application or that the use of the Licensed Software will not infringe any patents, copyrights or trademarks or other rights of third parties, or any warranty that the rights and licenses granted hereunder comprise all the rights and licenses necessary or desirable to use the Licensed Software for internal non-commercial research purposes as permitted by this Agreement. The entire risk as to the quality and performance of the Licensed Software is borne by the user. 
+11. The user acknowledges that Licensed Software is a research tool and 
+provided free of charge, it is only provided “as is”. VIB makes no 
+representations or warranties of any type whatsoever, express or implied, 
+regarding the Licensed Software. VIB expressly disclaims all 
+representations and warranties regarding the Licensed Software, including 
+but not limited to any representations or warranties of merchantability or 
+fitness for any particular application or that the use of the Licensed 
+Software will not infringe any patents, copyrights or trademarks or other 
+rights of third parties, or any warranty that the rights and licenses granted 
+hereunder comprise all the rights and licenses necessary or desirable to use 
+the Licensed Software for internal non-commercial research purposes as 
+permitted by this Agreement. The entire risk as to the quality and 
+performance of the Licensed Software is borne by the user. 
 
-12. VIB shall not be responsible for losses of any kind resulting from the use of Licensed Software, and can in no way provide compensation for any losses sustained, including but not limited to, any obligation, liability, right, claim or remedy for tort, or for any actual or alleged infringement of patents, copyrights, trade secrets, or similar rights of third parties, nor any business expense, machine downtime or damages caused by any deficiency, defect or error in Licensed Software or mal-function thereof, nor any incidental or consequential damages, however caused.
+12. VIB shall not be responsible for losses of any kind resulting from the 
+use of Licensed Software, and can in no way provide compensation for any 
+losses sustained, including but not limited to, any obligation, liability, 
+right, claim or remedy for tort, or for any actual or alleged infringement 
+of patents, copyrights, trade secrets, or similar rights of third parties, 
+nor any business expense, machine downtime or damages caused by any 
+deficiency, defect or error in Licensed Software or mal-function thereof, 
+nor any incidental or consequential damages, however caused.
 
-13. The user will indemnify, defend and hold harmless VIB, its directors, officers, employees and agents from and against all liability, losses, damages and expenses (including attorney’s fees and costs) arising out of any claims, demands, actions or other proceedings made or instituted by any third party against any of them and arising out of or relating to any breach of this Agreement by the user, or any use of the Licensed Software by the user, except insofar as such claims or liability result from VIB’s gross negligence or willful misconduct.  
+13. The user will indemnify, defend and hold harmless VIB, its directors, 
+officers, employees and agents from and against all liability, losses, 
+damages and expenses (including attorney’s fees and costs) arising out of 
+any claims, demands, actions or other proceedings made or instituted by 
+any third party against any of them and arising out of or relating to any 
+breach of this Agreement by the user, or any use of the Licensed Software 
+by the user, except insofar as such claims or liability result from VIB’s 
+gross negligence or willful misconduct.  
 
-14. This Agreement and the license rights granted herein shall become effective as of the date the user downloaded the Licensed Software and shall continue in full force until the user stops using the Licensed Software, unless terminated in accordance with this Section. Upon one party's breach of any agreement, covenant, or representation made in this Agreement, the agreement will automatically end thirty (30) days after such breach. Either party shall have the right, at any time, to terminate this Agreement without cause by written notice to the other party specifying the date of termination. Upon termination, the user shall destroy all full and partial copies of the Licensed Software. The user shall forward written notice to VIB that all programs containing Licensed Software have been deleted from all computer libraries and storage or memory devices and are no longer stored therein.
+14. This Agreement and the license rights granted herein shall become 
+effective as of the date the user downloaded the Licensed Software and shall 
+continue in full force until the user stops using the Licensed Software, 
+unless terminated in accordance with this Section. Upon one party's breach 
+of any agreement, covenant, or representation made in this Agreement, the 
+agreement will automatically end thirty (30) days after such breach. Either 
+party shall have the right, at any time, to terminate this Agreement without 
+cause by written notice to the other party specifying the date of termination. 
+Upon termination, the user shall destroy all full and partial copies of the 
+Licensed Software. The user shall forward written notice to VIB that all 
+programs containing Licensed Software have been deleted from all computer 
+libraries and storage or memory devices and are no longer stored therein.
 
-15. This Agreement shall be construed in accordance with the laws of Belgium. The courts of Belgium shall have exclusive jurisdiction. 
+15. This Agreement shall be construed in accordance with the laws of Belgium. 
+The courts of Belgium shall have exclusive jurisdiction. 
 
-16. The parties agree that this Agreement is the complete and exclusive agreement among the parties and supersedes all proposals and prior agreements whether written or oral, and all other communications among the parties relating to the subject matter of this Agreement. This Agreement cannot be modified except in writing and signed by both parties. Failure by either party at any time to enforce any of the provisions of this Agreement shall not constitute a waiver by such party of such provision nor in any way affect the validity of this Agreement.
+16. The parties agree that this Agreement is the complete and exclusive 
+agreement among the parties and supersedes all proposals and prior 
+agreements whether written or oral, and all other communications among the 
+parties relating to the subject matter of this Agreement. This Agreement 
+cannot be modified except in writing and signed by both parties. Failure by 
+either party at any time to enforce any of the provisions of this Agreement 
+shall not constitute a waiver by such party of such provision nor in any 
+way affect the validity of this Agreement.
 
-17. The invalidity of singular provisions does not affect the validity of the entire understanding. The parties are obligated, however, to replace the invalid provisions by a regulation, which comes closest to the economic intent of the invalid provision. The same shall apply mutatis mutandis in case of a gap.
+17. The invalidity of singular provisions does not affect the validity of 
+the entire understanding. The parties are obligated, however, to replace the 
+invalid provisions by a regulation, which comes closest to the economic intent 
+of the invalid provision. The same shall apply mutatis mutandis in case of a 
+gap.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
