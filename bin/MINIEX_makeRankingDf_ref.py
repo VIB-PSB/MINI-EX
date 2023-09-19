@@ -29,8 +29,15 @@ allTFs=list(set(['_'.join(i.rsplit('_')[:-2]) for i in list(dic_reg.keys())]))
 aliases={}
 with open(FILE_ALIAS) as f:
     for line in f:
-        if line.rstrip().rsplit('\t')[0] in allTFs:
-            aliases[line.rstrip().rsplit('\t')[0]]=line.rstrip().rsplit('\t')[1]
+        geneID, geneSymbol = line.rstrip().split('\t')[0], line.rstrip().split('\t')[1]
+        if geneID in allTFs:
+            if geneID not in aliases:
+                aliases[geneID] = [geneSymbol]
+            else:
+                aliases[geneID].append(geneSymbol)
+
+for geneID, symbol in aliases.items():
+    aliases[geneID] = "/ ".join(aliases[geneID]) # merge the final list of aliases (gene symbols) into one string
 
 for tf in allTFs:
     if tf not in aliases:
