@@ -20,7 +20,7 @@ def getCmap(c, n=1000):
     vals[:, 2] = np.linspace(c[2], 1, n)
     return mcolors.ListedColormap(vals)
 
-def circlemap(data1, data2, group_colors, cluster_grouping, rank_threshold, ax, full_expression=False):
+def circlemap(data1, data2, group_colors, cluster_grouping, rank_threshold, ax, full_expression=False, alias_info=None):
     
     '''
     Draw heatmap from TF (rows) x Cluster (columns) dataframes
@@ -51,7 +51,8 @@ def circlemap(data1, data2, group_colors, cluster_grouping, rank_threshold, ax, 
     ax.set_xticks(np.arange(data1.shape[1]))
     ax.set_yticks(np.arange(data1.shape[0]))
     ax.set_xticklabels(data1.columns, rotation=90)
-    ax.set_yticklabels(data1.index)
+    aliases = [alias_info[g] for g in data1.index.tolist()]
+    ax.set_yticklabels(aliases)
 
     ax.set_xticks((np.arange(data1.shape[1])+1)-0.5, minor=True)
     ax.set_yticks((np.arange(data1.shape[0])+1)-0.5, minor=True)
@@ -109,14 +110,17 @@ def regMap(regulons, cluster_matrix, clusters, cluster_grouping, group_colors,
     Output: - <outdir>/<dataset_id>_regmap_<rank_threshold>.svg
     '''
 
+    # extract alias info
+    alias_info = regulons.drop_duplicates('TF').set_index('TF')['alias']
+    
     # fetch data
     query = "borda_clusterRank < @rank_threshold"
     data = regulons.query(query)\
-                   .pivot_table(index='alias', columns='cluster', values='borda_clusterRank', aggfunc=np.min)\
+                   .pivot_table(index='TF', columns='cluster', values='borda_clusterRank', aggfunc=np.min)\
                    .loc[regulons.query(query)\
                                 .sort_values(['cluster','borda_clusterRank'])\
                                 .drop_duplicates('TF')\
-                                .alias]
+                                .TF]
 
     # Init plot
     nrows = len(data)+1
@@ -131,7 +135,7 @@ def regMap(regulons, cluster_matrix, clusters, cluster_grouping, group_colors,
 
     # plot heatmap
     ax = plt.subplot(grid[1:, 0])
-    circlemap(data, cluster_matrix, group_colors, cluster_grouping, rank_threshold, ax, full_expression=full_expression)
+    circlemap(data, cluster_matrix, group_colors, cluster_grouping, rank_threshold, ax, full_expression=full_expression, alias_info=alias_info)
     ax.set_xticklabels(['{} ({})'.format(cl._text, len(regulons.query("cluster == '{}'".format(cl._text)))) for cl in ax.get_xticklabels()])
 
     # legend
@@ -239,10 +243,10 @@ if __name__ == '__main__':
         del cellmatrix
 
     # alias translation
-    alias_table = regulons.drop_duplicates('TF').set_index('TF')['alias']
-    cluster_matrix['gene'] = [alias_table[g] for g in cluster_matrix.index.tolist()]
-    cluster_matrix = cluster_matrix.set_index('gene')
-    del alias_table
+    #alias_table = regulons.drop_duplicates('TF').set_index('TF')['alias']
+    #cluster_matrix['gene'] = [alias_table[g] for g in cluster_matrix.index.tolist()]
+    #cluster_matrix = cluster_matrix.set_index('gene')
+    #del alias_table
 
     # define cluster groups
     cluster_grouping = identities.set_index('cluster')['celltype'].to_dict()
