@@ -4,6 +4,8 @@ Motif-Informed Network Inference based on single-cell EXpression data
 
 The pipeline is built using Nextflow DSL2 and has the purpose of infer cell-type specific gene regulatory network using scRNA-Seq data in plants.
 
+MINI-EX uses a dual license to offer the distribution of the software under a proprietary model as well as an open source model.
+
 **MINI-EX v2.0 is released!** Main features:
 * Added support for _Solanum lycopersicum_ (tomato)
 * It is now possible to omit the motif enrichment analysis, enabling MINI-EX to run on all possible species (Please note: in this mode, resulting networks are more susceptible to false positives)
@@ -70,9 +72,11 @@ nextflow -C miniex.config run miniex.nf
 Having problems running MINI-EX? Check the [FAQ](docs/FAQ.md).
 
 
-## Support
+## Contact and support
 
-Should you encounter a bug or have any questions or suggestions, please [open an issue](https://github.com/VIB-PSB/MINI-EX/issues).
+Should you have any questions or suggestions, please send an e-mail to klaas.vandepoele@psb.vib-ugent.be.
+
+Should you encounter a bug, please [open an issue](https://github.com/VIB-PSB/MINI-EX/issues).
 
 ## Citation
 
