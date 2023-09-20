@@ -4,14 +4,15 @@ Motif-Informed Network Inference based on single-cell EXpression data
 
 The pipeline is built using Nextflow DSL2 and has the purpose of infer cell-type specific gene regulatory network using scRNA-Seq data in plants.
 
-MINI-EX uses a **dual license** to offer the distribution of the software under a proprietary model as well as an open source model.
+MINI-EX uses a [dual license](https://github.com/VIB-PSB/MINI-EX/blob/main/LICENSE) to offer the distribution of the software under a proprietary model as well as an open source model.
 
-**MINI-EX v2.0 is released!** Main features:
+**MINI-EX v2.\* is released!** Main features:
 * Added support for _Solanum lycopersicum_ (tomato)
+* Added support for maize AGPv5
 * It is now possible to omit the motif enrichment analysis, enabling MINI-EX to run on all possible species (Please note: in this mode, resulting networks are more susceptible to false positives)
 * Introducing a new output format: edge table with regulon ranks and edge weights
 * Added regulator heatmap as additional output figure ([example](/example/OUTPUTS/figures/miniexExample_regmap_8.svg))
-* The complete list of new features can be found in the [release notes](https://github.com/VIB-PSB/MINI-EX/releases/tag/v2.0)
+* The complete list of new features can be found in the release notes for [v2.0](https://github.com/VIB-PSB/MINI-EX/releases/tag/v2.0) and [v2.1](https://github.com/VIB-PSB/MINI-EX/releases/tag/v2.1)
 
 ## Pipeline summary
 **1\.** Run expression-based gene regulatory network (GRN) inference ([GRNBoost2](https://arboreto.readthedocs.io/en/latest/algorithms.html#grnboost2)) given a list of transcription factors (TFs) and a gene-to-cell count matrix<br/>
