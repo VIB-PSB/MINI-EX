@@ -56,9 +56,10 @@ def filtering(inf,out):
         else:
             spl=line.rstrip().rsplit('\t')
             reg=spl[0]
+            target_genes=spl[9].rsplit(",")
             ct=spl[1].replace('Cluster_','')
             if ct in  tf2clu[reg]:
-                dic[reg+'_'+ct]=spl[8].rsplit(",")
+                dic[reg+'_'+ct]=target_genes
                 
     for k in dic:
         dic[k]=list(set(dic[k]))

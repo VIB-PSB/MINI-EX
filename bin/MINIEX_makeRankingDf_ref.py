@@ -107,9 +107,9 @@ with open(ENRICHMENT) as f:
             spl=line.rstrip().rsplit('\t')
             if spl[1] in termsOI:
                 if spl[0] in dic_go_tmp:
-                    dic_go_tmp[spl[0]]+=[[float(spl[3]),spl[1],termsOI[spl[1]],int(spl[7])]]
+                    dic_go_tmp[spl[0]]+=[[float(spl[3]),spl[1],termsOI[spl[1]],int(spl[8])]]
                 else:
-                    dic_go_tmp[spl[0]]=[[float(spl[3]),spl[1],termsOI[spl[1]],int(spl[7])]]
+                    dic_go_tmp[spl[0]]=[[float(spl[3]),spl[1],termsOI[spl[1]],int(spl[8])]]
 
 dic_go={}
 for el in dic_go_tmp:
