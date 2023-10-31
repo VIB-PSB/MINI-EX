@@ -83,14 +83,20 @@ def check_dataset_file(file_name: str):
     with open(file_name) as a_file:
         if '"' in a_file.read():
             raise Exception(f"Quotes (\") detected in file '{file_name}'!")
-    df = pd.read_csv(file_name, delimiter='\t', header=None, index_col=0)
-    # CHECK: no trailing newlines present in the input files
-    if len(df) != count_lines(file_name):
-        raise Exception(f"Empty lines found in '{file_name}'! ({len(df)} vs {count_lines(file_name)})")
-    # CHECK: values in the first column of each data file must be unique
-    # the only exception is the Seurat markers file, so it is not checked
-    if df.index.has_duplicates and file_name not in MARKERS_OUT:
-        raise Exception(f"Duplicated indexes detected in file '{file_name}'!")
+    try:
+        df = pd.read_csv(file_name, delimiter='\t', header=None, index_col=0)
+        row_count = len(df)
+    except pd.errors.ParserError: # in some files generated from Seurat, the header line has one column missing -> skip it
+        df = pd.read_csv(file_name, delimiter='\t', header=None, index_col=0, skiprows=1)
+        row_count = len(df) + 1
+    finally:
+        # CHECK: no trailing newlines present in the input files
+        if row_count != count_lines(file_name):
+            raise Exception(f"Empty lines found in '{file_name}'! ({len(df)} vs {count_lines(file_name)})")
+        # CHECK: values in the first column of each data file must be unique
+        # the only exception is the Seurat markers file, so it is not checked
+        if df.index.has_duplicates and file_name not in MARKERS_OUT:
+            raise Exception(f"Duplicated indexes detected in file '{file_name}'!")
     
 for file_name in all_dataset_file_names:
     check_dataset_file(file_name)
