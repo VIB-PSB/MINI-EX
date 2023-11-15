@@ -46,9 +46,9 @@ tf2alias=pandas.Series(df.alias.values,index=df.TF).to_dict()
 def get_x_font_size_for_heatmap(dataframe):
     font_size = None
     if len(dataframe.columns) > 20:
-        font_size = 8
+        font_size = 5
     else:
-        font_size = 12
+        font_size = 7
     return font_size
 
 def get_y_font_size_for_heatmap(dataframe):
