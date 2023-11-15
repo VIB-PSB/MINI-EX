@@ -43,8 +43,30 @@ col_row=col_row.drop_duplicates().set_index(0).sort_index()
 
 tf2alias=pandas.Series(df.alias.values,index=df.TF).to_dict()
 
+def get_x_font_size_for_heatmap(dataframe):
+    font_size = None
+    if len(dataframe.columns) > 20:
+        font_size = 8
+    else:
+        font_size = 12
+    return font_size
+
+def get_y_font_size_for_heatmap(dataframe):
+    font_size = None
+    if len(dataframe) > 300:
+        font_size = 5
+    elif len(dataframe) > 100:
+        font_size = 5
+    elif len(dataframe) > 20:
+        font_size = 8
+    else:
+        font_size = 12
+    return font_size
+
+
+# cluster specificity heatmap
 plot_qval=plot_qval.loc[:, (plot_qval != 0).any(axis=0)] ###remove columns with only zeros
-plot_qval[plot_qval > 20] = 20                
+plot_qval[plot_qval > 20] = 20
 
 ax=seaborn.clustermap(plot_qval,cmap='Blues',xticklabels=True,yticklabels=True,row_colors=col_row,col_cluster=False,row_cluster=True,mask=(plot_qval==0),linewidths = 0.01, linecolor='black')
 ax1 = ax.ax_heatmap
@@ -52,7 +74,8 @@ ax1.set_facecolor("#b3b3b3ff")
 ax.ax_cbar.set_title('-log10(qval)')
 heatmap_pos = ax.ax_heatmap.get_position()
 ax.ax_heatmap.set_position([heatmap_pos.x0, heatmap_pos.y0, heatmap_pos.width*0.25, heatmap_pos.height])
-ax1.set_xticklabels(ax1.get_xticklabels(), rotation=90, horizontalalignment='right')
+ax1.set_xticklabels(ax1.get_xticklabels(), rotation=90, horizontalalignment='right', fontsize=get_x_font_size_for_heatmap(plot_qval))
+ax1.set_yticklabels(ax1.get_yticklabels(), fontsize=get_y_font_size_for_heatmap(plot_qval))
 ax.ax_row_colors.tick_params(bottom=False)
 ax.ax_row_colors.set_xticklabels('')
 
@@ -63,9 +86,8 @@ indiNewNames=[]
 for i in range(len(indiNew)):
     indiNewNames.append(plot_qval.index.tolist()[indiNew[i]])
 
+# DE calls
 plot_de=plot_de.reindex(indiNewNames)
-
-
 plot_de = plot_de[plot_de.columns.intersection(plot_qval.columns)]
 
 bx=seaborn.clustermap(plot_de,cmap='Blues',xticklabels=True,yticklabels=True,row_colors=col_row,col_cluster=False,row_cluster=False,vmax=1,vmin=0,linewidths = 0.01, linecolor='black')
@@ -73,7 +95,8 @@ bx.cax.set_visible(False) #remove cbar
 bx1 = bx.ax_heatmap
 heatmap_pos = bx.ax_heatmap.get_position()
 bx.ax_heatmap.set_position([heatmap_pos.x0, heatmap_pos.y0, heatmap_pos.width*0.25, heatmap_pos.height])
-bx1.set_xticklabels(bx1.get_xticklabels(), rotation=90, horizontalalignment='right')
+bx1.set_xticklabels(bx1.get_xticklabels(), rotation=90, horizontalalignment='right', fontsize=get_x_font_size_for_heatmap(plot_de))
+bx1.set_yticklabels(ax1.get_yticklabels(), fontsize=get_y_font_size_for_heatmap(plot_de))
 bx1.set_facecolor("#b3b3b3ff")
 bx.ax_row_colors.tick_params(bottom=False) 
 bx.ax_row_colors.set_xticklabels('')
