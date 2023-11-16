@@ -81,7 +81,7 @@ process run_grnboost {
     tuple val("${dataset_id}"), path("${dataset_id}_grnboost2.txt")
 
     """
-    OMP_NUM_THREADS=1 python3 $script_grnboost $TF_list "$matrix" 5 "${dataset_id}_grnboost2.txt"
+    OMP_NUM_THREADS=1 python3 $script_grnboost $TF_list "$matrix" "${task.cpus}" "${dataset_id}_grnboost2.txt"
     """
 }
 
