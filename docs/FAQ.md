@@ -8,4 +8,4 @@ A:
 ## Q: The global Borda rank and the cluster-specific Borda rank are not following each other exactly. Is this a bug?
 A:
 No, this is not a bug. There is not necessarily a monotonic relationship between the global Borda rank and the Borda rank of a subset. The example below shows this in more detail for a simple example of Borda ranking.
-![global-vs-subset_Borda](docs/Difference_global-vs-subset_Borda.PNG)
+![global-vs-subset_Borda](/Difference_global-vs-subset_Borda.PNG)
