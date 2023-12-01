@@ -20,9 +20,9 @@ log.info"""\
          Motif-Informed Network Inference from gene EXpression v.2.2
          ===========================================================
          ${motif_log}
-         Running single-cell cluster enrichment using the top ${params.tops} upregulated genes per cluster
+         Running single-cell cluster enrichment using the top ${params.topMarkers} upregulated genes per cluster
          Filtering out regulons of single-cell clusters where the TF is expressed in less than ${params.expressionFilter} % of the cells
-         Plotting expression specificity and DE calls for the top ${params.topRegs} regulons
+         Plotting expression specificity and DE calls for the top ${params.topRegulons} regulons
          """
          .stripIndent()
 
@@ -39,21 +39,21 @@ process check_input_files {
     input:
     path expressionMatrix
     path markersOut
-    path cells2clusters
-    path cluster2ident
+    path cellsToClusters
+    path clustersToIdentities
     path tfList
     path termsOfInterest
     path grnboostOut
     path featureFileMotifs
     path infoTf
     path goFile
-    path alias
+    path geneAliases
 
     output:
     stdout
 
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkInput.py" "$expressionMatrix" "$markersOut" "$cells2clusters" "$cluster2ident" "$tfList" "$termsOfInterest" "$grnboostOut" "$featureFileMotifs" "$infoTf" "$goFile" "$alias"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkInput.py" "$expressionMatrix" "$markersOut" "$cellsToClusters" "$clustersToIdentities" "$tfList" "$termsOfInterest" "$grnboostOut" "$featureFileMotifs" "$infoTf" "$goFile" "$geneAliases"
     """
 }
 
@@ -76,14 +76,14 @@ process run_grnboost {
     publishDir grnboostOutput, mode: 'copy'
 
     input:
-    path TF_list
+    path tfList
     tuple val(dataset_id), path(matrix)
     
     output:
     tuple val("${dataset_id}"), path("${dataset_id}_grnboost2.txt")
 
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_grnboostMultiprocess.py" $TF_list "$matrix" "${task.cpus}" "${dataset_id}_grnboost2.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_grnboostMultiprocess.py" $tfList "$matrix" "${task.cpus}" "${dataset_id}_grnboost2.txt"
     """
 }
 
@@ -125,7 +125,7 @@ process run_enricher_motifs {
 process filter_motifs {
 
     input:
-    path infoTF
+    path infoTf
     val motifFilter
     tuple val(dataset_id), path(enrichedModules)
 
@@ -133,7 +133,7 @@ process filter_motifs {
     tuple val("${dataset_id}"), path("${dataset_id}_enrichedRegulons.txt")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterForMotifs.py" $infoTF "$enrichedModules" "${dataset_id}_enrichedRegulons.txt" "$motifFilter"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterForMotifs.py" $infoTf "$enrichedModules" "${dataset_id}_enrichedRegulons.txt" "$motifFilter"
     """
 }
 
@@ -153,14 +153,14 @@ process filter_motifs_dummy {
 process get_topDEGs {
     
     input:
-    val tops
+    val topMarkers
     tuple val(dataset_id), path(allMarkers)
 
     output:
-    tuple val("${dataset_id}"), path("${dataset_id}_top${tops}cellClusters.out")
+    tuple val("${dataset_id}"), path("${dataset_id}_top${topMarkers}cellClusters.out")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_selectTopDEGs.py" $allMarkers "$tops" "${dataset_id}_top${tops}cellClusters.out"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_selectTopDEGs.py" $allMarkers "$topMarkers" "${dataset_id}_top${topMarkers}cellClusters.out"
     """
 }
 
@@ -189,7 +189,7 @@ process filter_expression {
     publishDir regOutput, mode: 'copy'
 
     input:
-    path infoTF
+    path infoTf
     val expressionFilter
     tuple val(dataset_id), path(expMatrix), path(cellClusters), path(regulons)
 
@@ -197,7 +197,7 @@ process filter_expression {
     tuple val("${dataset_id}"), path("${dataset_id}_regulons.txt")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterForTFExp.py" "$expMatrix" $infoTF $cellClusters "$expressionFilter" "$regulons" "${dataset_id}_regulons.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterForTFExp.py" "$expMatrix" $infoTf $cellClusters "$expressionFilter" "$regulons" "${dataset_id}_regulons.txt"
     """
 }
 
@@ -206,13 +206,13 @@ process make_info_file {
 
     input:
     tuple val(dataset_id), path(expMatrix), path(grnboostRegulons), path(motenrichRegulons), path(finalRegulons), path(cellClusters), path(identClust)
-    path infoTF
+    path infoTf
 
     output:
     tuple val("${dataset_id}"), path("${dataset_id}_TF_info_file.txt")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeInfoFile.py" "$expMatrix" "$grnboostRegulons" "$motenrichRegulons" "$finalRegulons" $infoTF $cellClusters $identClust "${dataset_id}_TF_info_file.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeInfoFile.py" "$expMatrix" "$grnboostRegulons" "$motenrichRegulons" "$finalRegulons" $infoTf $cellClusters $identClust "${dataset_id}_TF_info_file.txt"
     """
 }
 
@@ -247,13 +247,13 @@ process network_centrality {
 process getFiles_enrichment {
     
     input:
-    tuple val(dataset_id), path(finalRegulons), path(GOfile)
+    tuple val(dataset_id), path(finalRegulons), path(goFile)
 
     output:
     tuple val("${dataset_id}"), path("${dataset_id}_setFileRegulons.out"), path("${dataset_id}_featureFileGO.out")
 
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeFilesEnrichment.py" "$finalRegulons" "$GOfile" "${dataset_id}_setFileRegulons.out" "${dataset_id}_featureFileGO.out"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeFilesEnrichment.py" "$finalRegulons" "$goFile" "${dataset_id}_setFileRegulons.out" "${dataset_id}_featureFileGO.out"
     """
 }
 
@@ -282,43 +282,43 @@ process GO_enricher {
 process check_reference {
     
     input:
-    tuple val(dataset_id), path(finalRegulons), path(GOfile)
+    tuple val(dataset_id), path(finalRegulons), path(goFile)
     path termsOfInterest
 
     output:
     tuple val("${dataset_id}"), stdout
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkRef.py" "$finalRegulons" "$GOfile" "$termsOfInterest" 
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkRef.py" "$finalRegulons" "$goFile" "$termsOfInterest" 
     """
 }
 
 process ranking_df_ref {
     
     input:
-    path alias
+    path geneAliases
     path termsOfInterest
-    tuple val(dataset_id), path(identClust), path(finalRegulons), path(qvalct), path(netCent), path(enrichGO), path(allMarkers), path(GOfile)
+    tuple val(dataset_id), path(identClust), path(finalRegulons), path(qvalct), path(netCent), path(enrichGO), path(allMarkers), path(goFile)
 
     output:
     tuple val("${dataset_id}"), path("${dataset_id}_dfForRanking.txt")
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRankingDf_ref.py" "$identClust" "$finalRegulons" "$alias" "$qvalct" "$GOfile" "$termsOfInterest" "$netCent" "$enrichGO" "$allMarkers" "${dataset_id}_dfForRanking.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRankingDf_ref.py" "$identClust" "$finalRegulons" "$geneAliases" "$qvalct" "$goFile" "$termsOfInterest" "$netCent" "$enrichGO" "$allMarkers" "${dataset_id}_dfForRanking.txt"
     """  
 }
 
 process ranking_df_std {
     
     input:  
-    path alias
-    tuple val(dataset_id), path(identClust), path(finalRegulons), path(qvalct), path(netCent), path(allMarkers), val(GOfile)
+    path geneAliases
+    tuple val(dataset_id), path(identClust), path(finalRegulons), path(qvalct), path(netCent), path(allMarkers), val(goFile)
 
     output:
     tuple val("${dataset_id}"), path("${dataset_id}_dfForRanking.txt")
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRankingDf_std.py" "$identClust" "$finalRegulons" "$alias" "$qvalct" "$GOfile" "$netCent" "$allMarkers" "${dataset_id}_dfForRanking.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRankingDf_std.py" "$identClust" "$finalRegulons" "$geneAliases" "$qvalct" "$goFile" "$netCent" "$allMarkers" "${dataset_id}_dfForRanking.txt"
     """  
 }
 
@@ -359,13 +359,13 @@ process heatmap_tops {
     
     input:
     tuple val(dataset_id), path(rankedRegulons)
-    val topRegs
+    val topRegulons
 
     output:
     tuple val(dataset_id), path("${dataset_id}_heatmapSpecificity.svg"), path("${dataset_id}_heatmapDEcalls.svg")
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_visualHeatmapTop150.py" "$rankedRegulons" "${dataset_id}_heatmapSpecificity.svg" "${dataset_id}_heatmapDEcalls.svg" "$topRegs"  
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_visualHeatmapTop150.py" "$rankedRegulons" "${dataset_id}_heatmapSpecificity.svg" "${dataset_id}_heatmapDEcalls.svg" "$topRegulons"  
     """
 }
 
@@ -375,7 +375,7 @@ process regmaps {
     
     input:
     tuple val(dataset_id), path(expMatrix), path(cellClusters), path(identClust), path(rankedRegulons)
-    val topRegs
+    val topRegulons
 
     output:
     tuple val(dataset_id), path("${dataset_id}_regmap_*.svg")
@@ -385,7 +385,7 @@ process regmaps {
                                                                     -i $identClust \
                                                                     -r $rankedRegulons \
                                                                     -m $expMatrix \
-                                                                    -t 10,25,50,100,$topRegs \
+                                                                    -t 10,25,50,100,$topRegulons \
                                                                     -d $dataset_id
     """
 }
@@ -395,15 +395,15 @@ workflow {
     check_input_files(
         Channel.fromPath(params.expressionMatrix, checkIfExists:true).collect(),
         Channel.fromPath(params.markersOut, checkIfExists:true).collect(),
-        Channel.fromPath(params.cell2clusters, checkIfExists:true).collect(),
-        Channel.fromPath(params.cluster2ident, checkIfExists:true).collect(),
-        Channel.fromPath(params.TF_list, checkIfExists:true).collect(),
+        Channel.fromPath(params.cellsToClusters, checkIfExists:true).collect(),
+        Channel.fromPath(params.clustersToIdentities, checkIfExists:true).collect(),
+        Channel.fromPath(params.tfList, checkIfExists:true).collect(),
         params.termsOfInterest != null ? Channel.fromPath(params.termsOfInterest, checkIfExists:true).collect() : "/dummy_path_tof",
         params.grnboostOut != null ? Channel.fromPath(params.grnboostOut, checkIfExists:true).collect() : "/dummy_path_grnb",
-        params.doMotifAnalysis == true? Channel.fromPath(params.featureFile_motifs, checkIfExists:true) : "/dummy_path_motif",
-        Channel.fromPath(params.infoTF, checkIfExists:true).collect(),
-        params.GOfile != null ? Channel.fromPath(params.GOfile, checkIfExists:true).collect() : "/dummy_path_go",
-        Channel.fromPath(params.alias, checkIfExists:true).collect())
+        params.doMotifAnalysis == true? Channel.fromPath(params.featureFileMotifs, checkIfExists:true) : "/dummy_path_motif",
+        Channel.fromPath(params.infoTf, checkIfExists:true).collect(),
+        params.goFile != null ? Channel.fromPath(params.goFile, checkIfExists:true).collect() : "/dummy_path_go",
+        Channel.fromPath(params.geneAliases, checkIfExists:true).collect())
 
     check_input_files.out.view()
 
@@ -411,7 +411,7 @@ workflow {
     matrix_ch.view()
     
     if (params.grnboostOut == null){
-        run_grnboost(params.TF_list,matrix_ch)
+        run_grnboost(params.tfList,matrix_ch)
         grnboost_ch = run_grnboost.out
         grnboost_ch.view()
     }
@@ -424,10 +424,10 @@ workflow {
     grnboost_combined_ch = grnboost_ch.join(expressed_genes_ch)
     
     if (params.doMotifAnalysis){
-        unzip_motifMappings(params.featureFile_motifs)
+        unzip_motifMappings(params.featureFileMotifs)
         run_enricher_motifs(script_enricher,unzip_motifMappings.out,grnboost_combined_ch)
         
-        filter_motifs(params.infoTF,params.motifFilter,run_enricher_motifs.out)
+        filter_motifs(params.infoTf,params.motifFilter,run_enricher_motifs.out)
         filter_motifs_ch = filter_motifs.out
     } else {
         filter_motifs_dummy(grnboost_ch)
@@ -435,27 +435,27 @@ workflow {
     }
 
     deg_ch = Channel.fromPath(params.markersOut).map { n -> [ n.baseName.split("_")[0], n ] }
-    cluster_enrich_ch = get_topDEGs(params.tops,deg_ch)
+    cluster_enrich_ch = get_topDEGs(params.topMarkers,deg_ch)
 
     cluster_enrich_combined_ch = cluster_enrich_ch.join(filter_motifs_ch).join(expressed_genes_ch)
     run_enricher_cluster(script_enricher,cluster_enrich_combined_ch)  
 
-    cluster_ch = Channel.fromPath(params.cell2clusters).map { n -> [ n.baseName.split("_")[0], n ] }
+    cluster_ch = Channel.fromPath(params.cellsToClusters).map { n -> [ n.baseName.split("_")[0], n ] }
     filter_combined_ch = matrix_ch.join(cluster_ch).join(run_enricher_cluster.out)
-    filter_expression(params.infoTF,params.expressionFilter,filter_combined_ch)
+    filter_expression(params.infoTf,params.expressionFilter,filter_combined_ch)
     
-    cluster_ids_ch = Channel.fromPath(params.cluster2ident).map { n -> [ n.baseName.split("_")[0], n ] }
+    cluster_ids_ch = Channel.fromPath(params.clustersToIdentities).map { n -> [ n.baseName.split("_")[0], n ] }
     info_ch = matrix_ch.join(grnboost_ch).join(filter_motifs_ch).join(filter_expression.out).join(cluster_ch).join(cluster_ids_ch)
-    make_info_file(info_ch,params.infoTF)    
+    make_info_file(info_ch,params.infoTf)    
     
     regulons_ident_ch = cluster_ids_ch.join(filter_expression.out)
     clustermap_regs(regulons_ident_ch)
     
     network_centrality(filter_expression.out)
 
-    if ( params.GOfile != null ){
+    if ( params.goFile != null ){
 
-        getFiles_enrichment_input_ch = filter_expression.out.combine(Channel.fromPath(params.GOfile))
+        getFiles_enrichment_input_ch = filter_expression.out.combine(Channel.fromPath(params.goFile))
         getFiles_enrichment_input_ch.view()
         getFiles_enrichment_ch = getFiles_enrichment(getFiles_enrichment_input_ch)
 
@@ -463,20 +463,20 @@ workflow {
         GO_enricher(script_enricher,getFiles_enrichment_combined_ch)   
     }
 
-    if ( params.GOfile != null && params.termsOfInterest != null ){        
+    if ( params.goFile != null && params.termsOfInterest != null ){        
 
         check_reference(getFiles_enrichment_input_ch,params.termsOfInterest)
         check_reference_trimmed = check_reference.out.map { n,it -> [ n, it.trim() ] }
     
-        rankingRef_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(network_centrality.out).join(GO_enricher.out).join(deg_ch).combine(Channel.fromPath(params.GOfile))
-        ranking_df_ref(params.alias,params.termsOfInterest,rankingRef_combined_ch)
+        rankingRef_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(network_centrality.out).join(GO_enricher.out).join(deg_ch).combine(Channel.fromPath(params.goFile))
+        ranking_df_ref(params.geneAliases,params.termsOfInterest,rankingRef_combined_ch)
     
         metrics_ch = Channel.value('qval_cluster,out-degree,betweenness,closeness,GO_enrich_qval')
         metrics_combi_ch = ranking_df_ref.out.combine(metrics_ch).join(check_reference_trimmed)
     
     } else {
         rankingStd_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(network_centrality.out).join(deg_ch).combine(Channel.value(false))
-        ranking_df_std(params.alias,rankingStd_combined_ch)    
+        ranking_df_std(params.geneAliases,rankingStd_combined_ch)    
         
         metrics_ch = Channel.value('qval_cluster,out-degree,betweenness,closeness')
         std_ch = Channel.value('std')
@@ -488,10 +488,10 @@ workflow {
     scoreEdges_ch = filter_expression.out.join(makeBorda.out).join(grnboost_ch)
     scoreEdges(scoreEdges_ch)
 
-    heatmap_tops(makeBorda.out,params.topRegs)
+    heatmap_tops(makeBorda.out,params.topRegulons)
 
     regmaps_ch = matrix_ch.join(cluster_ch).join(cluster_ids_ch).join(makeBorda.out)    
-    regmaps(regmaps_ch, params.topRegs)
+    regmaps(regmaps_ch, params.topRegulons)
 }
 
 workflow.onComplete {
