@@ -17,7 +17,7 @@ if (params.doMotifAnalysis){
 }
 
 log.info"""\
-         Motif-Informed Network Inference from gene EXpression v.2.0
+         Motif-Informed Network Inference from gene EXpression v.2.2
          ===========================================================
          ${motif_log}
          Running single-cell cluster enrichment using the top ${params.tops} upregulated genes per cluster
@@ -36,8 +36,6 @@ figs = "$baseDir/figures"
 
 
 process check_input_files {
-    echo true
-
     input:
     path expressionMatrix
     path markersOut
@@ -50,6 +48,9 @@ process check_input_files {
     path infoTf
     path goFile
     path alias
+
+    output:
+    stdout
 
     """
     OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkInput.py" "$expressionMatrix" "$markersOut" "$cells2clusters" "$cluster2ident" "$tfList" "$termsOfInterest" "$grnboostOut" "$featureFileMotifs" "$infoTf" "$goFile" "$alias"
@@ -403,6 +404,8 @@ workflow {
         Channel.fromPath(params.infoTF).collect(),
         params.GOfile != null ? Channel.fromPath(params.GOfile).collect() : "/dummy_path_go",
         Channel.fromPath(params.alias).collect())
+
+    check_input_files.out.view()
 
     matrix_ch = Channel.fromPath(params.expressionMatrix).map { n -> [ n.baseName.split("_")[0], n ] }
     matrix_ch.view()
