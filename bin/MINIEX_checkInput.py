@@ -38,12 +38,6 @@ if not path_is_dummy(GO_FILE):
 
 #### GENERAL VERIFICATIONS ####
 
-# CHECK: all input files exist
-for file_name in all_file_names:
-    # all files must exist
-    if not os.path.isfile(file_name):
-        raise Exception(f"File not found: '{file_name}'!")
-
 # CHECK: if the GO file is null, then terms of interest is also null
 if path_is_dummy(GO_FILE):
     if not path_is_dummy(TERMS_OF_INTEREST):

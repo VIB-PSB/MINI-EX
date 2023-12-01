@@ -393,17 +393,17 @@ process regmaps {
 
 workflow {
     check_input_files(
-        Channel.fromPath(params.expressionMatrix).collect(),
-        Channel.fromPath(params.markersOut).collect(),
-        Channel.fromPath(params.cell2clusters).collect(),
-        Channel.fromPath(params.cluster2ident).collect(),
-        Channel.fromPath(params.TF_list).collect(),
-        params.termsOfInterest != null ? Channel.fromPath(params.termsOfInterest).collect() : "/dummy_path_tof",
-        params.grnboostOut != null ? Channel.fromPath(params.grnboostOut).collect() : "/dummy_path_grnb",
-        params.doMotifAnalysis == true? Channel.fromPath(params.featureFile_motifs) : "/dummy_path_motif",
-        Channel.fromPath(params.infoTF).collect(),
-        params.GOfile != null ? Channel.fromPath(params.GOfile).collect() : "/dummy_path_go",
-        Channel.fromPath(params.alias).collect())
+        Channel.fromPath(params.expressionMatrix, checkIfExists:true).collect(),
+        Channel.fromPath(params.markersOut, checkIfExists:true).collect(),
+        Channel.fromPath(params.cell2clusters, checkIfExists:true).collect(),
+        Channel.fromPath(params.cluster2ident, checkIfExists:true).collect(),
+        Channel.fromPath(params.TF_list, checkIfExists:true).collect(),
+        params.termsOfInterest != null ? Channel.fromPath(params.termsOfInterest, checkIfExists:true).collect() : "/dummy_path_tof",
+        params.grnboostOut != null ? Channel.fromPath(params.grnboostOut, checkIfExists:true).collect() : "/dummy_path_grnb",
+        params.doMotifAnalysis == true? Channel.fromPath(params.featureFile_motifs, checkIfExists:true) : "/dummy_path_motif",
+        Channel.fromPath(params.infoTF, checkIfExists:true).collect(),
+        params.GOfile != null ? Channel.fromPath(params.GOfile, checkIfExists:true).collect() : "/dummy_path_go",
+        Channel.fromPath(params.alias, checkIfExists:true).collect())
 
     check_input_files.out.view()
 
