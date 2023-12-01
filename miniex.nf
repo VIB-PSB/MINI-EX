@@ -87,7 +87,7 @@ process run_grnboost {
     """
 }
 
-process unzip_motifMappings {
+process unzip_motif_mappings {
     
     input:
     path featureFileMotifs
@@ -150,7 +150,7 @@ process filter_motifs_dummy {
     """
 }
 
-process get_topDEGs {
+process get_top_degs {
     
     input:
     val topMarkers
@@ -216,7 +216,7 @@ process make_info_file {
     """
 }
 
-process clustermap_regs {
+process make_regulon_clustermap {
     publishDir figs, mode: 'copy'
     
     input:
@@ -231,7 +231,7 @@ process clustermap_regs {
 }
 
 
-process network_centrality {
+process get_network_centrality {
     
     input:
     tuple val(datasetId), path(finalRegulons)
@@ -244,7 +244,7 @@ process network_centrality {
     """
 }
 
-process getFiles_enrichment {
+process make_go_enrichment_files {
     
     input:
     tuple val(datasetId), path(finalRegulons), path(goFile)
@@ -257,7 +257,7 @@ process getFiles_enrichment {
     """
 }
 
-process GO_enricher {
+process run_enricher_go {
     publishDir goEnrichmentOutput, mode: 'copy'
     
     input:
@@ -293,7 +293,7 @@ process check_reference {
     """
 }
 
-process ranking_df_ref {
+process make_ref_ranking_dataframe {
     
     input:
     path geneAliases
@@ -308,7 +308,7 @@ process ranking_df_ref {
     """  
 }
 
-process ranking_df_std {
+process make_std_ranking_dataframe {
     
     input:  
     path geneAliases
@@ -323,7 +323,7 @@ process ranking_df_std {
 }
 
 
-process makeBorda {
+process make_borda {
     publishDir regOutput, mode: 'copy'
     echo true
     
@@ -339,7 +339,7 @@ process makeBorda {
 }
 
 
-process scoreEdges {
+process score_edges {
     publishDir regOutput, mode: 'copy'
     
     input:
@@ -354,7 +354,7 @@ process scoreEdges {
 }
 
 
-process heatmap_tops {
+process make_top_regulons_heatmaps {
     publishDir figs, mode: 'copy'
     
     input:
@@ -370,7 +370,7 @@ process heatmap_tops {
 }
 
 
-process regmaps {
+process make_regmaps {
     publishDir figs, mode: 'copy'
     
     input:
@@ -424,8 +424,8 @@ workflow {
     grnboost_combined_ch = grnboost_ch.join(expressed_genes_ch)
     
     if (params.doMotifAnalysis){
-        unzip_motifMappings(params.featureFileMotifs)
-        run_enricher_motifs(scriptEnricher,unzip_motifMappings.out,grnboost_combined_ch)
+        unzip_motif_mappings(params.featureFileMotifs)
+        run_enricher_motifs(scriptEnricher,unzip_motif_mappings.out,grnboost_combined_ch)
         
         filter_motifs(params.infoTf,params.motifFilter,run_enricher_motifs.out)
         filter_motifs_ch = filter_motifs.out
@@ -435,7 +435,7 @@ workflow {
     }
 
     deg_ch = Channel.fromPath(params.markersOut).map { n -> [ n.baseName.split("_")[0], n ] }
-    cluster_enrich_ch = get_topDEGs(params.topMarkers,deg_ch)
+    cluster_enrich_ch = get_top_degs(params.topMarkers,deg_ch)
 
     cluster_enrich_combined_ch = cluster_enrich_ch.join(filter_motifs_ch).join(expressed_genes_ch)
     run_enricher_cluster(scriptEnricher,cluster_enrich_combined_ch)  
@@ -449,49 +449,49 @@ workflow {
     make_info_file(info_ch,params.infoTf)    
     
     regulons_ident_ch = cluster_ids_ch.join(filter_expression.out)
-    clustermap_regs(regulons_ident_ch)
+    make_regulon_clustermap(regulons_ident_ch)
     
-    network_centrality(filter_expression.out)
+    get_network_centrality(filter_expression.out)
 
     if ( params.goFile != null ){
 
-        getFiles_enrichment_input_ch = filter_expression.out.combine(Channel.fromPath(params.goFile))
-        getFiles_enrichment_input_ch.view()
-        getFiles_enrichment_ch = getFiles_enrichment(getFiles_enrichment_input_ch)
+        make_go_enrichment_files_input_ch = filter_expression.out.combine(Channel.fromPath(params.goFile))
+        make_go_enrichment_files_input_ch.view()
+        make_go_enrichment_files_ch = make_go_enrichment_files(make_go_enrichment_files_input_ch)
 
-        getFiles_enrichment_combined_ch = getFiles_enrichment_ch.join(expressed_genes_ch)
-        GO_enricher(scriptEnricher,getFiles_enrichment_combined_ch)   
+        make_go_enrichment_files_combined_ch = make_go_enrichment_files_ch.join(expressed_genes_ch)
+        run_enricher_go(scriptEnricher,make_go_enrichment_files_combined_ch)   
     }
 
     if ( params.goFile != null && params.termsOfInterest != null ){        
 
-        check_reference(getFiles_enrichment_input_ch,params.termsOfInterest)
+        check_reference(make_go_enrichment_files_input_ch,params.termsOfInterest)
         check_reference_trimmed = check_reference.out.map { n,it -> [ n, it.trim() ] }
     
-        rankingRef_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(network_centrality.out).join(GO_enricher.out).join(deg_ch).combine(Channel.fromPath(params.goFile))
-        ranking_df_ref(params.geneAliases,params.termsOfInterest,rankingRef_combined_ch)
+        rankingRef_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(run_enricher_go.out).join(deg_ch).combine(Channel.fromPath(params.goFile))
+        make_ref_ranking_dataframe(params.geneAliases,params.termsOfInterest,rankingRef_combined_ch)
     
         metrics_ch = Channel.value('qval_cluster,out-degree,betweenness,closeness,GO_enrich_qval')
-        metrics_combi_ch = ranking_df_ref.out.combine(metrics_ch).join(check_reference_trimmed)
+        metrics_combi_ch = make_ref_ranking_dataframe.out.combine(metrics_ch).join(check_reference_trimmed)
     
     } else {
-        rankingStd_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(network_centrality.out).join(deg_ch).combine(Channel.value(false))
-        ranking_df_std(params.geneAliases,rankingStd_combined_ch)    
+        rankingStd_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(deg_ch).combine(Channel.value(false))
+        make_std_ranking_dataframe(params.geneAliases,rankingStd_combined_ch)    
         
         metrics_ch = Channel.value('qval_cluster,out-degree,betweenness,closeness')
         std_ch = Channel.value('std')
-        metrics_combi_ch = ranking_df_std.out.combine(metrics_ch).combine(std_ch)        
+        metrics_combi_ch = make_std_ranking_dataframe.out.combine(metrics_ch).combine(std_ch)        
     }
 
-    makeBorda(metrics_combi_ch)
+    make_borda(metrics_combi_ch)
     
-    scoreEdges_ch = filter_expression.out.join(makeBorda.out).join(grnboost_ch)
-    scoreEdges(scoreEdges_ch)
+    score_edges_ch = filter_expression.out.join(make_borda.out).join(grnboost_ch)
+    score_edges(score_edges_ch)
 
-    heatmap_tops(makeBorda.out,params.topRegulons)
+    make_top_regulons_heatmaps(make_borda.out,params.topRegulons)
 
-    regmaps_ch = matrix_ch.join(cluster_ch).join(cluster_ids_ch).join(makeBorda.out)    
-    regmaps(regmaps_ch, params.topRegulons)
+    make_regmaps_input_ch = matrix_ch.join(cluster_ch).join(cluster_ids_ch).join(make_borda.out)    
+    make_regmaps(make_regmaps_input_ch, params.topRegulons)
 }
 
 workflow.onComplete {
