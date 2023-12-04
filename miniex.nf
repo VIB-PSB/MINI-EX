@@ -29,10 +29,11 @@ log.info"""\
 
 scriptEnricher = "$baseDir/bin/enricherv3.2.4"
 
-grnboostOutput = "$baseDir/GRNBoost2_output"
-regOutput = "$baseDir/regulons_output"
-goEnrichmentOutput = "$baseDir/GOenrichment_output"
-figs = "$baseDir/figures"
+grnboostDir = "$baseDir/GRNBoost2_output"
+regulonsDir = "$baseDir/regulons_output"
+goEnrichmentDir = "$baseDir/GOenrichment_output"
+figuresDir = "$baseDir/figures"
+logDir = "$baseDir/log"
 
 
 process check_input_files {
@@ -50,10 +51,12 @@ process check_input_files {
     path geneAliases
 
     output:
-    stdout
+    stdout emit: stdoutLog
+    path("processLog.txt"), emit: processLog
 
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkInput.py" "$expressionMatrix" "$markersOut" "$cellsToClusters" "$clustersToIdentities" "$tfList" "$termsOfInterest" "$grnboostOut" "$featureFileMotifs" "$infoTf" "$goFile" "$geneAliases"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkInput.py" "$expressionMatrix" "$markersOut" "$cellsToClusters" "$clustersToIdentities" "$tfList" "$termsOfInterest" "$grnboostOut" "$featureFileMotifs" "$infoTf" "$goFile" "$geneAliases" > "processLog.txt"
+    cat processLog.txt
     """
 }
 
@@ -73,7 +76,7 @@ process get_expressed_genes {
 
 
 process run_grnboost {
-    publishDir grnboostOutput, mode: 'copy'
+    publishDir grnboostDir, mode: 'copy'
 
     input:
     path tfList
@@ -186,7 +189,7 @@ process run_enricher_cluster {
 }
 
 process filter_expression {
-    publishDir regOutput, mode: 'copy'
+    publishDir regulonsDir, mode: 'copy'
 
     input:
     path infoTf
@@ -202,7 +205,7 @@ process filter_expression {
 }
 
 process make_info_file {
-    publishDir regOutput, mode: 'copy'
+    publishDir regulonsDir, mode: 'copy'
 
     input:
     tuple val(datasetId), path(expressionMatrix), path(grnboostRegulons), path(motifEnrichedRegulons), path(finalRegulons), path(cellClusters), path(clusterIdentities)
@@ -217,7 +220,7 @@ process make_info_file {
 }
 
 process make_regulon_clustermap {
-    publishDir figs, mode: 'copy'
+    publishDir figuresDir, mode: 'copy'
     
     input:
     tuple val(datasetId), path(clusterIdentities), path(finalRegulons)
@@ -258,7 +261,7 @@ process make_go_enrichment_files {
 }
 
 process run_enricher_go {
-    publishDir goEnrichmentOutput, mode: 'copy'
+    publishDir goEnrichmentDir, mode: 'copy'
     
     input:
     path scriptEnricher
@@ -324,23 +327,23 @@ process make_std_ranking_dataframe {
 
 
 process make_borda {
-    publishDir regOutput, mode: 'copy'
-    echo true
+    publishDir regulonsDir, mode: 'copy', pattern: '*.xlsx'
     
     input:
     tuple val(datasetId), path(regulonsDataframe), val(metrics), val(ref)
 
     output:
-    tuple val("${datasetId}"), path("${datasetId}_rankedRegulons.xlsx")
+    tuple val("${datasetId}"), path("${datasetId}_rankedRegulons.xlsx"), emit: processOut
+    tuple val("${datasetId}"), path("${datasetId}_bordaProcessLog.log"), emit: processLog
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeBorda.py" "$regulonsDataframe" "$metrics" "${datasetId}_rankedRegulons.xlsx" "$ref"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeBorda.py" "$regulonsDataframe" "$metrics" "${datasetId}_rankedRegulons.xlsx" "$ref" > "${datasetId}_bordaProcessLog.log"
     """
 }
 
 
 process score_edges {
-    publishDir regOutput, mode: 'copy'
+    publishDir regulonsDir, mode: 'copy'
     
     input:
     tuple val(datasetId), path(regulons), path(rankedRegulons), path(modules)
@@ -355,7 +358,7 @@ process score_edges {
 
 
 process make_top_regulons_heatmaps {
-    publishDir figs, mode: 'copy'
+    publishDir figuresDir, mode: 'copy'
     
     input:
     tuple val(datasetId), path(rankedRegulons)
@@ -371,7 +374,7 @@ process make_top_regulons_heatmaps {
 
 
 process make_regmaps {
-    publishDir figs, mode: 'copy'
+    publishDir figuresDir, mode: 'copy'
     
     input:
     tuple val(datasetId), path(expressionMatrix), path(cellClusters), path(clusterIdentities), path(rankedRegulons)
@@ -391,6 +394,24 @@ process make_regmaps {
 }
 
 
+process make_log_file {
+    publishDir logDir, mode: 'copy'
+
+    input:
+    path(checkInputLog)
+    tuple val(datasetId), path(bordaLog)
+
+    output:
+    path("${datasetId}_log.txt")
+
+    """
+    cat "$checkInputLog" "$bordaLog" > "${datasetId}_log.txt"
+    echo "MINI-EX pipeline finished on:" >> "${datasetId}_log.txt"
+    date >> "${datasetId}_log.txt"
+    """
+}
+
+
 workflow {
     check_input_files(
         Channel.fromPath(params.expressionMatrix, checkIfExists:true).collect(),
@@ -405,19 +426,16 @@ workflow {
         params.goFile != null ? Channel.fromPath(params.goFile, checkIfExists:true).collect() : "/dummy_path_go",
         Channel.fromPath(params.geneAliases, checkIfExists:true).collect())
 
-    check_input_files.out.view()
+    check_input_files.out.stdoutLog.view()  // print the output of check_input_files to the terminal
 
     matrix_ch = Channel.fromPath(params.expressionMatrix).map { n -> [ n.baseName.split("_")[0], n ] }
-    matrix_ch.view()
     
     if (params.grnboostOut == null){
         run_grnboost(params.tfList,matrix_ch)
         grnboost_ch = run_grnboost.out
-        grnboost_ch.view()
     }
     if (params.grnboostOut != null){
         grnboost_ch = Channel.fromPath(params.grnboostOut).map { n -> [ n.baseName.split("_")[0], n ] }
-        grnboost_ch.view()
     }
 
     expressed_genes_ch = get_expressed_genes(matrix_ch)
@@ -456,7 +474,6 @@ workflow {
     if ( params.goFile != null ){
 
         make_go_enrichment_files_input_ch = filter_expression.out.combine(Channel.fromPath(params.goFile))
-        make_go_enrichment_files_input_ch.view()
         make_go_enrichment_files_ch = make_go_enrichment_files(make_go_enrichment_files_input_ch)
 
         make_go_enrichment_files_combined_ch = make_go_enrichment_files_ch.join(expressed_genes_ch)
@@ -485,13 +502,15 @@ workflow {
 
     make_borda(metrics_combi_ch)
     
-    score_edges_ch = filter_expression.out.join(make_borda.out).join(grnboost_ch)
+    score_edges_ch = filter_expression.out.join(make_borda.out.processOut).join(grnboost_ch)
     score_edges(score_edges_ch)
 
-    make_top_regulons_heatmaps(make_borda.out,params.topRegulons)
+    make_top_regulons_heatmaps(make_borda.out.processOut,params.topRegulons)
 
-    make_regmaps_input_ch = matrix_ch.join(cluster_ch).join(cluster_ids_ch).join(make_borda.out)    
+    make_regmaps_input_ch = matrix_ch.join(cluster_ch).join(cluster_ids_ch).join(make_borda.out.processOut)    
     make_regmaps(make_regmaps_input_ch, params.topRegulons)
+
+    make_log_file(check_input_files.out.processLog, make_borda.out.processLog)
 }
 
 workflow.onComplete {
