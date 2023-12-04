@@ -52,11 +52,11 @@ process check_input_files {
 
     output:
     stdout emit: stdoutLog
-    path("processLog.txt"), emit: processLog
+    path("processLog.log"), emit: processLog
 
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkInput.py" "$expressionMatrix" "$markersOut" "$cellsToClusters" "$clustersToIdentities" "$tfList" "$termsOfInterest" "$grnboostOut" "$featureFileMotifs" "$infoTf" "$goFile" "$geneAliases" > "processLog.txt"
-    cat processLog.txt
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkInput.py" "$expressionMatrix" "$markersOut" "$cellsToClusters" "$clustersToIdentities" "$tfList" "$termsOfInterest" "$grnboostOut" "$featureFileMotifs" "$infoTf" "$goFile" "$geneAliases" > "processLog.log"
+    awk '!/== PATHS TO INPUT FILES/{print; next} {exit}' processLog.log
     """
 }
 

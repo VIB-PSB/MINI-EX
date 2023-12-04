@@ -138,7 +138,21 @@ for data_set in data_sets:
 
 
 # if the process is here, that means that all the tests passed, otherwise an exception is raized and the process is interrupted
-print("==============================================================")
+print("== INPUT VALIDATION ==========================================")
 print("Input files passed validation tests. Retrieved following data:")
 print(stats_df)
-print("==============================================================")
+print("== PATHS TO INPUT FILES ======================================")
+print(f"Expression matrix file(s)   : {' / '.join(EXPRESSION_MATRIX)}")
+print(f"Seurat markers file(s)      : {' / '.join(MARKERS_OUT)}")
+print(f"Cells to clusters file(s)   : {' / '.join(CELLS2CLUSTERS)}")
+print(f"Cluster identities file(s)  : {' / '.join(CLUSTER2IDENT)}")
+print(f"GRNBoost output file(s)     : {' / '.join(GRNBOOST_OUT) if not path_is_dummy(GRNBOOST_OUT) else 'NOT PROVIDED'}")
+print(f"Transcription factor file   : {' / '.join(TF_LIST)}")
+print(f"TF info file                : {' / '.join(INFO_TF)}")
+print(f"Gene aliases file           : {' / '.join(ALIAS)}")
+print(f"Motifs feature file         : {' / '.join(FEATURE_FILE_MOTIFS) if not path_is_dummy(FEATURE_FILE_MOTIFS) else 'NOT PROVIDED'}")
+print(f"GO file                     : {' / '.join(GO_FILE) if not path_is_dummy(GO_FILE) else 'NOT PROVIDED'}")
+print(f"Terms of interest (TOF) file: {' / '.join(TERMS_OF_INTEREST) if not path_is_dummy(TERMS_OF_INTEREST) else 'NOT PROVIDED'}")
+if not path_is_dummy(TERMS_OF_INTEREST):
+    terms_of_interest_df = pd.read_csv(TERMS_OF_INTEREST[0], names=['term'])
+    print(f"--> Provided TOFs: {' / '.join(terms_of_interest_df['term'])}")
