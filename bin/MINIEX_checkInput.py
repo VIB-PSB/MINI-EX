@@ -13,7 +13,37 @@ FEATURE_FILE_MOTIFS=sys.argv[8].split(' ')
 INFO_TF=sys.argv[9].split(' ')
 GO_FILE=sys.argv[10].split(' ')
 ALIAS=sys.argv[11].split(' ')
+DO_MOTIF_ANALYSIS=sys.argv[12]
+TOP_MARKERS=sys.argv[13]
+EXPRESSION_FILTER=sys.argv[14]
+MOTIF_FILTER=sys.argv[15]
+TOP_REGULONS=sys.argv[16]
 
+########## NUMERICAL PARAMETERS ##########
+def value_is_a_positive_integer(value):
+    try:
+        int_value = int(value)
+        return int_value >= 0
+    except ValueError:
+        return False
+
+if not value_is_a_positive_integer(TOP_MARKERS):
+    raise Exception(f"Incorrect value provided for the parameter 'topMarkers': '{TOP_MARKERS}'! It can only have positive integer values.")
+
+if not value_is_a_positive_integer(TOP_REGULONS):
+    raise Exception(f"Incorrect value provided for the parameter 'topRegulons': '{TOP_REGULONS}'! It can only have positive integer values.")
+
+if DO_MOTIF_ANALYSIS != "true" and DO_MOTIF_ANALYSIS != "false":
+    raise Exception(f"Incorrect value provided for the parameter 'doMotifAnalysis': '{DO_MOTIF_ANALYSIS}'. Only boolean values are allowed.")
+
+if MOTIF_FILTER != "TF-F_motifs" and MOTIF_FILTER != "TF_motifs":
+    raise Exception(f"Incorrect value provided for the parameter 'motifFilter': '{MOTIF_FILTER}'! The allowed values are 'TF-F_motifs' or 'TF_motifs'.")
+
+if not value_is_a_positive_integer(EXPRESSION_FILTER) or int(EXPRESSION_FILTER) > 100:
+    raise Exception(f"Incorrect value provided for the parameter 'expressionFilter': '{EXPRESSION_FILTER}'! The allowed values are between 0 and 100.")
+
+
+########## PATH PARAMETERS ##########
 
 def path_is_dummy(path): # checks whether the user specified "null" as path to that file
     return path[0].startswith('dummy_path')
@@ -141,18 +171,24 @@ for data_set in data_sets:
 print("== INPUT VALIDATION ==========================================")
 print("Input files passed validation tests. Retrieved following data:")
 print(stats_df)
-print("== PATHS TO INPUT FILES ======================================")
-print(f"Expression matrix file(s)   : {' / '.join(EXPRESSION_MATRIX)}")
-print(f"Seurat markers file(s)      : {' / '.join(MARKERS_OUT)}")
-print(f"Cells to clusters file(s)   : {' / '.join(CELLS2CLUSTERS)}")
-print(f"Cluster identities file(s)  : {' / '.join(CLUSTER2IDENT)}")
-print(f"GRNBoost output file(s)     : {' / '.join(GRNBOOST_OUT) if not path_is_dummy(GRNBOOST_OUT) else 'NOT PROVIDED'}")
-print(f"Transcription factor file   : {' / '.join(TF_LIST)}")
-print(f"TF info file                : {' / '.join(INFO_TF)}")
-print(f"Gene aliases file           : {' / '.join(ALIAS)}")
-print(f"Motifs feature file         : {' / '.join(FEATURE_FILE_MOTIFS) if not path_is_dummy(FEATURE_FILE_MOTIFS) else 'NOT PROVIDED'}")
-print(f"GO file                     : {' / '.join(GO_FILE) if not path_is_dummy(GO_FILE) else 'NOT PROVIDED'}")
-print(f"Terms of interest (TOF) file: {' / '.join(TERMS_OF_INTEREST) if not path_is_dummy(TERMS_OF_INTEREST) else 'NOT PROVIDED'}")
+print("== INPUT FILES ===============================================")
+print(f"Expression matrix file(s) : {' / '.join(EXPRESSION_MATRIX)}")
+print(f"Seurat markers file(s)    : {' / '.join(MARKERS_OUT)}")
+print(f"Cells to clusters file(s) : {' / '.join(CELLS2CLUSTERS)}")
+print(f"Cluster identities file(s): {' / '.join(CLUSTER2IDENT)}")
+print(f"GRNBoost output file(s)   : {' / '.join(GRNBOOST_OUT) if not path_is_dummy(GRNBOOST_OUT) else 'NOT PROVIDED'}")
+print(f"Transcription factor file : {' / '.join(TF_LIST)}")
+print(f"TF info file              : {' / '.join(INFO_TF)}")
+print(f"Gene aliases file         : {' / '.join(ALIAS)}")
+print(f"Motifs feature file       : {' / '.join(FEATURE_FILE_MOTIFS) if not path_is_dummy(FEATURE_FILE_MOTIFS) else 'NOT PROVIDED'}")
+print(f"GO file                   : {' / '.join(GO_FILE) if not path_is_dummy(GO_FILE) else 'NOT PROVIDED'}")
+print(f"Terms of interest file    : {' / '.join(TERMS_OF_INTEREST) if not path_is_dummy(TERMS_OF_INTEREST) else 'NOT PROVIDED'}")
+print("== MINI-EX PARAMETERS ========================================")
 if not path_is_dummy(TERMS_OF_INTEREST):
     terms_of_interest_df = pd.read_csv(TERMS_OF_INTEREST[0], names=['term'])
-    print(f"--> Provided TOFs: {' / '.join(terms_of_interest_df['term'])}")
+    print(f"Terms of interest         : {' / '.join(terms_of_interest_df['term'])}")
+print(f"doMotifAnalysis           : {DO_MOTIF_ANALYSIS}")
+print(f"topMarkers                : {TOP_MARKERS}")
+print(f"expressionFilter          : {EXPRESSION_FILTER}")
+print(f"motifFilter               : {MOTIF_FILTER}")
+print(f"topRegulons               : {TOP_REGULONS}")

@@ -16,8 +16,9 @@ if (params.doMotifAnalysis){
     motifLog = "Skipping motif enrichment filtering"
 }
 
+miniexVersion = "v2.2"
 log.info"""\
-         Motif-Informed Network Inference from gene EXpression v.2.2
+         Motif-Informed Network Inference from gene EXpression ${miniexVersion}
          ===========================================================
          ${motifLog}
          Running single-cell cluster enrichment using the top ${params.topMarkers} upregulated genes per cluster
@@ -36,7 +37,7 @@ figuresDir = "$baseDir/figures"
 logDir = "$baseDir/log"
 
 
-process check_input_files {
+process check_user_input {
     input:
     path expressionMatrix
     path markersOut
@@ -49,14 +50,25 @@ process check_input_files {
     path infoTf
     path goFile
     path geneAliases
+    val doMotifAnalysis
+    val topMarkers
+    val expressionFilter
+    val motifFilter
+    val topRegulons
 
     output:
     stdout emit: stdoutLog
     path("processLog.log"), emit: processLog
 
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkInput.py" "$expressionMatrix" "$markersOut" "$cellsToClusters" "$clustersToIdentities" "$tfList" "$termsOfInterest" "$grnboostOut" "$featureFileMotifs" "$infoTf" "$goFile" "$geneAliases" > "processLog.log"
-    awk '!/== PATHS TO INPUT FILES/{print; next} {exit}' processLog.log
+    echo -n "MINI-EX" "$miniexVersion" "\nPipeline started on: " > "processLog.log"
+    date >> "processLog.log"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkInput.py" "$expressionMatrix" "$markersOut" "$cellsToClusters" "$clustersToIdentities" \
+                                                                  "$tfList" "$termsOfInterest" "$grnboostOut" "$featureFileMotifs" "$infoTf" \
+                                                                  "$goFile" "$geneAliases" "$doMotifAnalysis" "$topMarkers" "$expressionFilter" \
+                                                                  "$motifFilter" "$topRegulons" >> "processLog.log"
+    # print input validation statistics on stdout
+    awk '/== INPUT VALIDATION/,/== INPUT FILES/ {if (!/== INPUT (VALIDATION|FILES)/) print}' processLog.log
     """
 }
 
@@ -406,14 +418,14 @@ process make_log_file {
 
     """
     cat "$checkInputLog" "$bordaLog" > "${datasetId}_log.txt"
-    echo "MINI-EX pipeline finished on:" >> "${datasetId}_log.txt"
+    echo -n "Pipeline ended on: " >> "${datasetId}_log.txt"
     date >> "${datasetId}_log.txt"
     """
 }
 
 
 workflow {
-    check_input_files(
+    check_user_input(
         Channel.fromPath(params.expressionMatrix, checkIfExists:true).collect(),
         Channel.fromPath(params.markersOut, checkIfExists:true).collect(),
         Channel.fromPath(params.cellsToClusters, checkIfExists:true).collect(),
@@ -424,9 +436,14 @@ workflow {
         params.doMotifAnalysis == true? Channel.fromPath(params.featureFileMotifs, checkIfExists:true) : "/dummy_path_motif",
         Channel.fromPath(params.infoTf, checkIfExists:true).collect(),
         params.goFile != null ? Channel.fromPath(params.goFile, checkIfExists:true).collect() : "/dummy_path_go",
-        Channel.fromPath(params.geneAliases, checkIfExists:true).collect())
+        Channel.fromPath(params.geneAliases, checkIfExists:true).collect(),
+        params.doMotifAnalysis,
+        params.topMarkers,
+        params.expressionFilter,
+        params.motifFilter,
+        params.topRegulons)
 
-    check_input_files.out.stdoutLog.view()  // print the output of check_input_files to the terminal
+    check_user_input.out.stdoutLog.view()  // print the output of check_user_input to the terminal
 
     matrix_ch = Channel.fromPath(params.expressionMatrix).map { n -> [ n.baseName.split("_")[0], n ] }
     
@@ -510,7 +527,7 @@ workflow {
     make_regmaps_input_ch = matrix_ch.join(cluster_ch).join(cluster_ids_ch).join(make_borda.out.processOut)    
     make_regmaps(make_regmaps_input_ch, params.topRegulons)
 
-    make_log_file(check_input_files.out.processLog, make_borda.out.processLog)
+    make_log_file(check_user_input.out.processLog, make_borda.out.processLog)
 }
 
 workflow.onComplete {

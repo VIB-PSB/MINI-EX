@@ -93,7 +93,7 @@ if REF == 'ref':
     
     
     best_combi=min(list(tmp_dic.values()), key=lambda x: x[1])[0]
-    log_message = f"BORDA ranks calculated on best metrics combination: {', '.join(best_combi)}."
+    log_message = f"Best metrics combination: {', '.join(best_combi)}."
     ranks=pandas.DataFrame(min(list(tmp_dic.values()), key=lambda x: x[1])[2]).copy()
     reference_df=pandas.DataFrame(min(list(tmp_dic.values()), key=lambda x: x[1])[3]).copy()
     
@@ -113,7 +113,7 @@ if REF == 'ref':
     df_final.to_excel(DF_OUT,index=None)
 
 elif REF == 'std':
-    log_message = f"BORDA ranks calculated on default metrics: {', '.join(METRICS)}."
+    log_message = f"Default metrics: {', '.join(METRICS)}."
     ranks=calculate_borda_std(make_ranks(METRICS,df))
         
     ranks['index1']=ranks.index
@@ -132,5 +132,6 @@ elif REF == 'std':
     df_final.to_excel(DF_OUT,index=None)
 
 
+print("== SELECTED BORDA METRICS ====================================")
 print(log_message)
 print("==============================================================")
