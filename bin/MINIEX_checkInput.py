@@ -1,5 +1,4 @@
-import os,sys
-
+import sys
 import pandas as pd
 
 EXPRESSION_MATRIX=sys.argv[1].split(' ')
