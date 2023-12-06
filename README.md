@@ -15,6 +15,12 @@ MINI-EX uses a [dual license](https://github.com/VIB-PSB/MINI-EX/blob/main/LICEN
 * The complete list of new features can be found in the release notes for [v2.0](https://github.com/VIB-PSB/MINI-EX/releases/tag/v2.0) and [v2.1](https://github.com/VIB-PSB/MINI-EX/releases/tag/v2.1)
 
 ## Pipeline summary
+A conceptual overview of the different steps in the MINI-EX algorithm is given here:
+
+![MINI-EX_scheme](docs/figure1_miniex.png)
+
+## Detailed pipeline overview
+
 **1\.** Run expression-based gene regulatory network (GRN) inference ([GRNBoost2](https://arboreto.readthedocs.io/en/latest/algorithms.html#grnboost2)) given a list of transcription factors (TFs) and a gene-to-cell count matrix<br/>
 **2\.** Run TF binding site (TFBS) enrichment on the expression-based regulons and filter for TF or TF-Family motifs (default TF-Family)<br/>
 **3a.** Filter the previously identified regulons by target genes' (TGs) expression among the defined cell clusters (cluster specificity) using the provided markers<br/>
@@ -31,9 +37,7 @@ else:
 
 **Note**: step 2 can be omitted when no motif mapping data is available (motif mapping data is provided for Arabidopsis, rice and maize). However, use with caution as without motif data the networks will be less precise.
 
-## Detailed pipeline overview
-
-![MINI-EX_scheme](docs/MINI-EX_scheme.png)
+![MINI-EX_scheme](docs/figure2_miniex.png)
 
 ## Inputs
 * Gene-to-cell count matrix (genes as rows and cells as columns)
