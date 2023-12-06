@@ -30,11 +30,11 @@ log.info"""\
 
 scriptEnricher = "$baseDir/bin/enricherv3.2.4"
 
-grnboostDir = "$baseDir/GRNBoost2_output"
-regulonsDir = "$baseDir/regulons_output"
-goEnrichmentDir = "$baseDir/GOenrichment_output"
-figuresDir = "$baseDir/figures"
-logDir = "$baseDir/log"
+grnboostDir = "$params.outputDir/GRNBoost2_output"
+regulonsDir = "$params.outputDir/regulons_output"
+goEnrichmentDir = "$params.outputDir/GOenrichment_output"
+figuresDir = "$params.outputDir/figures"
+logDir = "$params.outputDir"
 
 
 process check_user_input {
