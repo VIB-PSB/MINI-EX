@@ -18,7 +18,7 @@ def run_borda():
     # list of metrics that can be used for borda ranking + their sorting order ('ascending' = lower values have better rank)
     metrics = {'qval_cluster': 'ascending', 'out-degree': 'descending', 'betweenness': 'descending', 'closeness': 'descending', 'GO_enrich_qval': 'ascending'}
     if 'GO_enrich_qval' not in regulons_df.columns:  # if no GO enrichment information is available: remove this metric
-        metrics = metrics.pop('GO_enrich_qval')
+        metrics.pop('GO_enrich_qval')
 
     # compute individual (global and cluster) rankings for each metric and add them as temporary columns to the regulons dataframe
     regulons_df = add_metric_rankings(regulons_df, metrics)
@@ -199,3 +199,4 @@ def get_r50_for_metric(regulons_df: pd.DataFrame, metric_name: str):
 
 print("== BORDA RANKING =============================================")
 run_borda()
+print("==============================================================")
