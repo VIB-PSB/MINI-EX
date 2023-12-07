@@ -15,7 +15,8 @@ The [INPUTS folder](INPUTS/) contains:
   
   
   
-The [OUTPUTS folder](OUTPUTS/) contains four sub-folders:   
+The [OUTPUTS folder](OUTPUTS/) contains four sub-folders + the log file:
+- **Log file** containing statistics on the provided dataset(s) and information on intermediary results in the workflow
 - **GRNBoost2_output** containing the output of GRNBoost2  
 - **GOenrichment_output** containing the output of the functional enrichment of the inferred regulons    
 - **regulons_output** containing four files:  
