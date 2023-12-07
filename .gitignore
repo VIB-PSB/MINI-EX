@@ -1,7 +1,4 @@
 .nextflow*
 /work
-/figures
-/GOenrichment_output
-/log
-/regulons_output
-singularity_cache
+/output
+/singularity_cache
