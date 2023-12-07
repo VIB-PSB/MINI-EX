@@ -14,6 +14,8 @@ The paths to the folders containing the different input files need to be stated 
 
 **Note:** if GRNBoost2 was previously run separately, its output can be specified in the configuration file and the corresponding MINI-EX's step will be skipped.   
 ```
+params {
+
     // INPUT FILES DERIVED FROM SINGLE-CELL DATASETS //
     expressionMatrix = "$baseDir/example/INPUTS/*_matrix.txt"
     markersOut = "$baseDir/example/INPUTS/*_allMarkers.txt"
