@@ -7,36 +7,44 @@ MINI-EX is configured to run on a SLURM computer cluster as specified in the exe
 MINI-EX uses a Singularity container built on Docker image with the necessary Python 3.6 modules.
 
 ```
+// SPECIFY THE SYSTEM EXECUTOR //
 executor {
     name = 'slurm'
+    //  --> common examples: local, slurm, sge, azurebatch
     queueSize = 5
 }
 
+// SINGULARITY CONTAINERS SETTINGS // (not to be adapted)
 process.container = "vibpsb/mini-ex:latest"
-singularity.enabled = true
+singularity {
+    enabled = true
+    cacheDir = "singularity_cache"
+    autoMounts = true
+}
 ```
 
 **name**, **queueSize** and [optional settings](https://www.nextflow.io/docs/latest/config.html) can be changed according to resource availability. 
 
 ## **Params scope**
 The params section is meant to define parameters and paths that will be used by the pipeline scripts.  
-The **first block** of parameters defines the paths to the [input files](https://github.com/VIB-PSB/MINI-EX/tree/main/example/INPUTS) required and provided by the user.
+The **first block** defines the paths to the single-cell [input files](https://github.com/VIB-PSB/MINI-EX/tree/main/example/INPUTS) required and provided by the user. 
 
 ```
-params {
+    // INPUT FILES DERIVED FROM SINGLE-CELL DATASETS //
     expressionMatrix = "$baseDir/example/INPUTS/*_matrix.txt"
     markersOut = "$baseDir/example/INPUTS/*_allMarkers.txt"
-    cell2clusters = "$baseDir/example/INPUTS/*_cells2clusters.txt"
-    cluster2ident = "$baseDir/example/INPUTS/*_identities.txt"
-    TF_list = "$baseDir/example/INPUTS/TF_list.txt"
-    termsOfInterest = "$baseDir/example/INPUTS/GOsIwant.txt"
-//  termsOfInterest = null
+    cellsToClusters = "$baseDir/example/INPUTS/*_cells2clusters.txt"
+    clustersToIdentities = "$baseDir/example/INPUTS/*_identities.txt"
+```
+The **second block** allows to specify the path to a precomputed GRNBoost2 network. By default, this is set to the GRNBoost2 network of the example run. However, when running MINI-EX for the first time on your own data, `grnboostOut` should be set to `null` in order to run GRNBoost2 on your dataset.
 
-//  grnboostOut = "/$baseDir/example/OUTPUTS/GRNBoost2_output/*_grnboost2.txt"
-    grnboostOut = null
+```
+    // CACHED FILES // (allows to reuse the initial coexpression network)
+    grnboostOut = "/$baseDir/example/OUTPUTS/GRNBoost2_output/*_grnboost2.txt" 
+    // --> to infer coexpression network de novo, replace the line above by: grnboostOut = null
 ```
 
-The **second block** of parameters is composed by files provided and necessary for the pipeline to run.  
+The **third block** is composed of paths to species-specific files provided by MINI-EX for supported species.  
 There are currently four directories, one for each species supported by MINI-EX: *Arabidopsis thaliana* (data/ath), *Oryza sativa* (data/osa), *Solanum lycopersicum* (data/sly) and *Zea mays* (data/zma).
 
 This consists in:
@@ -48,47 +56,47 @@ Note: all ancestral terms are included and terms associated with more than 30% o
 * Gene-alias file downloaded from [TAIR](https://www.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FPublic_Data_Releases%2FTAIR_Data_20140331), [funRiceGenes](https://funricegenes.github.io/), [Sol Genomics Network](https://solgenomics.net/ftp/tomato_genome/annotation/ITAG4.0_release/ITAG4.0_descriptions.txt) and [MaizeGDB](https://www.maizegdb.org/associated_genes?type=all&style=tab).
 
 ```	
-    doMotifAnalysis = true // set to <false> if no motif mapping data is available [CAUTION: without motif data MINI-EX is less reliable]
-    featureFile_motifs = "$baseDir/data/ath/ath_2021.1_motifMapping.out.gz"
-    infoTF = "$baseDir/data/ath/ath_TF2fam2mot.txt"
-    GOfile = "$baseDir/data/ath/ath_full_BP_expcur_ext_names.txt"
-    alias = "$baseDir/data/ath/ath_gene_aliases.txt"
+    // SPECIES SPECIFIC INFORMATION //
+    tfList = "$baseDir/data/ath/ath_TF_list.txt"
+    geneAliases = "$baseDir/data/ath/ath_gene_aliases.txt"
+    infoTf = "$baseDir/data/ath/ath_TF2fam2mot.txt"
+    featureFileMotifs = "$baseDir/data/ath/ath_2021.1_motifMapping.out.gz"
+    goFile = "$baseDir/data/ath/ath_full_BP_expcur_ext_names.txt" 
+    // --> if GO data is not available, replace the line above by: goFile = null 
+    //     (when doing so, termsOfInterest should also be set to <null>)
 ```
-The **third block** of parameters consists in all the scripts used in the pipeline:  
- 
-```	
-    script_enricher = "$baseDir/bin/enricherv2.4"
-    script_checkInput = "$baseDir/bin/MINIEX_checkInput.py"
-    script_grnboost = "$baseDir/bin/MINIEX_grnboostMultiprocess.py"
-    script_motifs = "$baseDir/bin/MINIEX_filterForMotifs.py"
-    script_topDEGs = "$baseDir/bin/MINIEX_selectTopDEGs.py"
-    script_expTFs = "$baseDir/bin/MINIEX_filterForTFExp.py"
-    script_info = "$baseDir/bin/MINIEX_makeInfoFile.py"
-    script_clustermap = "$baseDir/bin/MINIEX_clustermap.py"
-    script_networkCentrality = "$baseDir/bin/MINIEX_network_analysis.py"
-    script_checkReference = "$baseDir/bin/MINIEX_checkRef.py"
-    script_filesEnrichment = "$baseDir/bin/MINIEX_makeFilesEnrichment.py"	
-    script_makedfRef = "$baseDir/bin/MINIEX_makeRankingDf_ref.py"
-    script_makedfStd = "$baseDir/bin/MINIEX_makeRankingDf_std.py"
-    script_makeborda = "$baseDir/bin/MINIEX_makeBorda.py"
-    script_scoreEdges = "$baseDir/bin/MINIEX_scoreEdges.py"
-    script_heatmapTops = "$baseDir/bin/MINIEX_visual_heatmap_top150.py"
-    script_regmaps = "$baseDir/bin/MINIEX_regmap.py"
-```
+The **fourth block** consists of MINI-EX parameters that can be adapted to change the behavior of MINI-EX.
 
-The **last block** of parameters defines the filters used along the GRN inference.  
-  
-The first two filters (tops and expressionFilter) have been chosen by benchmarking different filters against a root gold standard of known protein-DNA interactions.  
-The first refers to the number of upregulated genes per cluster (sorted by q-value) to use during the cell cluster enrichment, while the second refers to the percentage of cells that need to express the TF to retain the regulon for the specific cell cluster:    
-  
-* motifFilter can be set to **TF_motifs** if the user wishes not to extend the retention of regulons enriched for family motifs, but only to direct TF-motifs  
-* topRegs defines the top regulons to show in the two output heatmaps. It can be changed according to the user needs
+When the first parameter `doMotifAnalysis` is set to `false`, the motif mapping step in the MINI-EX workflow (step 2) is omitted. This yields less precise GRNs, but allows to run MINI-EX without species-specific information which are only shipped with MINI-EX for supported species.
+
+The `termsOfInterest` parameter is the path to a user-defined file with GO terms of interest. This file should contain terms (e.g. root, phloem, xylem, etc.) related to the process or tissue of interest and will affect the ranking of the final regulons. When set to `null`, no GO information is taken into account for ranking the regulons and MINI-EX will use its standard ranking procedure.
+
+The `topMarkers` parameter refers to the number of upregulated genes per cluster (sorted by q-value) to use during the cell cluster enrichment. `expressionFilter` refers to the percentage of cells that need to express the TF to retain the regulon for the specific cell cluster. Default values for both parameters have been chosen by benchmarking different filters against a root gold standard of known protein-DNA interactions.
+
+* `motifFilter` can be set to either **TF-F_motifs** (default) or **TF_motifs**. The default option keeps regulons in the motif filtering step (step 2) if the regulon is enriched for any motif of that TF family. When setting the parameter to **TF_motifs**, then only regulons are retained if they are enriched for direct TF-motifs.
+
+* `topRegs` defines the top regulons to show in the two output heatmaps. It can be changed according to the user needs.
 
 ```	
-    tops = "700"
+    // PARAMETERS //
+    doMotifAnalysis = true 
+    // --> set to <false> if no motif mapping data is available 
+    //     [CAUTION: without motif data MINI-EX is less reliable]
+    termsOfInterest = "$baseDir/example/INPUTS/GOsIwant.txt"
+    // --> to use the standard ranking procedure, replace the line above by: termsOfInterest = null
+    topMarkers = "700"
     expressionFilter = "10"
-    motifFilter = "TF-F_motifs"	
-    topRegs = "150"
+    motifFilter = "TF-F_motifs" 
+    // --> to use the motifs of the TF family: motifFilter = "TF-F_motifs"
+    // --> to only use the motifs known for a TF: motifFilter =  "TF_motifs"
+    topRegulons = "150"
+```
+
+The **last block** specifies the output directory.  
+
+```	
+    // SPECIFY OUTPUT DIRECTORY //
+    outputDir = "$baseDir/output"
 }
 ```
 
