@@ -342,14 +342,15 @@ process make_borda {
     publishDir regulonsDir, mode: 'copy', pattern: '*.xlsx'
     
     input:
-    tuple val(datasetId), path(regulonsDataframe), val(metrics), val(ref)
+    tuple val(datasetId), path(regulonsDataframe), val(ref)
 
     output:
     tuple val("${datasetId}"), path("${datasetId}_rankedRegulons.xlsx"), emit: processOut
     tuple val("${datasetId}"), path("${datasetId}_bordaProcessLog.log"), emit: processLog
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeBorda.py" "$regulonsDataframe" "$metrics" "${datasetId}_rankedRegulons.xlsx" "$ref" > "${datasetId}_bordaProcessLog.log"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeBorda.py" "$regulonsDataframe" "${datasetId}_rankedRegulons.xlsx" "$ref" > "${datasetId}_bordaProcessLog.log"
+    cat "${datasetId}_bordaProcessLog.log"
     """
 }
 
@@ -505,19 +506,16 @@ workflow {
         rankingRef_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(run_enricher_go.out).join(deg_ch).combine(Channel.fromPath(params.goFile))
         make_ref_ranking_dataframe(params.geneAliases,params.termsOfInterest,rankingRef_combined_ch)
     
-        metrics_ch = Channel.value('qval_cluster,out-degree,betweenness,closeness,GO_enrich_qval')
-        metrics_combi_ch = make_ref_ranking_dataframe.out.combine(metrics_ch).join(check_reference_trimmed)
+        borda_input_ch = make_ref_ranking_dataframe.out.join(check_reference_trimmed)
     
     } else {
         rankingStd_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(deg_ch).combine(Channel.value(false))
         make_std_ranking_dataframe(params.geneAliases,rankingStd_combined_ch)    
         
-        metrics_ch = Channel.value('qval_cluster,out-degree,betweenness,closeness')
-        std_ch = Channel.value('std')
-        metrics_combi_ch = make_std_ranking_dataframe.out.combine(metrics_ch).combine(std_ch)        
+        borda_input_ch = make_std_ranking_dataframe.out.combine(Channel.value('std'))        
     }
 
-    make_borda(metrics_combi_ch)
+    make_borda(borda_input_ch)
     
     score_edges_ch = filter_expression.out.join(make_borda.out.processOut).join(grnboost_ch)
     score_edges(score_edges_ch)
