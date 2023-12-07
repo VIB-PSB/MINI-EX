@@ -14,18 +14,15 @@ The paths to the folders containing the different input files need to be stated 
 
 **Note:** if GRNBoost2 was previously run separately, its output can be specified in the configuration file and the corresponding MINI-EX's step will be skipped.   
 ```
-params {
-	expressionMatrix = "$baseDir/example/INPUTS/*_matrix.txt"
-	markersOut = "$baseDir/example/INPUTS/*_allMarkers.txt"
-	cell2clusters = "$baseDir/example/INPUTS/*_cells2clusters.txt"
-	cluster2ident = "$baseDir/example/INPUTS/*_identities.txt"
-	TF_list = "$baseDir/example/INPUTS/TF_list.txt"
-	termsOfInterest = "$baseDir/example/INPUTS/GOsIwant.txt"
-//	termsOfInterest = null
-
-	grnboostOut = null
-//	grnboostOut = "/$baseDir/example/OUTPUTS/GRNBoost2_output/*_grnboost2.txt"
-
+    // INPUT FILES DERIVED FROM SINGLE-CELL DATASETS //
+    expressionMatrix = "$baseDir/example/INPUTS/*_matrix.txt"
+    markersOut = "$baseDir/example/INPUTS/*_allMarkers.txt"
+    cellsToClusters = "$baseDir/example/INPUTS/*_cells2clusters.txt"
+    clustersToIdentities = "$baseDir/example/INPUTS/*_identities.txt"
+    
+    // CACHED FILES // (allows to reuse the initial coexpression network)
+    grnboostOut = "/$baseDir/example/OUTPUTS/GRNBoost2_output/*_grnboost2.txt" 
+    // --> to infer coexpression network de novo, replace the line above by: grnboostOut = null
 ```
 
 The **expressionMatrix** points to the gene-to-cell count matrix and can be extracted from the [Seurat](https://satijalab.org/seurat/) object using the command below:
