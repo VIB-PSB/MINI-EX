@@ -48,12 +48,13 @@ The **third block** is composed of paths to species-specific files provided by M
 There are currently four directories, one for each species supported by MINI-EX: *Arabidopsis thaliana* (data/ath), *Oryza sativa* (data/osa), *Solanum lycopersicum* (data/sly) and *Zea mays* (data/zma).
 
 This consists in:
-* Ensemble motif-mapping file obtained by selecting the top motif matches for [Cluster Buster](https://github.com/weng-lab/cluster-buster) and [FIMO](https://meme-suite.org/meme/doc/fimo.html) matches for a collection of motifs mapped to the regulatory regions of the species.
+* List of known transcription factors of the species.
+* Gene-alias file downloaded from [TAIR](https://www.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FPublic_Data_Releases%2FTAIR_Data_20140331), [funRiceGenes](https://funricegenes.github.io/), [Sol Genomics Network](https://solgenomics.net/ftp/tomato_genome/annotation/ITAG4.0_release/ITAG4.0_descriptions.txt) and [MaizeGDB](https://www.maizegdb.org/associated_genes?type=all&style=tab).
 * TF-motif Family file linking each TF to its TF family and reporting wheather direct motif information is available or not, and the motifs directly associated to the TF.
+* Ensemble motif-mapping file obtained by selecting the top motif matches for [Cluster Buster](https://github.com/weng-lab/cluster-buster) and [FIMO](https://meme-suite.org/meme/doc/fimo.html) matches for a collection of motifs mapped to the regulatory regions of the species.
 * Gene-GO links for BP (biological process).
 For *A. thaliana* only those supported by experimental evidence ("EXP", "IMP", "IDA", "IPI", "IGI", "IEP") and manually curated ("TAS", "NAS", "IC") are included, while for other species all the evidences are kept.
 Note: all ancestral terms are included and terms associated with more than 30% of all the genes of the species are filtered out.
-* Gene-alias file downloaded from [TAIR](https://www.arabidopsis.org/download/index-auto.jsp?dir=%2Fdownload_files%2FPublic_Data_Releases%2FTAIR_Data_20140331), [funRiceGenes](https://funricegenes.github.io/), [Sol Genomics Network](https://solgenomics.net/ftp/tomato_genome/annotation/ITAG4.0_release/ITAG4.0_descriptions.txt) and [MaizeGDB](https://www.maizegdb.org/associated_genes?type=all&style=tab).
 
 ```	
     // SPECIES SPECIFIC INFORMATION //
@@ -75,7 +76,7 @@ The `topMarkers` parameter refers to the number of upregulated genes per cluster
 
 * `motifFilter` can be set to either **TF-F_motifs** (default) or **TF_motifs**. The default option keeps regulons in the motif filtering step (step 2) if the regulon is enriched for any motif of that TF family. When setting the parameter to **TF_motifs**, then only regulons are retained if they are enriched for direct TF-motifs.
 
-* `topRegs` defines the top regulons to show in the two output heatmaps. It can be changed according to the user needs.
+* `topRegulons` defines the top regulons to show in the two output heatmaps. It can be changed according to the user needs.
 
 ```	
     // PARAMETERS //
