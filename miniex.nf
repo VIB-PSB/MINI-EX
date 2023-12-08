@@ -479,7 +479,7 @@ workflow {
 
     cluster_ch = Channel.fromPath(params.cellsToClusters).map { n -> [ n.baseName.split("_")[0], n ] }
     filter_combined_ch = matrix_ch.join(cluster_ch).join(run_enricher_cluster.out)
-    filter_expression(params.infoTf,params.expressionFilter,filter_combined_ch)
+    filter_expression(params.tfList,params.expressionFilter,filter_combined_ch)
     
     cluster_ids_ch = Channel.fromPath(params.clustersToIdentities).map { n -> [ n.baseName.split("_")[0], n ] }
     info_ch = matrix_ch.join(grnboost_ch).join(filter_motifs_ch).join(filter_expression.out).join(cluster_ch).join(cluster_ids_ch)

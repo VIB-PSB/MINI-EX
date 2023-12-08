@@ -1,14 +1,14 @@
 import sys,pandas, collections
 
 MATRIX=sys.argv[1]
-INFO_TF=sys.argv[2]
+TF_FILE=sys.argv[2]
 
 CELLS=sys.argv[3]
 
      
 matrix=pandas.read_csv(MATRIX,sep='\t',index_col=0)
 cells_inMat=list(matrix.columns)
-tf_list=pandas.read_csv(INFO_TF,sep='\t',header=None)[0].to_list()
+tf_list=pandas.read_csv(TF_FILE,sep='\t',header=None)[0].to_list()
 
 matrix=matrix[matrix.index.isin(tf_list)] #subset matrix to only keep TFs
 
