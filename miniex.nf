@@ -222,13 +222,13 @@ process make_info_file {
 
     input:
     tuple val(datasetId), path(expressionMatrix), path(grnboostRegulons), path(motifEnrichedRegulons), path(finalRegulons), path(cellClusters), path(clusterIdentities)
-    path infoTf
+    path tfList
 
     output:
     tuple val("${datasetId}"), path("${datasetId}_TF_info_file.txt")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeInfoFile.py" "$expressionMatrix" "$grnboostRegulons" "$motifEnrichedRegulons" "$finalRegulons" $infoTf $cellClusters $clusterIdentities "${datasetId}_TF_info_file.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeInfoFile.py" "$expressionMatrix" "$grnboostRegulons" "$motifEnrichedRegulons" "$finalRegulons" $tfList $cellClusters $clusterIdentities "${datasetId}_TF_info_file.txt"
     """
 }
 
@@ -483,7 +483,7 @@ workflow {
     
     cluster_ids_ch = Channel.fromPath(params.clustersToIdentities).map { n -> [ n.baseName.split("_")[0], n ] }
     info_ch = matrix_ch.join(grnboost_ch).join(filter_motifs_ch).join(filter_expression.out).join(cluster_ch).join(cluster_ids_ch)
-    make_info_file(info_ch,params.infoTf)    
+    make_info_file(info_ch,params.tfList)    
     
     regulons_ident_ch = cluster_ids_ch.join(filter_expression.out)
     make_regulon_clustermap(regulons_ident_ch)

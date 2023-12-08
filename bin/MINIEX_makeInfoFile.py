@@ -6,7 +6,7 @@ MAT=sys.argv[1]
 GRNB_OUT=sys.argv[2]
 MOTENR_OUT=sys.argv[3]
 TFFILT_OUT=sys.argv[4]
-INFO_TF=sys.argv[5]
+TF_FILE=sys.argv[5]
 CELLS=sys.argv[6]
 IDS=sys.argv[7]
 OUT=sys.argv[8]
@@ -22,7 +22,7 @@ with open(CELLS) as f:
         cell2type[line.strip().split('\t')[0]]=str(line.strip().split('\t')[1])
 cell2type_counter=collections.Counter(list(cell2type.values()))  
 
-tfs_all=list(pandas.read_csv(INFO_TF, header=None, usecols=[0], sep='\t')[0])
+tfs_all=list(pandas.read_csv(TF_FILE, header=None, usecols=[0], sep='\t')[0])
 
 matrix=matrix[matrix.index.isin(tfs_all)]  #subset matrix to only keep TFs
 matrix=matrix.transpose()
