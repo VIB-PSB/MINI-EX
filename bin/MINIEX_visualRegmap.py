@@ -7,6 +7,7 @@ import matplotlib.colors as mcolors
 import matplotlib.patches as mpatches
 import matplotlib.collections as mcoll
 
+from natsort import natsort_keygen
 
 def getCmap(c, n=1000):
 
@@ -192,25 +193,25 @@ if __name__ == '__main__':
     sys.stdout.flush()
 
     # cells2clusters 
-    cells2clusters = pd.read_csv(args.cells2clusters, sep='\t', header=None)\
+    cells2clusters = pd.read_csv(args.cells2clusters, sep='\t', header=None, dtype={0:"str", 1:"str"})\
                        .rename(columns={0:'cell', 1:'cluster'})
     #cells2clusters.columns = ['cell', 'cluster','name']
-    cells2clusters.cluster = cells2clusters.cluster.apply(lambda x: 'Cluster_{}'.format(int(x) if int(x) == x else x))
+    cells2clusters.cluster = cells2clusters.cluster.apply(lambda x: 'Cluster_{}'.format(x))
     cells2clusters = cells2clusters.set_index('cell')
 
     # identities
-    identities = pd.read_csv(args.identities, sep='\t', header=None)
+    identities = pd.read_csv(args.identities, sep='\t', header=None, dtype={0:"str", 1:"str", 2:"int"})
     if identities.shape[1] == 2:
         identities.columns = ['cluster','celltype']
         identities['celltype'] = identities['celltype'].astype(str)
         identities['celltype_lower'] = identities.celltype.str.lower()
-        identities = identities.sort_values(['celltype_lower', 'cluster'], ascending=True)\
+        identities = identities.sort_values(['celltype_lower', 'cluster'], key=natsort_keygen())\
                                .drop('celltype_lower', axis=1)
         identities['idx'] = list(range(1,len(identities)+1))
     else:
         identities.columns = ['cluster','celltype','idx']
         identities['celltype'] = identities['celltype'].astype(str)
-    identities.cluster = identities.cluster.apply(lambda x: 'Cluster_{}'.format(int(x) if int(x) == x else x))
+    identities.cluster = identities.cluster.apply(lambda x: 'Cluster_{}'.format(x))
 
     # regulons
     regulons = pd.read_excel(args.regulons)
