@@ -30,14 +30,15 @@ log.info"""\
 
 scriptEnricher = "$baseDir/bin/enricherv3.2.4"
 
-grnboostDir = "$params.outputDir/GRNBoost2_output"
-regulonsDir = "$params.outputDir/regulons_output"
-goEnrichmentDir = "$params.outputDir/GOenrichment_output"
+grnboostDir = "$params.outputDir/grnboost2"
+regulonsDir = "$params.outputDir/regulons"
+goEnrichmentDir = "$params.outputDir/go_enrichment"
 figuresDir = "$params.outputDir/figures"
 logDir = "$params.outputDir"
 
 
 process check_user_input {
+
     input:
     path expressionMatrix
     path markersOut
