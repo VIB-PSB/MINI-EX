@@ -16,10 +16,10 @@ The [INPUTS folder](INPUTS/) contains:
   
   
 The [OUTPUTS folder](OUTPUTS/) contains four sub-folders + the log file:
-- **Log file** containing statistics on the provided dataset(s) and information on intermediary results in the workflow
-- **GRNBoost2_output** containing the output of GRNBoost2  
-- **GOenrichment_output** containing the output of the functional enrichment of the inferred regulons    
-- **regulons_output** containing four files:  
+- **Log file** containing statistics on the provided dataset(s), information on the provided input files and parameters, as well as intermediary results in the workflow
+- **grnboost2** containing the output of GRNBoost2  
+- **go_enrichment** containing the output of the functional enrichment of the inferred regulons    
+- **regulons** containing four files:  
 	- miniexExample_TF_info_file.txt, a tab-separated file containing, for each TF, information about the TF's expression, whether it was retained or not in the final regulons list, and if not, at which step it was discarded. It also reports the percentage of cells for each cluster expressing the TF. This can be useful for adjusting the **expressionFilter** parameter in the last block of the [config file](https://github.com/VIB-PSB/MINI-EX/tree/main/docs/configuration.md).         
 	- miniexExample_regulons.txt, a tab-separated file with TF, cell cluster and list of TGs for each of the inferred regulons  
 	- miniexExample_edgeTable.tsv, a tab-separated file that lists all inferred edges: TF, TG, cell cluster, borda_rank (see below), borda_clusterRank (see below), weight (GRNBoost2 edge weight)  
