@@ -8,3 +8,4 @@ tqdm==4.40.0
 fsspec>=0.3.3
 openpyxl==3.0.9
 xlrd==1.2.0
+natsort==8.4.0
