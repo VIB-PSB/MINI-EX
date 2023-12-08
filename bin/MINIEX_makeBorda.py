@@ -157,7 +157,7 @@ def run_borda_ref(regulons_df: pd.DataFrame, metrics: Dict):
 
     # identify the best combination of metrics (=having the lowest Borda R50)
     best_metric_combination = min(metric_combination_r50, key=lambda k: metric_combination_r50[k]).split(',')
-    print(f"Best metrics: {', '.join(best_metric_combination)}")
+    print(f"Selected metrics: {', '.join(best_metric_combination)}")
 
     # compute final Borda rank based on the best combination of metrics
     weighted_metric_combination = [item + '_metricRankWeighted' for item in best_metric_combination]
