@@ -19,5 +19,7 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: vibpsb/mini-ex-dev:latest
+          tags: |
+            vibpsb/mini-ex:latest
+            vibpsb/mini-ex:vl.0
           
