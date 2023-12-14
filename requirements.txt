@@ -1,6 +1,6 @@
 numpy==1.16.1 
 seaborn==0.11.2 
-pandas==2.1.3
+pandas==1.1.5
 arboreto==0.1.5 
 scipy==1.5.4 
 networkx==2.5.1
