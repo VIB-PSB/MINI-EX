@@ -340,17 +340,18 @@ process make_std_ranking_dataframe {
 
 
 process make_borda {
-    publishDir regulonsDir, mode: 'copy', pattern: '*.xlsx'
+    publishDir regulonsDir, mode: 'copy', pattern: '*.{xlsx,tsv}'
     
     input:
     tuple val(datasetId), path(regulonsDataframe), val(ref)
 
     output:
     tuple val("${datasetId}"), path("${datasetId}_rankedRegulons.xlsx"), emit: processOut
+    tuple val("${datasetId}"), path("${datasetId}_rankedRegulons.tsv")
     tuple val("${datasetId}"), path("${datasetId}_bordaProcessLog.log"), emit: processLog
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeBorda.py" "$regulonsDataframe" "${datasetId}_rankedRegulons.xlsx" "$ref" > "${datasetId}_bordaProcessLog.log"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeBorda.py" "$regulonsDataframe" "${datasetId}_rankedRegulons" "$ref" > "${datasetId}_bordaProcessLog.log"
     cat "${datasetId}_bordaProcessLog.log"
     """
 }
