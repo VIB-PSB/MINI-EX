@@ -96,10 +96,10 @@ process run_grnboost {
     tuple val(datasetId), path(matrix)
     
     output:
-    tuple val("${datasetId}"), path("${datasetId}_grnboost2.txt")
+    tuple val("${datasetId}"), path("${datasetId}_grnboost2.tsv")
 
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_grnboostMultiprocess.py" $tfList "$matrix" "${task.cpus}" "${datasetId}_grnboost2.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_grnboostMultiprocess.py" $tfList "$matrix" "${task.cpus}" "${datasetId}_grnboost2.tsv"
     """
 }
 
@@ -210,10 +210,10 @@ process filter_expression {
     tuple val(datasetId), path(expressionMatrix), path(cellClusters), path(regulons)
 
     output:
-    tuple val("${datasetId}"), path("${datasetId}_regulons.txt")
+    tuple val("${datasetId}"), path("${datasetId}_regulons.tsv")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterForTFExp.py" "$expressionMatrix" $infoTf $cellClusters "$expressionFilter" "$regulons" "${datasetId}_regulons.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterForTFExp.py" "$expressionMatrix" $infoTf $cellClusters "$expressionFilter" "$regulons" "${datasetId}_regulons.tsv"
     """
 }
 
@@ -225,10 +225,10 @@ process make_info_file {
     path infoTf
 
     output:
-    tuple val("${datasetId}"), path("${datasetId}_TF_info_file.txt")
+    tuple val("${datasetId}"), path("${datasetId}_TF_info_file.tsv")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeInfoFile.py" "$expressionMatrix" "$grnboostRegulons" "$motifEnrichedRegulons" "$finalRegulons" $infoTf $cellClusters $clusterIdentities "${datasetId}_TF_info_file.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeInfoFile.py" "$expressionMatrix" "$grnboostRegulons" "$motifEnrichedRegulons" "$finalRegulons" $infoTf $cellClusters $clusterIdentities "${datasetId}_TF_info_file.tsv"
     """
 }
 
