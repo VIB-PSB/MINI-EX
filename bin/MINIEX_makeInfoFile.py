@@ -1,5 +1,5 @@
 
-import pandas,collections,seaborn, sys
+import pandas,collections,sys
 
 
 MAT=sys.argv[1]
