@@ -1,69 +1,107 @@
+import pandas,collections,statistics,sys
 
-import pandas,collections,sys
 
-
-MAT=sys.argv[1]
-GRNB_OUT=sys.argv[2]
-MOTENR_OUT=sys.argv[3]
-TFFILT_OUT=sys.argv[4]
+MATRIX=sys.argv[1]
+GRNBOOST_GRN=sys.argv[2]
+MOTIF_ENRICHMENT_GRN=sys.argv[3]
+EXPRESSION_FILTERED_GRN=sys.argv[4]
 TF_FILE=sys.argv[5]
 CELLS=sys.argv[6]
-IDS=sys.argv[7]
+CLUSTER_IDS=sys.argv[7]
 OUT=sys.argv[8]
 
+####################
+### READ IN DATA ###
+####################
 
-matrix=pandas.read_csv(MAT,sep='\t',index_col=0)
+# Read in TFs as set
+tfs_all = set(pandas.read_csv(TF_FILE, header=None, sep='\t')[0])
 
-exp_genes = list(matrix.index)
+# Read in count matrix
+count_matrix = pandas.read_csv(MATRIX, sep='\t', index_col=0)
 
-cell2type={}
-with open(CELLS) as f:
-    for line in f:
-        cell2type[line.strip().split('\t')[0]]=str(line.strip().split('\t')[1])
-cell2type_counter=collections.Counter(list(cell2type.values()))  
+# Read in GRNBoost2 output as TF-to-nb_of_TGs dict
+tf2nb_of_tgs_grnboost = collections.Counter(pandas.read_csv(GRNBOOST_GRN, header=None, sep='\t')[0])
 
-tfs_all=list(pandas.read_csv(TF_FILE, header=None, usecols=[0], sep='\t')[0])
+# Read in motif enrichment output as TF-to-nb_of_TGs dict
+tf2nb_of_tgs_motif_enrichment = collections.Counter(pandas.read_csv(MOTIF_ENRICHMENT_GRN, header=None, sep='\t')[0])
 
-matrix=matrix[matrix.index.isin(tfs_all)]  #subset matrix to only keep TFs
-matrix=matrix.transpose()
-matrix=matrix[matrix.index.isin(cell2type.keys())] #subset matrix to only keep annotated cells
+# Read in expression filtered output (final regulons) as a dict with cluster as key and a TF-to-nb_of_TGs dict as value
+cluster2tf2nb_of_tgs_expression_filtered = dict()
+with open(EXPRESSION_FILTERED_GRN) as file:
+    for line in file:
+        tf, cluster, tgs = line.rstrip().split('\t')
+        if cluster not in cluster2tf2nb_of_tgs_expression_filtered:
+            cluster2tf2nb_of_tgs_expression_filtered[cluster] = dict()
+        # add the TF as key to the dict, with the number of TGs (as nb of comma's + 1) as value
+        cluster2tf2nb_of_tgs_expression_filtered[cluster][tf] = tgs.count(',') + 1
 
-tfs_exp=list(set(exp_genes)& set(tfs_all))
+# Read in cell2cluster info
+cell_cluster_df = pandas.read_csv(CELLS, sep='\t', header=None, names=["cell_id", "cluster", "tissue"], usecols=["cell_id", "cluster"], index_col="cell_id", dtype={"cluster":"str"})
 
-tfs_grnb=list(set(pandas.read_csv(GRNB_OUT, header=None, usecols=[0], sep='\t')[0]))
+# Read in cluster (number) and tissue identity and merge into one string (e.g. "xylem-28")
+cluster_ids_df = pandas.read_csv(CLUSTER_IDS, sep='\t', header=None, names=["cluster_id", "tissue"], dtype={"cluster_id":"str", "tissue":"str"})
+cluster_ids_df["merged_cluster_name"] = cluster_ids_df['tissue'].astype(str) + '-' + cluster_ids_df.index.astype(str)
+cluster_ids_df.set_index("cluster_id", inplace=True)
 
-tfs_enrich=list(set(pandas.read_csv(MOTENR_OUT, header=None, usecols=[0], sep='\t')[0]))
+################################
+### CREATE FILTERING INFO DF ###
+################################
 
-tfs_filt=list(set(pandas.read_csv(TFFILT_OUT, header=None, usecols=[0], sep='\t')[0]))
+# Get all expressed TFs
+tfs_expressed = set(count_matrix.index) & tfs_all
 
-df_info=pandas.DataFrame(0,index=sorted(tfs_all),columns=['isTF_expressed','isTF_expressionRegulons','isTF_TFBSRegulons','isTF_finalRegulons'])
-for tf in tfs_all:
-    if tf in tfs_exp:
-        df_info['isTF_expressed'][tf]=1
-    if tf in tfs_grnb:
-        df_info['isTF_expressionRegulons'][tf]=1
-    if tf in tfs_enrich:
-        df_info['isTF_TFBSRegulons'][tf]=1
-    if tf in tfs_filt:
-        df_info['isTF_finalRegulons'][tf]=1
+# Get all TFs of the final expression filtered regulons
+tfs_expression_filtered = set().union(*([set(tf2nb.keys()) for tf2nb in cluster2tf2nb_of_tgs_expression_filtered.values()]))
 
-identities={}
-with open(IDS) as f:
-    for line in f:
-        spl=line.rstrip().rsplit('\t')
-        identities[str(spl[0])]=spl[1]
-        
-columns=[identities[i]+'-'+i for i in cell2type_counter.keys()]        
-df_perc=pandas.DataFrame(0.0,index=tfs_exp,columns=sorted(columns))
+# Make df with info on which TFs are kept at each filtering step
+# Start with a 0-filled df
+filtering_steps = ['isTF_expressed','isTF_expressionRegulons','isTF_TFBSRegulons','isTF_finalRegulons']
+filtering_info_df = pandas.DataFrame(0, index=sorted(tfs_all), columns=filtering_steps)
 
-    
-for tf in tfs_exp:
-    cell_tot = collections.Counter([cell2type[i] for i in matrix[matrix[tf]>1].index.tolist() ]) #in how many cells the TF is exp
-    temp=[]
-    for ct in cell_tot:
-        percent=round((cell_tot[ct]/cell2type_counter[ct])*100,1)
-        df_perc[identities[ct]+'-'+ct][tf]=percent
+# Fill the df with 1's if the TF is not filtered out at this step
+for tf in filtering_info_df.index:
+    if tf in tfs_expressed:
+        filtering_info_df.loc[tf,'isTF_expressed'] = 1
+    if tf in tf2nb_of_tgs_grnboost.keys():
+        filtering_info_df.loc[tf,'isTF_expressionRegulons'] = 1
+    if tf in tf2nb_of_tgs_motif_enrichment.keys():
+        filtering_info_df.loc[tf,'isTF_TFBSRegulons'] = 1
+    if tf in tfs_expression_filtered:
+        filtering_info_df.loc[tf,'isTF_finalRegulons'] = 1
 
-        
-df_all=df_info.join(df_perc)
-df_all.to_csv(OUT,sep='\t')
+#################################
+### CREATE EXPRESSION INFO DF ###
+#################################
+
+# Subset matrix to only keep TFs and annotated cells
+count_matrix = count_matrix[count_matrix.index.isin(tfs_all)]  
+count_matrix = count_matrix.transpose()
+count_matrix = count_matrix[count_matrix.index.isin(cell_cluster_df.index)]
+
+# Get a dict with cluster ID as keys and number of cells as values
+cluster2nb_of_cells = collections.Counter(cell_cluster_df.cluster)
+
+# Start with a 0-filled df 
+expression_info_df = pandas.DataFrame(0.0, index=sorted(tfs_expressed), columns=sorted(cluster_ids_df["merged_cluster_name"]))
+
+for tf in tfs_expressed:
+    # Make a dict with cluster ID as keys and number of cells expressing the TF as values
+    cells_expressing_tf = count_matrix[count_matrix[tf] > 1].index
+    cluster2nb_of_cells_with_tf = collections.Counter(cell_cluster_df.loc[cells_expressing_tf].cluster)
+
+    # For each cluster, calculate the percentage of cells expressing the TF
+    for cluster, nb_of_cells_with_tf in cluster2nb_of_cells_with_tf.items():
+        percentage = round((nb_of_cells_with_tf / cluster2nb_of_cells[cluster]) * 100, 1)
+        # Add the percentage to the expression info df
+        expression_info_df.loc[tf, cluster_ids_df.loc[cluster, "merged_cluster_name"]] = percentage
+
+################################
+### COMBINE AND WRITE OUTPUT ###
+################################
+
+# Add the expression info to the filtering info df
+complete_info_df = filtering_info_df.join(expression_info_df)
+# Write as output file
+complete_info_df.to_csv(OUT, sep='\t')
+
