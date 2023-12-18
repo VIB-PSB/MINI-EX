@@ -1,4 +1,4 @@
-import pandas,collections,statistics,sys
+import pandas,collections,statistics,natsort,sys
 
 
 MATRIX=sys.argv[1]
@@ -105,3 +105,36 @@ complete_info_df = filtering_info_df.join(expression_info_df)
 # Write as output file
 complete_info_df.to_csv(OUT, sep='\t')
 
+#################################
+### EXTRACT INFO FOR LOG FILE ###
+#################################
+
+# Display the number of initial TFs and the number of expressed TFs
+data = {'Number of TFs': [len(tfs_all), len(tfs_expressed)]}
+print("== INITIAL TF SET ============================================")
+print(pandas.DataFrame(data, index=['All TFs', 'Expressed TFs']))
+print("")
+
+# Get all regulon numbers and regulon sizes for all clusters
+cluster2nb_of_regulons = {cluster: len(tf2nb_of_tgs) for cluster, tf2nb_of_tgs in cluster2tf2nb_of_tgs_expression_filtered.items()}
+cluster2median_size = {cluster: statistics.median(tf2nb_of_tgs.values()) for cluster, tf2nb_of_tgs in cluster2tf2nb_of_tgs_expression_filtered.items()}
+
+# Display the number of TFs and the median number of TGs for each filtering step
+data = {'Number of regulons': [len(tf2nb_of_tgs_grnboost), \
+                                len(tf2nb_of_tgs_motif_enrichment), \
+                                round(statistics.mean(cluster2nb_of_regulons.values()))],
+        'Regulon size (median number of TGs)': [statistics.median(tf2nb_of_tgs_grnboost.values()), \
+                                                statistics.median(tf2nb_of_tgs_motif_enrichment.values()), \
+                                                round(statistics.mean(cluster2median_size.values()))]}
+print("== GRN FILTERING =============================================")
+print(pandas.DataFrame(data, index=['GRN after step 1 (GRNBoost2)', 'GRN after step 2 (motif filtering)', 'GRN after step 3 (expression filtering)']))
+print("")
+print("For the statistics of the final GRN (after step 3) above, a mean over all clusters is shown.")
+print("")
+print("More detaled numbers are given below:")
+print("")
+clusters = natsort.natsorted(cluster2nb_of_regulons.keys())
+data = {'Number of regulons': [cluster2nb_of_regulons[cluster] for cluster in clusters], \
+        'Regulon size (median number of TGs)': [cluster2median_size[cluster] for cluster in clusters]}
+print(pandas.DataFrame(data, index=clusters))
+print("")
