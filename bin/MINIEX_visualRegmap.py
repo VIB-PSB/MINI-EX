@@ -157,7 +157,8 @@ def regMap(regulons, cluster_matrix, clusters, cluster_grouping, group_colors,
     plt.legend(handles=handles, bbox_to_anchor=(0,1), loc='upper left', frameon=False, borderpad=0, borderaxespad=0)
 
     plt.axis('off')
-    plt.savefig('{}/{}_regmap_{}.svg'.format(outdir, dataset_id, rank_threshold), dpi=200, bbox_inches='tight', facecolor='white')
+    plt.savefig(f"{outdir}/{dataset_id}_regmap_{rank_threshold}.svg", dpi=200, bbox_inches='tight', facecolor='white')
+    plt.savefig(f"{outdir}/{dataset_id}_regmap_{rank_threshold}.png", dpi=600, bbox_inches='tight', facecolor='white')
     #plt.show()
 
 

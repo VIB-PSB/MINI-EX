@@ -32,7 +32,8 @@ def run_borda():
     regulons_df = remove_temporary_columns(regulons_df) # remove metric ranks & Borda values => only keep Borda ranks
     regulons_df = regulons_df.sort_values(by="borda_rank")  # sort rows by global Borda ranking
 
-    regulons_df.to_excel(OUTPUT_FILE_NAME, index=None)
+    regulons_df.to_excel(f"{OUTPUT_FILE_NAME}.xlsx", index=None)
+    regulons_df.to_csv(f"{OUTPUT_FILE_NAME}.tsv", sep='\t', index=None)
 
 
 def add_metric_rankings(regulons_df: pd.DataFrame, metrics: Dict):

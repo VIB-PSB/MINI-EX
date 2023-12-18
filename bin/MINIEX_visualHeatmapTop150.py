@@ -68,7 +68,7 @@ def get_y_font_size_for_heatmap(dataframe):
 plot_qval=plot_qval.loc[:, (plot_qval != 0).any(axis=0)] ###remove columns with only zeros
 plot_qval[plot_qval > 20] = 20
 
-ax=seaborn.clustermap(plot_qval,cmap='Blues',xticklabels=True,yticklabels=True,row_colors=col_row,col_cluster=False,row_cluster=True,mask=(plot_qval==0),linewidths = 0.01, linecolor='black')
+ax=seaborn.clustermap(plot_qval,cmap='Blues',xticklabels=True,yticklabels=True,row_colors=col_row,col_cluster=False,row_cluster=True,mask=(plot_qval==0),linewidths=0.01,linecolor='dimgrey')
 ax1 = ax.ax_heatmap
 ax1.set_facecolor("#b3b3b3ff")
 ax.ax_cbar.set_title('-log10(qval)')
@@ -90,7 +90,7 @@ for i in range(len(indiNew)):
 plot_de=plot_de.reindex(indiNewNames)
 plot_de = plot_de[plot_de.columns.intersection(plot_qval.columns)]
 
-bx=seaborn.clustermap(plot_de,cmap='Blues',xticklabels=True,yticklabels=True,row_colors=col_row,col_cluster=False,row_cluster=False,vmax=1,vmin=0,linewidths = 0.01, linecolor='black')
+bx=seaborn.clustermap(plot_de,cmap='Blues',xticklabels=True,yticklabels=True,row_colors=col_row,col_cluster=False,row_cluster=False,vmax=1,vmin=0,linewidths=0.01,linecolor='dimgrey')
 bx.cax.set_visible(False) #remove cbar
 bx1 = bx.ax_heatmap
 heatmap_pos = bx.ax_heatmap.get_position()
@@ -102,5 +102,7 @@ bx.ax_row_colors.tick_params(bottom=False)
 bx.ax_row_colors.set_xticklabels('')
 
 
-ax.savefig(OUT_SPEC)
-bx.savefig(OUT_DE)
+ax.savefig(f"{OUT_SPEC}.svg")
+ax.savefig(f"{OUT_SPEC}.png", dpi=600)
+bx.savefig(f"{OUT_DE}.svg")
+bx.savefig(f"{OUT_DE}.png", dpi=600)

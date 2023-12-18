@@ -96,10 +96,10 @@ process run_grnboost {
     tuple val(datasetId), path(matrix)
     
     output:
-    tuple val("${datasetId}"), path("${datasetId}_grnboost2.txt")
+    tuple val("${datasetId}"), path("${datasetId}_grnboost2.tsv")
 
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_grnboostMultiprocess.py" $tfList "$matrix" "${task.cpus}" "${datasetId}_grnboost2.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_grnboostMultiprocess.py" $tfList "$matrix" "${task.cpus}" "${datasetId}_grnboost2.tsv"
     """
 }
 
@@ -210,10 +210,10 @@ process filter_expression {
     tuple val(datasetId), path(expressionMatrix), path(cellClusters), path(regulons)
 
     output:
-    tuple val("${datasetId}"), path("${datasetId}_regulons.txt")
+    tuple val("${datasetId}"), path("${datasetId}_regulons.tsv")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterForTFExp.py" "$expressionMatrix" $infoTf $cellClusters "$expressionFilter" "$regulons" "${datasetId}_regulons.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterForTFExp.py" "$expressionMatrix" $infoTf $cellClusters "$expressionFilter" "$regulons" "${datasetId}_regulons.tsv"
     """
 }
 
@@ -225,10 +225,10 @@ process make_info_file {
     path tfList
 
     output:
-    tuple val("${datasetId}"), path("${datasetId}_TF_info_file.txt")
+    tuple val("${datasetId}"), path("${datasetId}_TF_info_file.tsv")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeInfoFile.py" "$expressionMatrix" "$grnboostRegulons" "$motifEnrichedRegulons" "$finalRegulons" $tfList $cellClusters $clusterIdentities "${datasetId}_TF_info_file.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeInfoFile.py" "$expressionMatrix" "$grnboostRegulons" "$motifEnrichedRegulons" "$finalRegulons" $tfList $cellClusters $clusterIdentities "${datasetId}_TF_info_file.tsv"
     """
 }
 
@@ -239,10 +239,10 @@ process make_regulon_clustermap {
     tuple val(datasetId), path(clusterIdentities), path(finalRegulons)
 
     output:
-    tuple val("${datasetId}"), path("${datasetId}_clustermap.svg")
+    tuple val("${datasetId}"), path("${datasetId}_clustermap.svg"), path("${datasetId}_clustermap.png")
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_visualClustermap.py" "$clusterIdentities" "$finalRegulons" "${datasetId}_clustermap.svg"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_visualClustermap.py" "$clusterIdentities" "$finalRegulons" "${datasetId}_clustermap"
     """
 }
 
@@ -340,17 +340,18 @@ process make_std_ranking_dataframe {
 
 
 process make_borda {
-    publishDir regulonsDir, mode: 'copy', pattern: '*.xlsx'
+    publishDir regulonsDir, mode: 'copy', pattern: '*.{xlsx,tsv}'
     
     input:
     tuple val(datasetId), path(regulonsDataframe), val(ref)
 
     output:
     tuple val("${datasetId}"), path("${datasetId}_rankedRegulons.xlsx"), emit: processOut
+    tuple val("${datasetId}"), path("${datasetId}_rankedRegulons.tsv")
     tuple val("${datasetId}"), path("${datasetId}_bordaProcessLog.log"), emit: processLog
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeBorda.py" "$regulonsDataframe" "${datasetId}_rankedRegulons.xlsx" "$ref" > "${datasetId}_bordaProcessLog.log"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeBorda.py" "$regulonsDataframe" "${datasetId}_rankedRegulons" "$ref" > "${datasetId}_bordaProcessLog.log"
     cat "${datasetId}_bordaProcessLog.log"
     """
 }
@@ -379,10 +380,10 @@ process make_top_regulons_heatmaps {
     val topRegulons
 
     output:
-    tuple val(datasetId), path("${datasetId}_heatmapSpecificity.svg"), path("${datasetId}_heatmapDEcalls.svg")
+    tuple val(datasetId), path("${datasetId}_heatmapSpecificity.svg"), path("${datasetId}_heatmapSpecificity.png"), path("${datasetId}_heatmapDEcalls.svg"), path("${datasetId}_heatmapDEcalls.png")
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_visualHeatmapTop150.py" "$rankedRegulons" "${datasetId}_heatmapSpecificity.svg" "${datasetId}_heatmapDEcalls.svg" "$topRegulons"  
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_visualHeatmapTop150.py" "$rankedRegulons" "${datasetId}_heatmapSpecificity" "${datasetId}_heatmapDEcalls" "$topRegulons"
     """
 }
 
@@ -395,7 +396,7 @@ process make_regmaps {
     val topRegulons
 
     output:
-    tuple val(datasetId), path("${datasetId}_regmap_*.svg")
+    tuple val(datasetId), path("${datasetId}_regmap_*.svg"), path("${datasetId}_regmap_*.png")
      
     """
     OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_visualRegmap.py" -c $cellClusters \
