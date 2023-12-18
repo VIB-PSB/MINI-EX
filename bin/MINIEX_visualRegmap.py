@@ -244,12 +244,6 @@ if __name__ == '__main__':
                                    .aggregate(lambda v: v.apply(lambda x: x.nlargest(3).mean(), axis=1))
         del cellmatrix
 
-    # alias translation
-    #alias_table = regulons.drop_duplicates('TF').set_index('TF')['alias']
-    #cluster_matrix['gene'] = [alias_table[g] for g in cluster_matrix.index.tolist()]
-    #cluster_matrix = cluster_matrix.set_index('gene')
-    #del alias_table
-
     # define cluster groups
     cluster_grouping = identities.set_index('cluster')['celltype'].to_dict()
 
