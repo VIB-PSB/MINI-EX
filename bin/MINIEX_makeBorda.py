@@ -200,4 +200,5 @@ def get_r50_for_metric(regulons_df: pd.DataFrame, metric_name: str):
 
 print("== BORDA RANKING =============================================")
 run_borda()
+print("")
 print("==============================================================")

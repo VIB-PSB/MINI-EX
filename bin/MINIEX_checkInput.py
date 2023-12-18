@@ -167,9 +167,11 @@ for data_set in data_sets:
 
 
 # if the process is here, that means that all the tests passed, otherwise an exception is raized and the process is interrupted
+print("")
 print("== INPUT VALIDATION ==========================================")
 print("Input files passed validation tests. Retrieved following data:")
 print(stats_df)
+print("")
 print("== INPUT FILES ===============================================")
 print(f"Expression matrix file(s) : {' / '.join(EXPRESSION_MATRIX)}")
 print(f"Seurat markers file(s)    : {' / '.join(MARKERS_OUT)}")
@@ -182,6 +184,7 @@ print(f"Gene aliases file         : {' / '.join(ALIAS)}")
 print(f"Motifs feature file       : {' / '.join(FEATURE_FILE_MOTIFS) if not path_is_dummy(FEATURE_FILE_MOTIFS) else 'NOT PROVIDED'}")
 print(f"GO file                   : {' / '.join(GO_FILE) if not path_is_dummy(GO_FILE) else 'NOT PROVIDED'}")
 print(f"Terms of interest file    : {' / '.join(TERMS_OF_INTEREST) if not path_is_dummy(TERMS_OF_INTEREST) else 'NOT PROVIDED'}")
+print("")
 print("== MINI-EX PARAMETERS ========================================")
 if not path_is_dummy(TERMS_OF_INTEREST):
     terms_of_interest_df = pd.read_csv(TERMS_OF_INTEREST[0], names=['term'])
@@ -191,3 +194,4 @@ print(f"topMarkers                : {TOP_MARKERS}")
 print(f"expressionFilter          : {EXPRESSION_FILTER}")
 print(f"motifFilter               : {MOTIF_FILTER}")
 print(f"topRegulons               : {TOP_REGULONS}")
+print("")
