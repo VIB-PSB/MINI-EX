@@ -226,9 +226,11 @@ process make_info_file {
 
     output:
     tuple val("${datasetId}"), path("${datasetId}_TF_info_file.tsv")
+    tuple val("${datasetId}"), path("${datasetId}_regulonInfoLog.log"), emit: regulonInfoLog
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeInfoFile.py" "$expressionMatrix" "$grnboostRegulons" "$motifEnrichedRegulons" "$finalRegulons" $tfList $cellClusters $clusterIdentities "${datasetId}_TF_info_file.tsv"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeInfoFile.py" "$expressionMatrix" "$grnboostRegulons" "$motifEnrichedRegulons" "$finalRegulons" $tfList $cellClusters $clusterIdentities "${datasetId}_TF_info_file.tsv" > "${datasetId}_regulonInfoLog.log"
+    cat "${datasetId}_regulonInfoLog.log"
     """
 }
 
@@ -414,13 +416,14 @@ process make_log_file {
 
     input:
     path(checkInputLog)
+    tuple val(datasetId), path(regulonInfoLog)
     tuple val(datasetId), path(bordaLog)
 
     output:
     path("${datasetId}_log.txt")
 
     """
-    cat "$checkInputLog" "$bordaLog" > "${datasetId}_log.txt"
+    cat "$checkInputLog" "$regulonInfoLog" "$bordaLog" > "${datasetId}_log.txt"
     echo -n "Pipeline ended on: " >> "${datasetId}_log.txt"
     date >> "${datasetId}_log.txt"
     """
@@ -527,7 +530,7 @@ workflow {
     make_regmaps_input_ch = matrix_ch.join(cluster_ch).join(cluster_ids_ch).join(make_borda.out.processOut)    
     make_regmaps(make_regmaps_input_ch, params.topRegulons)
 
-    make_log_file(check_user_input.out.processLog, make_borda.out.processLog)
+    make_log_file(check_user_input.out.processLog, make_info_file.out.regulonInfoLog, make_borda.out.processLog)
 }
 
 workflow.onComplete {
