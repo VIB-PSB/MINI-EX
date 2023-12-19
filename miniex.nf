@@ -218,7 +218,7 @@ process filter_expression {
 }
 
 process make_info_file {
-    publishDir regulonsDir, mode: 'copy'
+    publishDir regulonsDir, mode: 'copy', pattern: '*.tsv'
 
     input:
     tuple val(datasetId), path(expressionMatrix), path(grnboostRegulons), path(motifEnrichedRegulons), path(finalRegulons), path(cellClusters), path(clusterIdentities)
@@ -416,8 +416,7 @@ process make_log_file {
 
     input:
     path(checkInputLog)
-    tuple val(datasetId), path(regulonInfoLog)
-    tuple val(datasetId), path(bordaLog)
+    tuple val(datasetId), path(regulonInfoLog), path(bordaLog)
 
     output:
     path("${datasetId}_log.txt")
@@ -530,7 +529,7 @@ workflow {
     make_regmaps_input_ch = matrix_ch.join(cluster_ch).join(cluster_ids_ch).join(make_borda.out.processOut)    
     make_regmaps(make_regmaps_input_ch, params.topRegulons)
 
-    make_log_file(check_user_input.out.processLog, make_info_file.out.regulonInfoLog, make_borda.out.processLog)
+    make_log_file(check_user_input.out.processLog, make_info_file.out.regulonInfoLog.join(make_borda.out.processLog))
 }
 
 workflow.onComplete {
