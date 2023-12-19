@@ -226,11 +226,10 @@ process make_info_file {
 
     output:
     tuple val("${datasetId}"), path("${datasetId}_TF_info_file.tsv")
-    tuple val("${datasetId}"), path("${datasetId}_regulonInfoLog.log"), emit: regulonInfoLog
+    tuple val("${datasetId}"), path("${datasetId}_regulonInfoLog.log"), emit: processLog
     
     """
     OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeInfoFile.py" "$expressionMatrix" "$grnboostRegulons" "$motifEnrichedRegulons" "$finalRegulons" $tfList $cellClusters $clusterIdentities "${datasetId}_TF_info_file.tsv" > "${datasetId}_regulonInfoLog.log"
-    cat "${datasetId}_regulonInfoLog.log"
     """
 }
 
@@ -354,7 +353,6 @@ process make_borda {
      
     """
     OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeBorda.py" "$regulonsDataframe" "${datasetId}_rankedRegulons" "$ref" > "${datasetId}_bordaProcessLog.log"
-    cat "${datasetId}_bordaProcessLog.log"
     """
 }
 
@@ -529,7 +527,7 @@ workflow {
     make_regmaps_input_ch = matrix_ch.join(cluster_ch).join(cluster_ids_ch).join(make_borda.out.processOut)    
     make_regmaps(make_regmaps_input_ch, params.topRegulons)
 
-    make_log_file(check_user_input.out.processLog, make_info_file.out.regulonInfoLog.join(make_borda.out.processLog))
+    make_log_file(check_user_input.out.processLog, make_info_file.out.processLog.join(make_borda.out.processLog))
 }
 
 workflow.onComplete {
