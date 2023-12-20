@@ -47,10 +47,10 @@ As the pipeline can be run in parallel for multiple datasets all the inputs can 
 All input files should have specific extensions and names as shown in [here](docs/data_preparation.md).  
 
 ## Outputs
-* **regulons_output folder** containing a tab-separated files with the inferred regulons, an edge table, info per TF, and an excel file with the ranked regulons and relative metadata
+* **regulons folder** containing a tab-separated files with the inferred regulons, an edge table, info per TF, and an excel file with the ranked regulons and relative metadata
 * **figures folder** containing a clustermap reporting the distribution of the different regulons across the cell clusters, and two heatmaps showing the cell cluster specificity and DE calls of the top 150 regulons, respectively. 
-* **GOenrichment_output folder** containing a tab-separated file with GO enrichment for the different regulons with relative statistics
-* **GRNBoost2_output folder** containing a TF-TG tab-separated file resulted from the GRNBoost2 run
+* **go_enrichment folder** containing a tab-separated file with GO enrichment for the different regulons with relative statistics
+* **grnboost2 folder** containing a TF-TG tab-separated file resulted from the GRNBoost2 run
 * **Log file** containing statistics on the provided dataset(s) and information on intermediary results in the workflow
 
 ##   
