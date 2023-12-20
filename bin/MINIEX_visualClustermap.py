@@ -88,7 +88,11 @@ dendro_box.y1 = dendro_box.y0+diff_dendro
 ax.ax_col_dendrogram.set_position(dendro_box)
 ax.ax_col_dendrogram.set_position([dendro_box.x0, dendro_box.y0, dendro_box.width*0.25, dendro_box.height])
 
+# Shrink color bar
+x0, y0, _w, _h = ax.cbar_pos
+ax.ax_cbar.set_position([x0 + 0.045, y0 + 0.1, ax.ax_row_dendrogram.get_position().width / 7, ax.ax_col_dendrogram.get_position().height / 1.3])
 
+# Save figure
 ax.savefig(f"{OUT_FIG}.svg")
 ax.savefig(f"{OUT_FIG}.png", dpi=600)
 
