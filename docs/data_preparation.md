@@ -92,7 +92,7 @@ The **clustersToIdentities** points to a tab-separated file containing the cell 
 
 The **TF_list** is a list of TFs which is used in the GRNBoost2 run.  
   
-The [TF_list.txt](/example/INPUTS/TF_list.tsv) contained in the [INPUTS](/example/INPUTS) folder contains 1879 TFs collected from [PlantRegMap/PlantTFDB v5.0](http://planttfdb.gao-lab.org/), [PlnTFDB v3.0](http://plntfdb.bio.uni-potsdam.de/v3.0/) and [TF2Network](http://bioinformatics.psb.ugent.be/webtools/TF2Network/) for which either direct TF-motif information was available or motif information related to the TF family.
+The [TF_list.tsv](/example/INPUTS/TF_list.tsv) contained in the [INPUTS](/example/INPUTS) folder contains 1879 TFs collected from [PlantRegMap/PlantTFDB v5.0](http://planttfdb.gao-lab.org/), [PlnTFDB v3.0](http://plntfdb.bio.uni-potsdam.de/v3.0/) and [TF2Network](http://bioinformatics.psb.ugent.be/webtools/TF2Network/) for which either direct TF-motif information was available or motif information related to the TF family.
 
 ```
 AT1G18790
