@@ -24,7 +24,7 @@ col_row=[]
 def simplify_cluster_name(cluster_name):
     tissue, cluster = cluster_name.split("_Cluster_")
     if tissue == cluster:
-        return cluster
+        return f"Cluster_{cluster}"
     else:
         return cluster_name.replace("_Cluster_", "-")
 df["cluster"]=df["cluster"].astype(str).apply(lambda x: simplify_cluster_name(x))
@@ -47,10 +47,10 @@ for index,row in df.iterrows():
             col_row.append([row['alias'],'orange'])     
         else:
             col_row.append([row['alias'],'gray']) 
-  
-plot_qval=plot_qval.fillna(0.0).sort_index(key=natsort.natsort_keygen(alg=natsort.IGNORECASE))
+
+plot_qval=plot_qval.fillna(0.0).sort_index()
 col_row=pandas.DataFrame(col_row)
-col_row=col_row.drop_duplicates().set_index(0).sort_index(key=natsort.natsort_keygen(alg=natsort.IGNORECASE)) 
+col_row=col_row.drop_duplicates().set_index(0).sort_index()
 
 tf2alias=pandas.Series(df.alias.values,index=df.TF).to_dict()
 
