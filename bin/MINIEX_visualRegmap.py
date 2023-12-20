@@ -1,3 +1,4 @@
+import natsort
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -6,8 +7,6 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import matplotlib.patches as mpatches
 import matplotlib.collections as mcoll
-
-from natsort import natsort_keygen
 
 def getCmap(c, n=1000):
 
@@ -207,9 +206,8 @@ if __name__ == '__main__':
     if identities.shape[1] == 2:
         identities.columns = ['cluster','celltype']
         identities['celltype'] = identities['celltype'].astype(str)
-        identities['celltype_lower'] = identities.celltype.str.lower()
-        identities = identities.sort_values(['celltype_lower', 'cluster'], key=natsort_keygen())\
-                               .drop('celltype_lower', axis=1)
+        identities = identities.loc[natsort.natsorted(identities.index, alg=natsort.IGNORECASE,
+                                                      key=lambda x: identities.loc[x, ['celltype', 'cluster']].to_list())]
         identities['idx'] = list(range(1,len(identities)+1))
     else:
         identities.columns = ['cluster','celltype','idx']
