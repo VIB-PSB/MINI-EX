@@ -17,13 +17,13 @@ The paths to the folders containing the different input files need to be stated 
 params {
 
     // INPUT FILES DERIVED FROM SINGLE-CELL DATASETS //
-    expressionMatrix = "$baseDir/example/INPUTS/*_matrix.txt"
-    markersOut = "$baseDir/example/INPUTS/*_allMarkers.txt"
-    cellsToClusters = "$baseDir/example/INPUTS/*_cells2clusters.txt"
-    clustersToIdentities = "$baseDir/example/INPUTS/*_identities.txt"
+    expressionMatrix = "$baseDir/example/INPUTS/*_matrix.tsv"
+    markersOut = "$baseDir/example/INPUTS/*_allMarkers.tsv"
+    cellsToClusters = "$baseDir/example/INPUTS/*_cells2clusters.tsv"
+    clustersToIdentities = "$baseDir/example/INPUTS/*_identities.tsv"
     
     // CACHED FILES // (allows to reuse the initial coexpression network)
-    grnboostOut = "/$baseDir/example/OUTPUTS/GRNBoost2_output/*_grnboost2.txt" 
+    grnboostOut = "/$baseDir/example/OUTPUTS/grnboost2/*_grnboost2.tsv" 
     // --> to infer coexpression network de novo, replace the line above by: grnboostOut = null
 ```
 
@@ -31,7 +31,7 @@ The **expressionMatrix** points to the gene-to-cell count matrix and can be extr
 
 ```
 expression.matrix <- as.data.frame(as.matrix(GetAssayData(object = SEURAT_OBJECT, assay = "RNA", slot = "counts")))
-write.table(expression.matrix, "./dataset1_matrix.txt", sep='\t', quote = FALSE)
+write.table(expression.matrix, "./dataset1_matrix.tsv", sep='\t', quote = FALSE)
 ```
 
 ```
@@ -46,7 +46,7 @@ The **markersOut** points to the output obtained by Seurat [FindAllMarkers](http
 
 ```
 ath_markers_all <- FindAllMarkers(SEURAT_OBJECT, only.pos=TRUE)
-write.table(ath_markers_all, "./dataset1_allMarkers.txt", sep = "\t", quote=FALSE)
+write.table(ath_markers_all, "./dataset1_allMarkers.tsv", sep = "\t", quote=FALSE)
 ```
 
 ```
@@ -66,7 +66,7 @@ The **cellsToClusters** points to a tab-separated file containing the cluster an
 
 ```
 object <-FetchData(SEURAT_OBJECT, vars = 'ident')
-write.table(object,"./dataset1_cell2cluster.txt", sep='\t',quote=FALSE,col.names = FALSE) 
+write.table(object,"./dataset1_cell2cluster.tsv", sep='\t',quote=FALSE,col.names = FALSE) 
 ```
 
 ```
@@ -92,7 +92,7 @@ The **clustersToIdentities** points to a tab-separated file containing the cell 
 
 The **TF_list** is a list of TFs which is used in the GRNBoost2 run.  
   
-The [TF_list.txt](/example/INPUTS/TF_list.txt) contained in the [INPUTS](/example/INPUTS) folder contains 1879 TFs collected from [PlantRegMap/PlantTFDB v5.0](http://planttfdb.gao-lab.org/), [PlnTFDB v3.0](http://plntfdb.bio.uni-potsdam.de/v3.0/) and [TF2Network](http://bioinformatics.psb.ugent.be/webtools/TF2Network/) for which either direct TF-motif information was available or motif information related to the TF family.
+The [TF_list.txt](/example/INPUTS/TF_list.tsv) contained in the [INPUTS](/example/INPUTS) folder contains 1879 TFs collected from [PlantRegMap/PlantTFDB v5.0](http://planttfdb.gao-lab.org/), [PlnTFDB v3.0](http://plntfdb.bio.uni-potsdam.de/v3.0/) and [TF2Network](http://bioinformatics.psb.ugent.be/webtools/TF2Network/) for which either direct TF-motif information was available or motif information related to the TF family.
 
 ```
 AT1G18790
