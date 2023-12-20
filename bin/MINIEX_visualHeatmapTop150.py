@@ -24,7 +24,7 @@ col_row=[]
 def simplify_cluster_name(cluster_name):
     tissue, cluster = cluster_name.split("_Cluster_")
     if tissue == cluster:
-        return f"Cluster_{cluster}"
+        return f"Cluster-{cluster}"
     else:
         return cluster_name.replace("_Cluster_", "-")
 df["cluster"]=df["cluster"].astype(str).apply(lambda x: simplify_cluster_name(x))
@@ -86,7 +86,7 @@ ax1 = ax.ax_heatmap
 ax1.set_facecolor("#b3b3b3ff")
 ax.ax_cbar.set_title('-log10(qval)')
 heatmap_pos = ax.ax_heatmap.get_position()
-ax.ax_heatmap.set_position([heatmap_pos.x0, heatmap_pos.y0, heatmap_pos.width*0.5, heatmap_pos.height])
+ax.ax_heatmap.set_position([heatmap_pos.x0, heatmap_pos.y0, heatmap_pos.width*0.7, heatmap_pos.height])
 fontsize = min([get_x_font_size_for_heatmap(plot_qval),get_y_font_size_for_heatmap(plot_qval)]) # enforce the same x and y font size
 ax1.set_xticklabels(ax1.get_xticklabels(), rotation=90, horizontalalignment='center', fontsize=fontsize)
 ax1.set_yticklabels(ax1.get_yticklabels(), fontsize=fontsize)
@@ -98,8 +98,7 @@ ax.ax_cbar.set_position([x0 + 0.045, y0 + 0.04, ax.ax_row_dendrogram.get_positio
 # Add legend to plots
 lut = {"Associated with GO term of interest": "#008000ff", "Associated with any other GO term": "#ffa500ff", "No GO info known": "#808080ff"}
 handles = [Patch(facecolor=lut[name], linewidth=0.5, edgecolor="#303030ff") for name in lut]
-ax.ax_col_dendrogram.legend(handles, lut, title='Legend',
-           bbox_to_anchor=(1, 1), bbox_transform=gcf().transFigure, loc='upper right')
+ax.ax_heatmap.legend(handles, lut, title='Legend', bbox_to_anchor=(0.27, 0.97), bbox_transform=gcf().transFigure, loc='upper left')
 
 
 ###get the order from the dendogram
@@ -116,7 +115,7 @@ bx=seaborn.clustermap(plot_de,cmap='Blues',xticklabels=True,yticklabels=True,row
 bx.cax.set_visible(False) #remove cbar
 bx1 = bx.ax_heatmap
 heatmap_pos = bx.ax_heatmap.get_position()
-bx.ax_heatmap.set_position([heatmap_pos.x0, heatmap_pos.y0, heatmap_pos.width*0.5, heatmap_pos.height])
+bx.ax_heatmap.set_position([heatmap_pos.x0, heatmap_pos.y0, heatmap_pos.width*0.7, heatmap_pos.height])
 fontsize = min([get_x_font_size_for_heatmap(plot_de),get_y_font_size_for_heatmap(plot_de)]) # enforce the same x and y font size
 bx1.set_xticklabels(bx1.get_xticklabels(), rotation=90, horizontalalignment='center', fontsize=fontsize)
 bx1.set_yticklabels(ax1.get_yticklabels(), fontsize=fontsize)
@@ -128,9 +127,7 @@ bx.ax_row_colors.set_xticklabels('')
 lut = {"Associated with GO term of interest": "#008000ff", "Associated with any other GO term": "#ffa500ff", "No GO info known": "#808080ff",  \
         "Differentially expressed (DE) TF": "#08306bff", "Expressed (in 10% of cells) TF, not DE": "#f7fbffff", "Not DE, not expressed": "#b3b3b3ff"}
 handles = [Patch(facecolor=lut[name], linewidth=0.5, edgecolor="#303030ff") for name in lut]
-bx.ax_col_dendrogram.legend(handles, lut, title='Legend',
-           bbox_to_anchor=(1, 1), bbox_transform=gcf().transFigure, loc='upper right')
-
+bx.ax_heatmap.legend(handles, lut, title='Legend', bbox_to_anchor=(0.3, 0.98), bbox_transform=gcf().transFigure, loc='upper left')
 
 ax.savefig(f"{OUT_SPEC}.svg")
 ax.savefig(f"{OUT_SPEC}.png", dpi=600)
