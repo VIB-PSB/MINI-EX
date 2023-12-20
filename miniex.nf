@@ -439,7 +439,7 @@ workflow {
         params.doMotifAnalysis == true? Channel.fromPath(params.featureFileMotifs, checkIfExists:true) : "/dummy_path_motif",
         Channel.fromPath(params.infoTf, checkIfExists:true).collect(),
         params.goFile != null ? Channel.fromPath(params.goFile, checkIfExists:true).collect() : "/dummy_path_go",
-        Channel.fromPath(params.geneAliases, checkIfExists:true).collect(),
+        params.geneAliases != null ? Channel.fromPath(params.geneAliases, checkIfExists:true).collect() : "/dummy_gene_aliases",
         params.doMotifAnalysis,
         params.topMarkers,
         params.expressionFilter,
@@ -500,19 +500,24 @@ workflow {
         run_enricher_go(scriptEnricher,make_go_enrichment_files_combined_ch)   
     }
 
-    if ( params.goFile != null && params.termsOfInterest != null ){        
+    if ( params.geneAliases == null )
+        gene_aliases_ch = Channel.fromPath("$baseDir/data/.dummy_empty_file.txt")
+    else
+        gene_aliases_ch = Channel.fromPath(params.geneAliases)
 
+    if ( params.goFile != null && params.termsOfInterest != null ){        
         check_reference(make_go_enrichment_files_input_ch,params.termsOfInterest)
         check_reference_trimmed = check_reference.out.map { n,it -> [ n, it.trim() ] }
     
         rankingRef_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(run_enricher_go.out).join(deg_ch).combine(Channel.fromPath(params.goFile))
-        make_ref_ranking_dataframe(params.geneAliases,params.termsOfInterest,rankingRef_combined_ch)
+        
+        make_ref_ranking_dataframe(gene_aliases_ch,params.termsOfInterest,rankingRef_combined_ch)
     
         borda_input_ch = make_ref_ranking_dataframe.out.join(check_reference_trimmed)
     
     } else {
         rankingStd_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(deg_ch).combine(Channel.value(false))
-        make_std_ranking_dataframe(params.geneAliases,rankingStd_combined_ch)    
+        make_std_ranking_dataframe(gene_aliases_ch,rankingStd_combined_ch)    
         
         borda_input_ch = make_std_ranking_dataframe.out.combine(Channel.value('std'))        
     }
