@@ -81,7 +81,7 @@ TACTCATAGCAATATG-1	10
 ACTGAACAGTTAAGTG-1	20
 ```
 
-The **clustersToIdentities** points to a tab-separated file containing the cell type annotation for each cluster. Optionally, this file can contain a third column which specifies a cluster index. This index is used to indicate the position of a cluster along a known developmental trajectory (see [miniexExample_identities_with_idx.txt](/example/INPUTS/miniexExample_identities_with_idx.txt) in the [INPUTS](/example/INPUTS) folder), and translates to the column index in the regulator heatmaps ([example](/example/OUTPUTS/figures/miniexExample_regmap_8.svg)). If this column is not specified, an automatic index is created by sorting the cluster identities alphabetically.
+The **clustersToIdentities** points to a tab-separated file containing the cell type annotation for each cluster. Optionally, this file can contain a third column which specifies a cluster index. This index is used to indicate the position of a cluster along a known developmental trajectory (see [miniexExample_identities_with_idx.tsv](/example/INPUTS/miniexExample_identities_with_idx.tsv) in the [INPUTS](/example/INPUTS) folder), and translates to the column index in the regulator heatmaps ([example](/example/OUTPUTS/figures/miniexExample_regmap_8.svg)). If this column is not specified, an automatic index is created by sorting the cluster identities alphabetically.
 
 ```
 13	cortex
