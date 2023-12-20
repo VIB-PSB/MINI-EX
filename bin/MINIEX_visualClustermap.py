@@ -28,7 +28,7 @@ dic=pandas.DataFrame(dic).fillna(0)
 def simplify_cluster_name(cluster_name):
     tissue, cluster = cluster_name.split("_Cluster_")
     if tissue == cluster:
-        return f"Cluster_{cluster}"
+        return f"Cluster-{cluster}"
     else:
         return cluster_name.replace("_Cluster_", "-")
 dic.rename(columns={column:simplify_cluster_name(column) for column in dic.columns}, inplace=True) 
@@ -42,7 +42,10 @@ col_dic=dict(zip(celltypes, colors))
 
 col_colors=[]
 for c in dic.columns:
-    col_colors.append([c,col_dic[c.rsplit('-')[0]]])
+    # if no annotation is provided, cluster names are in form "Cluster-X" -> we want the X
+    # if annotation is provided, cluster names are in form "Tissue-X" -> we want the Tissue
+    tissue = c.rsplit('-')[1] if c.startswith("Cluster") else c.rsplit('-')[0]
+    col_colors.append([c,col_dic[tissue]])
 col_colors=pandas.DataFrame(col_colors,columns=['cluster','cell type'])
 
 col_colors=col_colors.set_index('cluster')
