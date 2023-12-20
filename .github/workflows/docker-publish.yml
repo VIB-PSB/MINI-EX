@@ -10,10 +10,17 @@ jobs:
     steps:
       - name: Check out the repo
         uses: actions/checkout@v2
-      - name: Push to Docker Hub
-        uses: docker/build-push-action@v1
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-          repository: vibpsb/mini-ex
-          tags: latest
+      - name: Push to Docker Hub
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: |
+            vibpsb/mini-ex:latest
+            vibpsb/mini-ex:v2.2
+            vibpsb/mini-ex:dev
+          

@@ -29,18 +29,19 @@ def enricher_parser(infile,outfile,extended):
             pass
         else:
             spl=line.strip().split("\t")
+            target_genes = spl[9].rsplit(",")
             if extended == 'TF_motifs':
                 if spl[0] in mot2tf[spl[1]]:
-                    for g in spl[8].rsplit(","):
+                    for g in target_genes:
                         df.append([spl[0],g])
             elif extended == 'TF-F_motifs':
                 if spl[0] in tf2fam and tf2fam[spl[0]] in mot2fam[spl[1]]:
                     if tf2fam[spl[0]] != 'Unknown':
-                        for g in spl[8].rsplit(","):
+                        for g in target_genes:
                             df.append([spl[0],g])  
                     else:
                         if spl[0] in mot2tf[spl[1]]: #do not extend to fams when the fam is "Unknown"
-                            for g in spl[8].rsplit(","):
+                            for g in target_genes:
                                 df.append([spl[0],g]) 
 
 

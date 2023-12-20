@@ -15,17 +15,16 @@ The paths to the folders containing the different input files need to be stated 
 **Note:** if GRNBoost2 was previously run separately, its output can be specified in the configuration file and the corresponding MINI-EX's step will be skipped.   
 ```
 params {
-	expressionMatrix = "$baseDir/example/INPUTS/*_matrix.txt"
-	markersOut = "$baseDir/example/INPUTS/*_allMarkers.txt"
-	cell2clusters = "$baseDir/example/INPUTS/*_cells2clusters.txt"
-	cluster2ident = "$baseDir/example/INPUTS/*_identities.txt"
-	TF_list = "$baseDir/example/INPUTS/TF_list.txt"
-	termsOfInterest = "$baseDir/example/INPUTS/GOsIwant.txt"
-//	termsOfInterest = null
 
-	grnboostOut = null
-//	grnboostOut = "/$baseDir/example/OUTPUTS/GRNBoost2_output/*_grnboost2.txt"
-
+    // INPUT FILES DERIVED FROM SINGLE-CELL DATASETS //
+    expressionMatrix = "$baseDir/example/INPUTS/*_matrix.txt"
+    markersOut = "$baseDir/example/INPUTS/*_allMarkers.txt"
+    cellsToClusters = "$baseDir/example/INPUTS/*_cells2clusters.txt"
+    clustersToIdentities = "$baseDir/example/INPUTS/*_identities.txt"
+    
+    // CACHED FILES // (allows to reuse the initial coexpression network)
+    grnboostOut = "/$baseDir/example/OUTPUTS/GRNBoost2_output/*_grnboost2.txt" 
+    // --> to infer coexpression network de novo, replace the line above by: grnboostOut = null
 ```
 
 The **expressionMatrix** points to the gene-to-cell count matrix and can be extracted from the [Seurat](https://satijalab.org/seurat/) object using the command below:
@@ -63,7 +62,7 @@ AT1G08190	6.19518803968411e-12	0.323064627623938	0.072	0.255	1.41070626851647e-0
 AT5G15470	6.73638999455266e-12	0.323992721599046	0.054	0.223	1.53394336565959e-07	14	AT5G15470
 ```
 
-The **cell2clusters** points to a tab-separated file containing the cluster annotation for each cell in the expression matrix. It can be obtained using the [Seurat](https://satijalab.org/seurat/) command [FetchData](https://www.rdocumentation.org/packages/Seurat/versions/3.1.2/topics/FetchData) as shown below:  
+The **cellsToClusters** points to a tab-separated file containing the cluster annotation for each cell in the expression matrix. It can be obtained using the [Seurat](https://satijalab.org/seurat/) command [FetchData](https://www.rdocumentation.org/packages/Seurat/versions/3.1.2/topics/FetchData) as shown below:  
 
 ```
 object <-FetchData(SEURAT_OBJECT, vars = 'ident')
@@ -82,7 +81,7 @@ TACTCATAGCAATATG-1	10
 ACTGAACAGTTAAGTG-1	20
 ```
 
-The **cluster2ident** points to a tab-separated file containing the cell type annotation for each cluster. Optionally, this file can contain a third column which specifies a cluster index. This index is used to indicate the position of a cluster along a known developmental trajectory (see [miniexExample_identities_with_idx.txt](/example/INPUTS/miniexExample_identities_with_idx.txt) in the [INPUTS](/example/INPUTS) folder), and translates to the column index in the regulator heatmaps ([example](/example/OUTPUTS/figures/miniexExample_regmap_8.svg)). If this column is not specified, an automatic index is created by sorting the cluster identities alphabetically.
+The **clustersToIdentities** points to a tab-separated file containing the cell type annotation for each cluster. Optionally, this file can contain a third column which specifies a cluster index. This index is used to indicate the position of a cluster along a known developmental trajectory (see [miniexExample_identities_with_idx.txt](/example/INPUTS/miniexExample_identities_with_idx.txt) in the [INPUTS](/example/INPUTS) folder), and translates to the column index in the regulator heatmaps ([example](/example/OUTPUTS/figures/miniexExample_regmap_8.svg)). If this column is not specified, an automatic index is created by sorting the cluster identities alphabetically.
 
 ```
 13	cortex

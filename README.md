@@ -33,7 +33,7 @@ else:
 
 ## Detailed pipeline overview
 
-![MINI-EX_scheme](docs/MINI-EX_scheme.png)
+![MINI-EX_scheme](docs/MINI-EX_schema.png)
 
 ## Inputs
 * Gene-to-cell count matrix (genes as rows and cells as columns)
@@ -50,7 +50,8 @@ All input files should have specific extensions and names as shown in [here](doc
 * **regulons_output folder** containing a tab-separated files with the inferred regulons, an edge table, info per TF, and an excel file with the ranked regulons and relative metadata
 * **figures folder** containing a clustermap reporting the distribution of the different regulons across the cell clusters, and two heatmaps showing the cell cluster specificity and DE calls of the top 150 regulons, respectively. 
 * **GOenrichment_output folder** containing a tab-separated file with GO enrichment for the different regulons with relative statistics
-* **GRNBoost2_output folder** containing a TF-TG tab-separated file resulted from the GRNBoost2 run   
+* **GRNBoost2_output folder** containing a TF-TG tab-separated file resulted from the GRNBoost2 run
+* **Log file** containing statistics on the provided dataset(s) and information on intermediary results in the workflow
 
 ##   
 A detailed overview on necessary input files and expected output files can be found [here](example/).
