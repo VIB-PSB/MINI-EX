@@ -1,4 +1,4 @@
-import pandas, seaborn, sys
+import pandas,seaborn,sys,natsort
 
 CELLID=sys.argv[1]
 REGULONS=sys.argv[2]
@@ -23,16 +23,26 @@ for ele in dic:
     dic[ele]={k: v for d in dic[ele] for k, v in d.items()}
 
 dic=pandas.DataFrame(dic).fillna(0)
-dic = dic.reindex(sorted(dic.columns), axis=1) #sort columns
+
+# If the tissue name and cluster name are the same, simplify the redundant name
+def simplify_cluster_name(cluster_name):
+    tissue, cluster = cluster_name.split("_Cluster_")
+    if tissue == cluster:
+        return cluster
+    else:
+        return cluster_name.replace("_Cluster_", "-")
+dic.rename(columns={column:simplify_cluster_name(column) for column in dic.columns}, inplace=True) 
+
+dic = dic.reindex(natsort.natsorted(dic.columns, alg=natsort.IGNORECASE), axis=1) #sort columns
 
 pal = seaborn.color_palette('Spectral_r', len(list(set(cellTyp_mtx.values()))))
 colors=pal.as_hex()
-celltypes=sorted(list(set(cellTyp_mtx.values())))
+celltypes=natsort.natsorted(list(set(cellTyp_mtx.values())), alg=natsort.IGNORECASE)
 col_dic=dict(zip(celltypes, colors))
 
 col_colors=[]
 for c in dic.columns:
-    col_colors.append([c,col_dic[c.rsplit('_')[0]]])
+    col_colors.append([c,col_dic[c.rsplit('-')[0]]])
 col_colors=pandas.DataFrame(col_colors,columns=['cluster','cell type'])
 
 col_colors=col_colors.set_index('cluster')
@@ -40,22 +50,12 @@ seaborn.set_style('white')
 
 def get_x_font_size_for_heatmap(dataframe):
     font_size = None
-    if len(dataframe.columns) > 20:
+    if len(dataframe.columns) > 30:
+        font_size = 3
+    elif len(dataframe.columns) > 20:
         font_size = 5
     else:
         font_size = 7
-    return font_size
-
-def get_y_font_size_for_heatmap(dataframe):
-    font_size = None
-    if len(dataframe) > 300:
-        font_size = 5
-    elif len(dataframe) > 100:
-        font_size = 5
-    elif len(dataframe) > 20:
-        font_size = 8
-    else:
-        font_size = 12
     return font_size
 
 ax=seaborn.clustermap(dic,cmap='mako_r',yticklabels=False,xticklabels=True,col_colors=col_colors)
@@ -66,7 +66,9 @@ ax1 = ax.ax_heatmap
 ###reduce size of heatmap and rotate labels
 heatmap_pos = ax.ax_heatmap.get_position()
 ax.ax_heatmap.set_position([heatmap_pos.x0, heatmap_pos.y0, heatmap_pos.width*0.25, heatmap_pos.height])
-ax1.set_xticklabels(ax1.get_xticklabels(), rotation=90, horizontalalignment='right', fontsize=get_x_font_size_for_heatmap(dic))
+labels = ax1.set_xticklabels(ax1.get_xticklabels(), rotation=90, horizontalalignment='center', verticalalignment='top', fontsize=get_x_font_size_for_heatmap(dic))
+for i, label in enumerate(labels):
+    label.set_y(label.get_position()[1] - 0.01) # lower the labels a bit
 
 ###move color box columns down and reduce size
 color_box = ax.ax_col_colors.get_position()
