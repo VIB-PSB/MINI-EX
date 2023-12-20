@@ -31,16 +31,16 @@ The **first block** defines the paths to the single-cell [input files](https://g
 
 ```
     // INPUT FILES DERIVED FROM SINGLE-CELL DATASETS //
-    expressionMatrix = "$baseDir/example/INPUTS/*_matrix.txt"
-    markersOut = "$baseDir/example/INPUTS/*_allMarkers.txt"
-    cellsToClusters = "$baseDir/example/INPUTS/*_cells2clusters.txt"
-    clustersToIdentities = "$baseDir/example/INPUTS/*_identities.txt"
+    expressionMatrix = "$baseDir/example/INPUTS/*_matrix.tsv"
+    markersOut = "$baseDir/example/INPUTS/*_allMarkers.tsv"
+    cellsToClusters = "$baseDir/example/INPUTS/*_cells2clusters.tsv"
+    clustersToIdentities = "$baseDir/example/INPUTS/*_identities.tsv"
 ```
 The **second block** allows to specify the path to a precomputed GRNBoost2 network. By default, this is set to the GRNBoost2 network of the example run. However, when running MINI-EX for the first time on your own data, `grnboostOut` should be set to `null` in order to run GRNBoost2 on your dataset.
 
 ```
     // CACHED FILES // (allows to reuse the initial coexpression network)
-    grnboostOut = "/$baseDir/example/OUTPUTS/GRNBoost2_output/*_grnboost2.txt" 
+    grnboostOut = "/$baseDir/example/OUTPUTS/grnboost2/*_grnboost2.tsv"
     // --> to infer coexpression network de novo, replace the line above by: grnboostOut = null
 ```
 
@@ -58,11 +58,12 @@ Note: all ancestral terms are included and terms associated with more than 30% o
 
 ```	
     // SPECIES SPECIFIC INFORMATION //
-    tfList = "$baseDir/data/ath/ath_TF_list.txt"
-    geneAliases = "$baseDir/data/ath/ath_gene_aliases.txt"
-    infoTf = "$baseDir/data/ath/ath_TF2fam2mot.txt"
+    tfList = "$baseDir/data/ath/ath_TF_list.tsv"
+    geneAliases = "$baseDir/data/ath/ath_gene_aliases.tsv"
+    // --> if gene aliases are not available, replace the line above by: geneAliases = null 
+    infoTf = "$baseDir/data/ath/ath_TF2fam2mot.tsv"
     featureFileMotifs = "$baseDir/data/ath/ath_2021.1_motifMapping.out.gz"
-    goFile = "$baseDir/data/ath/ath_full_BP_expcur_ext_names.txt" 
+    goFile = "$baseDir/data/ath/ath_full_BP_expcur_ext_names.tsv"
     // --> if GO data is not available, replace the line above by: goFile = null 
     //     (when doing so, termsOfInterest should also be set to <null>)
 ```
@@ -83,7 +84,7 @@ The `topMarkers` parameter refers to the number of upregulated genes per cluster
     doMotifAnalysis = true 
     // --> set to <false> if no motif mapping data is available 
     //     [CAUTION: without motif data MINI-EX is less reliable]
-    termsOfInterest = "$baseDir/example/INPUTS/GOsIwant.txt"
+    termsOfInterest = "$baseDir/example/INPUTS/GOsIwant.tsv"
     // --> to use the standard ranking procedure, replace the line above by: termsOfInterest = null
     topMarkers = "700"
     expressionFilter = "10"
