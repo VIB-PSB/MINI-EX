@@ -28,7 +28,7 @@ dic=pandas.DataFrame(dic).fillna(0)
 def simplify_cluster_name(cluster_name):
     tissue, cluster = cluster_name.split("_Cluster_")
     if tissue == cluster:
-        return cluster
+        return f"Cluster_{cluster}"
     else:
         return cluster_name.replace("_Cluster_", "-")
 dic.rename(columns={column:simplify_cluster_name(column) for column in dic.columns}, inplace=True) 
