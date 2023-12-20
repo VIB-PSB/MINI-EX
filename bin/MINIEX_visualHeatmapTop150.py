@@ -92,6 +92,8 @@ ax1.set_xticklabels(ax1.get_xticklabels(), rotation=90, horizontalalignment='cen
 ax1.set_yticklabels(ax1.get_yticklabels(), fontsize=fontsize)
 ax.ax_row_colors.tick_params(bottom=False)
 ax.ax_row_colors.set_xticklabels('')
+x0, y0, _w, _h = ax.cbar_pos
+ax.ax_cbar.set_position([x0 + 0.045, y0 + 0.04, ax.ax_row_dendrogram.get_position().width / 4, ax.ax_col_dendrogram.get_position().height / 1.3])
 
 # Add legend to plots
 lut = {"Associated with GO term of interest": "#008000ff", "Associated with any other GO term": "#ffa500ff", "No GO info known": "#808080ff"}
