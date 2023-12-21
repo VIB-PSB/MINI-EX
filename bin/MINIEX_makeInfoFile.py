@@ -41,7 +41,7 @@ cell_cluster_df = pandas.read_csv(CELLS, sep='\t', header=None, names=["cell_id"
 
 # Read in cluster (number) and tissue identity and merge into one string (e.g. "xylem-28")
 cluster_ids_df = pandas.read_csv(CLUSTER_IDS, sep='\t', header=None, names=["cluster_id", "tissue"], dtype={"cluster_id":"str", "tissue":"str"})
-cluster_ids_df["merged_cluster_name"] = cluster_ids_df['tissue'].astype(str) + '-' + cluster_ids_df.index.astype(str)
+cluster_ids_df["merged_cluster_name"] = cluster_ids_df['tissue'].astype(str) + '-' + cluster_ids_df['cluster_id'].astype(str)
 cluster_ids_df.set_index("cluster_id", inplace=True)
 
 ################################
