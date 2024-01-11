@@ -413,8 +413,7 @@ process make_log_file {
     publishDir logDir, mode: 'copy'
 
     input:
-    path(checkInputLog)
-    tuple val(datasetId), path(regulonInfoLog), path(bordaLog)
+    tuple path(checkInputLog), val(datasetId), path(regulonInfoLog), path(bordaLog)
 
     output:
     path("${datasetId}_log.txt")
@@ -501,9 +500,9 @@ workflow {
     }
 
     if ( params.geneAliases == null )
-        gene_aliases_ch = Channel.fromPath("$baseDir/data/.dummy_empty_file.txt")
+        gene_aliases_path = "$baseDir/data/.dummy_empty_file.txt"
     else
-        gene_aliases_ch = Channel.fromPath(params.geneAliases)
+        gene_aliases_path = params.geneAliases
 
     if ( params.goFile != null && params.termsOfInterest != null ){        
         check_reference(make_go_enrichment_files_input_ch,params.termsOfInterest)
@@ -511,13 +510,13 @@ workflow {
     
         rankingRef_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(run_enricher_go.out).join(deg_ch).combine(Channel.fromPath(params.goFile))
         
-        make_ref_ranking_dataframe(gene_aliases_ch,params.termsOfInterest,rankingRef_combined_ch)
+        make_ref_ranking_dataframe(gene_aliases_path,params.termsOfInterest,rankingRef_combined_ch)
     
         borda_input_ch = make_ref_ranking_dataframe.out.join(check_reference_trimmed)
     
     } else {
         rankingStd_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(deg_ch).combine(Channel.value(false))
-        make_std_ranking_dataframe(gene_aliases_ch,rankingStd_combined_ch)    
+        make_std_ranking_dataframe(gene_aliases_path,rankingStd_combined_ch)    
         
         borda_input_ch = make_std_ranking_dataframe.out.combine(Channel.value('std'))        
     }
@@ -532,7 +531,7 @@ workflow {
     make_regmaps_input_ch = matrix_ch.join(cluster_ch).join(cluster_ids_ch).join(make_borda.out.processOut)    
     make_regmaps(make_regmaps_input_ch, params.topRegulons)
 
-    make_log_file(check_user_input.out.processLog, make_info_file.out.processLog.join(make_borda.out.processLog))
+    make_log_file(check_user_input.out.processLog.combine(make_info_file.out.processLog.join(make_borda.out.processLog)))
 }
 
 workflow.onComplete {
