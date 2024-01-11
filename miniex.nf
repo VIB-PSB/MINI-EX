@@ -413,8 +413,7 @@ process make_log_file {
     publishDir logDir, mode: 'copy'
 
     input:
-    path(checkInputLog)
-    tuple val(datasetId), path(regulonInfoLog), path(bordaLog)
+    tuple path(checkInputLog), val(datasetId), path(regulonInfoLog), path(bordaLog)
 
     output:
     path("${datasetId}_log.txt")
@@ -532,7 +531,7 @@ workflow {
     make_regmaps_input_ch = matrix_ch.join(cluster_ch).join(cluster_ids_ch).join(make_borda.out.processOut)    
     make_regmaps(make_regmaps_input_ch, params.topRegulons)
 
-    make_log_file(check_user_input.out.processLog, make_info_file.out.processLog.join(make_borda.out.processLog))
+    make_log_file(check_user_input.out.processLog.combine(make_info_file.out.processLog.join(make_borda.out.processLog)))
 }
 
 workflow.onComplete {
