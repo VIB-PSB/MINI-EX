@@ -1,0 +1,78 @@
+MINI-EX v2.2 
+Pipeline started on: Thu Jan 11 11:44:24 CET 2024
+
+== INPUT VALIDATION ==========================================
+Input files passed validation tests. Retrieved following data:
+               cells  genes  clusters  tissues
+dataset                                       
+miniexExample   1541   4999        41       14
+
+== INPUT FILES ===============================================
+Expression matrix file(s) : miniexExample_matrix.tsv
+Seurat markers file(s)    : miniexExample_allMarkers.tsv
+Cells to clusters file(s) : miniexExample_cells2clusters.tsv
+Cluster identities file(s): miniexExample_identities.tsv
+GRNBoost output file(s)   : miniexExample_grnboost2.tsv
+Transcription factor file : ath_TF_list.tsv
+TF info file              : ath_TF2fam2mot.tsv
+Gene aliases file         : ath_gene_aliases.tsv
+Motifs feature file       : ath_2021.1_motifMapping.out.gz
+GO file                   : ath_full_BP_expcur_ext_names.tsv
+Terms of interest file    : GOsIwant.tsv
+
+== MINI-EX PARAMETERS ========================================
+Terms of interest         : xylem / phloem / trichome / root  / vasculature / trichoblast / vascular / stele / tracheary / procambium / sieve
+doMotifAnalysis           : true
+topMarkers                : 700
+expressionFilter          : 10
+motifFilter               : TF-F_motifs
+topRegulons               : 150
+
+== INITIAL TF SET ============================================
+               Number of TFs
+All TFs                 1877
+Expressed TFs            346
+
+== GRN FILTERING =============================================
+                                         Number of regulons  Regulon size (median number of TGs)
+GRN after step 1 (GRNBoost2)                            346                               3276.5
+GRN after step 2 (motif filtering)                       13                               1206.0
+GRN after step 3 (expression filtering)                   2                                119.0
+
+For the statistics of the final GRN (after step 3) above, a mean over all clusters is shown.
+
+More detaled numbers are given below:
+
+              Number of regulons  Regulon size (median number of TGs)
+Cluster_1                      2                                159.0
+Cluster_3                      3                                157.0
+Cluster_4                      5                                127.0
+Cluster_6                      1                                122.0
+Cluster_8                      1                                 99.0
+Cluster_11                     2                                132.5
+Cluster_12                     1                                112.0
+Cluster_13                     1                                149.0
+Cluster_16.1                   2                                 89.5
+Cluster_17                     1                                110.0
+Cluster_20                     4                                121.5
+Cluster_21                     8                                157.0
+Cluster_22.1                   6                                 87.0
+Cluster_23                     1                                 41.0
+Cluster_25                     1                                164.0
+Cluster_26                     2                                107.5
+Cluster_28                     3                                110.0
+Cluster_29                     4                                124.5
+Cluster_30                     2                                118.5
+Cluster_31                     1                                123.0
+Cluster_32                     3                                132.0
+Cluster_33                     2                                130.5
+Cluster_34                     2                                 56.0
+Cluster_35                     1                                120.0
+Cluster_36                     2                                137.5
+
+== BORDA RANKING =============================================
+Borda procedure: STANDARD
+Default metrics: qval_cluster, out-degree, betweenness, closeness, GO_enrich_qval
+
+==============================================================
+Pipeline ended on: Thu Jan 11 11:45:09 CET 2024
