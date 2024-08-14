@@ -127,7 +127,7 @@ process run_enricher_motifs {
     tuple val("${datasetId}"), path("${datasetId}_enricherRegulons.txt")
 
     """
-    cat "$featureFileMotifsUnzipped" | grep -f "$expressedGenes" > featureFileMotifsfiltered.txt
+    cat "$featureFileMotifsUnzipped" | grep -F -f "$expressedGenes" > featureFileMotifsfiltered.txt
     $scriptEnricher featureFileMotifsfiltered.txt "$modules" -f 0.001 -n \$(cat "$expressedGenes" | wc -l) --min-hits 2 --print-hits -o "${datasetId}_enricherRegulons.txt"
 
     # Throw an error if no enrichment is found
