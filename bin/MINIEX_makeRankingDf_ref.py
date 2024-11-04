@@ -101,7 +101,7 @@ with open(CENTRALITIES) as f:
 dic_go_tmp={}
 with open(ENRICHMENT) as f:
     for line in f:
-        if line.startswith('#'):
+        if line.startswith('#') or line.startswith('set_id'): # skip the comments and the header
             pass
         else:
             spl=line.rstrip().rsplit('\t')

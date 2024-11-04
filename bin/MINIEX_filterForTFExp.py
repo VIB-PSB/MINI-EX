@@ -51,7 +51,7 @@ def filtering(inf,out):
     fout=open(out,'w')
     dic={}
     for line in fin:
-        if line.startswith('#'):
+        if line.startswith('#') or line.startswith('set_id'): # skip the comments and the header
             pass
         else:
             spl=line.rstrip().rsplit('\t')

@@ -28,7 +28,7 @@ log.info"""\
          .stripIndent()
 
 
-scriptEnricher = "$baseDir/bin/enricherv3.2.4"
+scriptEnricher = "$baseDir/bin/enricher_v.3.3.1"
 
 grnboostDir = "$params.outputDir/grnboost2"
 regulonsDir = "$params.outputDir/regulons"
@@ -127,8 +127,7 @@ process run_enricher_motifs {
     tuple val("${datasetId}"), path("${datasetId}_enricherRegulons.txt")
 
     """
-    cat "$featureFileMotifsUnzipped" | grep -F -f "$expressedGenes" > featureFileMotifsfiltered.txt
-    $scriptEnricher featureFileMotifsfiltered.txt "$modules" -f 0.001 -n \$(cat "$expressedGenes" | wc -l) --min-hits 2 --print-hits -o "${datasetId}_enricherRegulons.txt"
+    $scriptEnricher "$featureFileMotifsUnzipped" "$modules" -f 0.001 -b "$expressedGenes" --min-hits 2 --print-hits -o "${datasetId}_enricherRegulons.txt"
 
     # Throw an error if no enrichment is found
     if [ "\$(head ${datasetId}_enricherRegulons.txt | grep -P '^[^#]' | wc -l)" -eq 0 ]; then 
@@ -190,8 +189,7 @@ process run_enricher_cluster {
     tuple val("${datasetId}"), path("${datasetId}_enricherCelltypes.txt") 
 
     """
-    cat "$featureFileCellClusters" | grep -f "$expressedGenes" > feature_file_cell_clusters_filtered.txt
-    $scriptEnricher feature_file_cell_clusters_filtered.txt "$filteredRegulons" -f 0.001 -n \$(cat "$expressedGenes" | wc -l) --min-hits 2 --print-hits -o "${datasetId}_enricherCelltypes.txt"
+    $scriptEnricher "$featureFileCellClusters" "$filteredRegulons" -f 0.001 -b "$expressedGenes" --min-hits 2 --print-hits -o "${datasetId}_enricherCelltypes.txt"
 
     # Throw an error if no enrichment is found
     if [ "\$(head ${datasetId}_enricherCelltypes.txt | grep -P '^[^#]' | wc -l)" -eq 0 ]; then 
@@ -285,8 +283,7 @@ process run_enricher_go {
     tuple val("${datasetId}"), path("${datasetId}_enricherGO.txt")
      
     """
-    cat "$featureFile" | grep -f "$expressedGenes" > feature_file_filtered.txt
-    $scriptEnricher feature_file_filtered.txt "$set" -f 0.05 -n \$(cat "$expressedGenes" | wc -l) --min-hits 2 -p -o "${datasetId}_enricherGO.txt"
+    $scriptEnricher "$featureFile" "$set" -f 0.05 -b "$expressedGenes" --min-hits 2 -p -o "${datasetId}_enricherGO.txt"
 
     # Throw an error if no enrichment is found
     if [ "\$(head ${datasetId}_enricherGO.txt | grep -P '^[^#]' | wc -l)" -eq 0 ]; then 

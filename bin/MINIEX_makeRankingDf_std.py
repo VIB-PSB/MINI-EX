@@ -45,7 +45,7 @@ regPerClu=collections.Counter(['_'.join(i.rsplit('_')[-2:]) for i in dic_reg])
 dic_enirch={}
 with open(TOPS) as f:
     for line in f:
-        if line.startswith('#'):
+        if line.startswith('#') or line.startswith('set_id'): # skip the comments and the header
             pass
         else:
             spl=line.rstrip().rsplit('\t')

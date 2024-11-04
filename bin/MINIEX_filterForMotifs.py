@@ -25,7 +25,7 @@ def enricher_parser(infile,outfile,extended):
     fin=open(infile,'r')
     df=[]
     for line in fin:
-        if line.startswith('#'):
+        if line.startswith('#') or line.startswith('set_id'): # skip the comments and the header
             pass
         else:
             spl=line.strip().split("\t")
