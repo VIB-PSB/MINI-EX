@@ -12,11 +12,12 @@ FEATURE_FILE_MOTIFS=sys.argv[8].split(' ')
 INFO_TF=sys.argv[9].split(' ')
 GO_FILE=sys.argv[10].split(' ')
 ALIAS=sys.argv[11].split(' ')
-DO_MOTIF_ANALYSIS=sys.argv[12]
-TOP_MARKERS=sys.argv[13]
-EXPRESSION_FILTER=sys.argv[14]
-MOTIF_FILTER=sys.argv[15]
-TOP_REGULONS=sys.argv[16]
+ENRICHMENT_BACKGROUND=sys.argv[12].split(' ')
+DO_MOTIF_ANALYSIS=sys.argv[13]
+TOP_MARKERS=sys.argv[14]
+EXPRESSION_FILTER=sys.argv[15]
+MOTIF_FILTER=sys.argv[16]
+TOP_REGULONS=sys.argv[17]
 
 ########## NUMERICAL PARAMETERS ##########
 def value_is_a_positive_integer(value):
@@ -52,18 +53,6 @@ def count_lines(file_path):  # counts number of lines in the provided file witho
         line_count = sum(1 for line in file)
     return line_count
 
-# collecting names of all input files
-all_dataset_file_names = EXPRESSION_MATRIX + MARKERS_OUT + CELLS2CLUSTERS + CLUSTER2IDENT
-all_file_names = all_dataset_file_names + TF_LIST + INFO_TF + ALIAS
-if not path_is_dummy(TERMS_OF_INTEREST):
-    all_file_names += TERMS_OF_INTEREST
-if not path_is_dummy(GRNBOOST_OUT):
-    all_file_names += GRNBOOST_OUT
-if not path_is_dummy(FEATURE_FILE_MOTIFS):
-    all_file_names += FEATURE_FILE_MOTIFS
-if not path_is_dummy(GO_FILE):
-    all_file_names += GO_FILE
-
 
 #### GENERAL VERIFICATIONS ####
 
@@ -96,9 +85,10 @@ stats_df['dataset'] = data_sets
 stats_df.set_index('dataset', inplace=True)
 
 # CHECK: all dataset files should start with the name of dataset followed by an underscore
+all_dataset_file_names = EXPRESSION_MATRIX + MARKERS_OUT + CELLS2CLUSTERS + CLUSTER2IDENT
 if (not all('_' in file_name for file_name in all_dataset_file_names) or
     (GRNBOOST_OUT != None and not all('_' in file_name for file_name in GRNBOOST_OUT))):
-    raise Exception("All input files must contain an underscore!")
+    raise Exception("All input files must start with a dataset name followed by an underscore!")
 
 # performs checks common to all input dataset files
 def check_dataset_file(file_name: str):
@@ -158,6 +148,13 @@ for data_set in data_sets:
     # CHECK: only up-regulated markers should be present
     if (markers_df['avg_logFC'] < 0).any():
         raise Exception(f"Down-regulated markers detected for the '{data_set}' data set!")
+    
+    # CHECK: if the enrichment background is provided, then it must have at least one gene id in common with the expressed genes
+    if not path_is_dummy(ENRICHMENT_BACKGROUND):
+        enrichment_background_df = pd.read_csv(ENRICHMENT_BACKGROUND[0],delimiter='\t',header=None,names=['gene_id'])
+        genes_in_common = set(enrichment_background_df['gene_id']).intersection(matrix_df.index)
+        if len(genes_in_common) == 0:
+            raise Exception(f"The enrichment background has no genes in common with the expressed genes in the '{data_set}' data set!")
 
     # collect statistics
     stats_df.loc[data_set, 'cells'] = matrix_df.shape[1]
@@ -173,25 +170,26 @@ print("Input files passed validation tests. Retrieved following data:")
 print(stats_df)
 print("")
 print("== INPUT FILES ===============================================")
-print(f"Expression matrix file(s) : {' / '.join(EXPRESSION_MATRIX)}")
-print(f"Seurat markers file(s)    : {' / '.join(MARKERS_OUT)}")
-print(f"Cells to clusters file(s) : {' / '.join(CELLS2CLUSTERS)}")
-print(f"Cluster identities file(s): {' / '.join(CLUSTER2IDENT)}")
-print(f"GRNBoost output file(s)   : {' / '.join(GRNBOOST_OUT) if not path_is_dummy(GRNBOOST_OUT) else 'NOT PROVIDED'}")
-print(f"Transcription factor file : {' / '.join(TF_LIST)}")
-print(f"TF info file              : {' / '.join(INFO_TF)}")
-print(f"Gene aliases file         : {' / '.join(ALIAS)}")
-print(f"Motifs feature file       : {' / '.join(FEATURE_FILE_MOTIFS) if not path_is_dummy(FEATURE_FILE_MOTIFS) else 'NOT PROVIDED'}")
-print(f"GO file                   : {' / '.join(GO_FILE) if not path_is_dummy(GO_FILE) else 'NOT PROVIDED'}")
-print(f"Terms of interest file    : {' / '.join(TERMS_OF_INTEREST) if not path_is_dummy(TERMS_OF_INTEREST) else 'NOT PROVIDED'}")
+print(f"Expression matrix file(s)  : {' / '.join(EXPRESSION_MATRIX)}")
+print(f"Seurat markers file(s)     : {' / '.join(MARKERS_OUT)}")
+print(f"Cells to clusters file(s)  : {' / '.join(CELLS2CLUSTERS)}")
+print(f"Cluster identities file(s) : {' / '.join(CLUSTER2IDENT)}")
+print(f"GRNBoost output file(s)    : {' / '.join(GRNBOOST_OUT) if not path_is_dummy(GRNBOOST_OUT) else 'NOT PROVIDED'}")
+print(f"Transcription factor file  : {' / '.join(TF_LIST)}")
+print(f"TF info file               : {' / '.join(INFO_TF)}")
+print(f"Gene aliases file          : {' / '.join(ALIAS)}")
+print(f"Motifs feature file        : {' / '.join(FEATURE_FILE_MOTIFS) if not path_is_dummy(FEATURE_FILE_MOTIFS) else 'NOT PROVIDED'}")
+print(f"GO file                    : {' / '.join(GO_FILE) if not path_is_dummy(GO_FILE) else 'NOT PROVIDED'}")
+print(f"Terms of interest file     : {' / '.join(TERMS_OF_INTEREST) if not path_is_dummy(TERMS_OF_INTEREST) else 'NOT PROVIDED'}")
+print(f"Enrichment background file : {' / '.join(ENRICHMENT_BACKGROUND) if not path_is_dummy(ENRICHMENT_BACKGROUND) else 'NOT PROVIDED'}")
 print("")
 print("== MINI-EX PARAMETERS ========================================")
 if not path_is_dummy(TERMS_OF_INTEREST):
     terms_of_interest_df = pd.read_csv(TERMS_OF_INTEREST[0], names=['term'])
-    print(f"Terms of interest         : {' / '.join(terms_of_interest_df['term'])}")
-print(f"doMotifAnalysis           : {DO_MOTIF_ANALYSIS}")
-print(f"topMarkers                : {TOP_MARKERS}")
-print(f"expressionFilter          : {EXPRESSION_FILTER}")
-print(f"motifFilter               : {MOTIF_FILTER}")
-print(f"topRegulons               : {TOP_REGULONS}")
+    print(f"Terms of interest          : {' / '.join(terms_of_interest_df['term'])}")
+print(f"doMotifAnalysis            : {DO_MOTIF_ANALYSIS}")
+print(f"topMarkers                 : {TOP_MARKERS}")
+print(f"expressionFilter           : {EXPRESSION_FILTER}")
+print(f"motifFilter                : {MOTIF_FILTER}")
+print(f"topRegulons                : {TOP_REGULONS}")
 print("")

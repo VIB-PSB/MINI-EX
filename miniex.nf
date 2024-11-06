@@ -51,6 +51,7 @@ process check_user_input {
     path infoTf
     path goFile
     path geneAliases
+    path enrichmentBackground
     val doMotifAnalysis
     val topMarkers
     val expressionFilter
@@ -66,8 +67,8 @@ process check_user_input {
     date >> "processLog.log"
     OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkInput.py" "$expressionMatrix" "$markersOut" "$cellsToClusters" "$clustersToIdentities" \
                                                                   "$tfList" "$termsOfInterest" "$grnboostOut" "$featureFileMotifs" "$infoTf" \
-                                                                  "$goFile" "$geneAliases" "$doMotifAnalysis" "$topMarkers" "$expressionFilter" \
-                                                                  "$motifFilter" "$topRegulons" >> "processLog.log"
+                                                                  "$goFile" "$geneAliases" "$enrichmentBackground" "$doMotifAnalysis" "$topMarkers" \
+                                                                   "$expressionFilter" "$motifFilter" "$topRegulons" >> "processLog.log"
     # print input validation statistics on stdout
     awk '/== INPUT VALIDATION/,/== INPUT FILES/ {if (!/== INPUT (VALIDATION|FILES)/) print}' processLog.log
     """
@@ -103,6 +104,7 @@ process run_grnboost {
     """
 }
 
+
 process unzip_motif_mappings {
     
     input:
@@ -116,6 +118,7 @@ process unzip_motif_mappings {
     """
 }
 
+
 process run_enricher_motifs {
     
     input:
@@ -124,18 +127,19 @@ process run_enricher_motifs {
     tuple val(datasetId), path(modules), path(expressedGenes)
 
     output:
-    tuple val("${datasetId}"), path("${datasetId}_enricherRegulons.txt")
+    tuple val("${datasetId}"), path("${datasetId}_enrichedRegulons.txt")
 
     """
-    $scriptEnricher "$featureFileMotifsUnzipped" "$modules" -f 0.001 -b "$expressedGenes" --min-hits 2 --print-hits -o "${datasetId}_enricherRegulons.txt"
+    $scriptEnricher "$featureFileMotifsUnzipped" "$modules" -f 0.001 -b "$expressedGenes" --min-hits 2 --print-hits -o "${datasetId}_enrichedRegulons.txt"
 
     # Throw an error if no enrichment is found
-    if [ "\$(head ${datasetId}_enricherRegulons.txt | grep -P '^[^#]' | wc -l)" -eq 0 ]; then 
-        echo 'ERROR: Enricher output empty!'
+    if [ "\$(head ${datasetId}_enrichedRegulons.txt | grep -P '^[^#]' | wc -l)" -eq 1 ]; then 
+        echo 'ERROR: Enricher output is empty!'
         exit 1
     fi
     """
 }
+
 
 process filter_motifs {
 
@@ -152,6 +156,7 @@ process filter_motifs {
     """
 }
 
+
 process filter_motifs_dummy {
 
     input:
@@ -164,6 +169,7 @@ process filter_motifs_dummy {
     cp "$modules" "${datasetId}_enrichedRegulons.txt"
     """
 }
+
 
 process get_top_degs {
     
@@ -179,6 +185,7 @@ process get_top_degs {
     """
 }
 
+
 process run_enricher_cluster {
     
     input:
@@ -186,18 +193,19 @@ process run_enricher_cluster {
     tuple val(datasetId), path(featureFileCellClusters), path(filteredRegulons), path(expressedGenes)
 
     output:
-    tuple val("${datasetId}"), path("${datasetId}_enricherCelltypes.txt") 
+    tuple val("${datasetId}"), path("${datasetId}_enrichedCelltypes.txt") 
 
     """
-    $scriptEnricher "$featureFileCellClusters" "$filteredRegulons" -f 0.001 -b "$expressedGenes" --min-hits 2 --print-hits -o "${datasetId}_enricherCelltypes.txt"
+    $scriptEnricher "$featureFileCellClusters" "$filteredRegulons" -f 0.001 -b "$expressedGenes" --min-hits 2 --print-hits -o "${datasetId}_enrichedCelltypes.txt"
 
     # Throw an error if no enrichment is found
-    if [ "\$(head ${datasetId}_enricherCelltypes.txt | grep -P '^[^#]' | wc -l)" -eq 0 ]; then 
-        echo 'ERROR: Enricher output empty!'
+    if [ "\$(head ${datasetId}_enrichedCelltypes.txt | grep -P '^[^#]' | wc -l)" -eq 1 ]; then 
+        echo 'ERROR: Enricher output is empty!'
         exit 1
     fi
     """
 }
+
 
 process filter_expression {
     publishDir regulonsDir, mode: 'copy'
@@ -215,6 +223,7 @@ process filter_expression {
     """
 }
 
+
 process make_info_file {
     publishDir regulonsDir, mode: 'copy', pattern: '*.tsv'
 
@@ -230,6 +239,7 @@ process make_info_file {
     OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeInfoFile.py" "$expressionMatrix" "$grnboostRegulons" "$motifEnrichedRegulons" "$finalRegulons" $tfList $cellClusters $clusterIdentities "${datasetId}_TF_info_file.tsv" > "${datasetId}_regulonInfoLog.log"
     """
 }
+
 
 process make_regulon_clustermap {
     publishDir figuresDir, mode: 'copy'
@@ -259,6 +269,7 @@ process get_network_centrality {
     """
 }
 
+
 process make_go_enrichment_files {
     
     input:
@@ -271,6 +282,7 @@ process make_go_enrichment_files {
     OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeFilesEnrichment.py" "$finalRegulons" "$goFile" "${datasetId}_setFileRegulons.out" "${datasetId}_featureFileGO.out"
     """
 }
+
 
 process run_enricher_go {
     publishDir goEnrichmentDir, mode: 'copy'
@@ -293,6 +305,7 @@ process run_enricher_go {
     """
 }
 
+
 process check_reference {
     
     input:
@@ -306,6 +319,7 @@ process check_reference {
     OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkRef.py" "$finalRegulons" "$goFile" "$termsOfInterest" 
     """
 }
+
 
 process make_ref_ranking_dataframe {
     
@@ -321,6 +335,7 @@ process make_ref_ranking_dataframe {
     OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRankingDf_ref.py" "$clusterIdentities" "$finalRegulons" "$geneAliases" "$qValueCluster" "$goFile" "$termsOfInterest" "$networkCentrality" "$goEnrichment" "$allMarkers" "${datasetId}_dfForRanking.txt"
     """  
 }
+
 
 process make_std_ranking_dataframe {
     
@@ -436,6 +451,7 @@ workflow {
         Channel.fromPath(params.infoTf, checkIfExists:true).collect(),
         params.goFile != null ? Channel.fromPath(params.goFile, checkIfExists:true).collect() : "/dummy_path_go",
         params.geneAliases != null ? Channel.fromPath(params.geneAliases, checkIfExists:true).collect() : "/dummy_gene_aliases",
+        params.enrichmentBackground != null ? Channel.fromPath(params.enrichmentBackground, checkIfExists:true).collect() : "/dummy_path_enrichment_background",
         params.doMotifAnalysis,
         params.topMarkers,
         params.expressionFilter,
@@ -454,8 +470,14 @@ workflow {
         grnboost_ch = Channel.fromPath(params.grnboostOut).map { n -> [ n.baseName.split("_")[0], n ] }
     }
 
-    expressed_genes_ch = get_expressed_genes(matrix_ch)
-    grnboost_combined_ch = grnboost_ch.join(expressed_genes_ch)
+    if (params.enrichmentBackground == null){
+        // use expressed genes as the enrichment background, if it is not specified by the user
+        enrichment_background_ch = get_expressed_genes(matrix_ch)
+        grnboost_combined_ch = grnboost_ch.join(enrichment_background_ch)
+    } else {
+        enrichment_background_ch = Channel.fromPath(params.enrichmentBackground)
+        grnboost_combined_ch = grnboost_ch.combine(enrichment_background_ch)
+    }
     
     if (params.doMotifAnalysis){
         unzip_motif_mappings(params.featureFileMotifs)
@@ -471,7 +493,10 @@ workflow {
     deg_ch = Channel.fromPath(params.markersOut).map { n -> [ n.baseName.split("_")[0], n ] }
     cluster_enrich_ch = get_top_degs(params.topMarkers,deg_ch)
 
-    cluster_enrich_combined_ch = cluster_enrich_ch.join(filter_motifs_ch).join(expressed_genes_ch)
+    // add enrichment background (use join in case of expressed genes (as dataset dependent) or combine in case of a user specified enrichment background)
+    if (params.enrichmentBackground == null) { cluster_enrich_combined_ch = cluster_enrich_ch.join(filter_motifs_ch).join(enrichment_background_ch) }
+    else { cluster_enrich_combined_ch = cluster_enrich_ch.join(filter_motifs_ch).combine(enrichment_background_ch) }
+
     run_enricher_cluster(scriptEnricher,cluster_enrich_combined_ch)  
 
     cluster_ch = Channel.fromPath(params.cellsToClusters).map { n -> [ n.baseName.split("_")[0], n ] }
@@ -492,7 +517,10 @@ workflow {
         make_go_enrichment_files_input_ch = filter_expression.out.combine(Channel.fromPath(params.goFile))
         make_go_enrichment_files_ch = make_go_enrichment_files(make_go_enrichment_files_input_ch)
 
-        make_go_enrichment_files_combined_ch = make_go_enrichment_files_ch.join(expressed_genes_ch)
+        // add enrichment background (use join in case of expressed genes (as dataset dependent) or combine in case of a user specified enrichment background)
+        if (params.enrichmentBackground == null) { make_go_enrichment_files_combined_ch = make_go_enrichment_files_ch.join(enrichment_background_ch)}
+        else { make_go_enrichment_files_combined_ch = make_go_enrichment_files_ch.combine(enrichment_background_ch) }
+
         run_enricher_go(scriptEnricher,make_go_enrichment_files_combined_ch)   
     }
 
