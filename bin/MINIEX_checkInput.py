@@ -1,3 +1,4 @@
+import subprocess
 import sys
 import pandas as pd
 
@@ -18,6 +19,24 @@ TOP_MARKERS=sys.argv[14]
 EXPRESSION_FILTER=sys.argv[15]
 MOTIF_FILTER=sys.argv[16]
 TOP_REGULONS=sys.argv[17]
+
+
+########## HELPER FUNCTIONS ##########
+
+def path_is_dummy(path): # checks whether the user specified "null" as path to that file
+    return path[0].startswith('dummy_path')
+
+def find_symbol_in_file(file_name, symbol):
+    result = False
+    try:
+        output = subprocess.check_output(f"grep '{symbol}' {file_name}", shell=True)
+        if output:
+            result = True
+    except subprocess.CalledProcessError as e:
+        if e.returncode != 1:  # 1 means grep found no matches
+            raise Exception(f"Command 'grep' (1) failed with the error: '{e}'!")
+    return result
+
 
 ########## NUMERICAL PARAMETERS ##########
 def value_is_a_positive_integer(value):
@@ -43,18 +62,7 @@ if not value_is_a_positive_integer(EXPRESSION_FILTER) or int(EXPRESSION_FILTER) 
     raise Exception(f"Incorrect value provided for the parameter 'expressionFilter': '{EXPRESSION_FILTER}'! The allowed values are between 0 and 100.")
 
 
-########## PATH PARAMETERS ##########
-
-def path_is_dummy(path): # checks whether the user specified "null" as path to that file
-    return path[0].startswith('dummy_path')
-
-def count_lines(file_path):  # counts number of lines in the provided file without reading it
-    with open(file_path, 'r') as file:
-        line_count = sum(1 for line in file)
-    return line_count
-
-
-#### GENERAL VERIFICATIONS ####
+########## GENERAL VERIFICATIONS ##########
 
 # CHECK: if the GO file is null, then terms of interest is also null
 if path_is_dummy(GO_FILE):
@@ -72,7 +80,7 @@ if not path_is_dummy(GRNBOOST_OUT) and len(EXPRESSION_MATRIX) != len(GRNBOOST_OU
     raise Exception(f"The number of expression matrix files ({len(EXPRESSION_MATRIX)}) is different from the number of GRNBoost output files ({len(GRNBOOST_OUT)})!")
 
 
-#### DATASET-RELATED VERIFICATIONS ####
+########## DATASET-RELATED VERIFICATIONS ##########
 
 # as MINI-EX can handle multiple datasets at the same time, the list of datasets is extracted
 # and the following verifications are performed for each dataset individually
@@ -93,26 +101,26 @@ if (not all('_' in file_name for file_name in all_dataset_file_names) or
 # performs checks common to all input dataset files
 def check_dataset_file(file_name: str):
     # CHECK: no quotes allowed in input files
-    with open(file_name) as a_file:
-        if '"' in a_file.read():
-            raise Exception(f"Quotes (\") detected in file '{file_name}'!")
-    try:
-        df = pd.read_csv(file_name, delimiter='\t', header=None, index_col=0)
-        row_count = len(df)
-    except pd.errors.ParserError: # in some files generated from Seurat, the header line has one column missing -> skip it
-        df = pd.read_csv(file_name, delimiter='\t', header=None, index_col=0, skiprows=1)
-        row_count = len(df) + 1
-    finally:
-        # CHECK: no trailing newlines present in the input files
-        if row_count != count_lines(file_name):
-            raise Exception(f"Empty lines found in '{file_name}'! ({len(df)} vs {count_lines(file_name)})")
-        # CHECK: values in the first column of each data file must be unique
-        # the only exception is the Seurat markers file, so it is not checked
-        if df.index.has_duplicates and file_name not in MARKERS_OUT:
-            raise Exception(f"Duplicated indexes detected in file '{file_name}'!")
+    if find_symbol_in_file(file_name, '"'):
+        raise Exception(f"Quotes (\") found in file'{file_name}'!")
+        
+    # CHECK: no trailing newlines present in the input files
+    if find_symbol_in_file(file_name, '^$'):
+        raise Exception(f"Empty lines found in '{file_name}'!")
+    
+    # CHECK: values in the first column of each data file must be unique
+    # the only exception is the Seurat markers file, so it is not checked
+    if file_name not in MARKERS_OUT:
+        try:
+            output = subprocess.check_output(f"cut -f1 {file_name} | sort | uniq -d", shell=True)
+            if output.strip():
+                raise Exception(f"Duplicated indexes detected in file '{file_name}'!")
+        except subprocess.CalledProcessError as e:
+            raise Exception(f"Command 'cut' (2) failed with the error '{e}'!")
     
 for file_name in all_dataset_file_names:
     check_dataset_file(file_name)
+
 
 for data_set in data_sets:
     # CHECK: each dataset must have the four input files (or five, if GRNBoost output files are provided)
@@ -126,41 +134,54 @@ for data_set in data_sets:
     if not path_is_dummy(GRNBOOST_OUT) and not any(file_name.startswith(prefix) for file_name in GRNBOOST_OUT):
         raise Exception(f"No GRNBoost output file provided for the dataset {data_set}!")
     
-    # read the four input files for the current dataset as pandas dataframes
+    # retrieve the names of the dataset-related input files
     cells2clusters_file_name = [file_name for file_name in CELLS2CLUSTERS if file_name.startswith(prefix)][0]
     identities_file_name = [file_name for file_name in CLUSTER2IDENT if file_name.startswith(prefix)][0]
     matrix_file_name = [file_name for file_name in EXPRESSION_MATRIX if file_name.startswith(prefix)][0]
     markers_file_name = [file_name for file_name in MARKERS_OUT if file_name.startswith(prefix)][0]
-    cells2clusters_df = pd.read_csv(cells2clusters_file_name,delimiter='\t',names=['cell_id','cluster_id','cluster_annotation'],dtype={'cell_id':str,'cluster_id':str,'cluster_annotation':str})[['cluster_id']].drop_duplicates().sort_values(by='cluster_id').reset_index(drop=True)
-    identities_df = pd.read_csv(identities_file_name,delimiter='\t',usecols=[0,1],names=['cluster_id','cluster_annotation'],dtype={'cluster_id':str,'cluster_annotation':str}).drop_duplicates().sort_values(by='cluster_id').reset_index(drop=True)
-    matrix_df = pd.read_csv(matrix_file_name,delimiter='\t',header=0,index_col=0)
-    markers_df = pd.read_csv(markers_file_name,delimiter='\t',skiprows=1,names=['gene_id', 'p_val', 'avg_logFC', 'pct.1', 'pct.2', 'p_val_adj', 'cluster', 'gene'])
 
     # CHECK: no underscores allowed in cluster names
-    if any('_' in cluster_name for cluster_name in identities_df['cluster_annotation'].tolist()):
-        raise Exception(f"Underscores detected in cluster names of the '{data_set}' data set!")
+    try:
+        output = subprocess.check_output(f'cut -f2 {identities_file_name} | grep "_"', shell=True)
+        if output:
+            raise Exception(f"Underscores detected in cluster names of the '{data_set}' data set!")
+    except subprocess.CalledProcessError as e:
+        if e.returncode != 1:  # 1 means grep found no matches
+            raise Exception(f"Command 'cut' (3) failed with the error: '{e}'!")
     
     # CHECK: cluster id and identities must correspond between cells2clusters and cluster2ident files
-    identities_cluster_id_df = identities_df[['cluster_id']].drop_duplicates().sort_values(by='cluster_id').reset_index(drop=True).copy()
-    if not cells2clusters_df.equals(identities_cluster_id_df):
-        raise Exception(f"Cluster identities differ between cells2cluster and identities files for the '{data_set}' data set!")
+    try:
+        output = subprocess.check_output(f'bash -c "comm -3 <(cut -f1 {identities_file_name} | sort -u) <(cut -f2 {cells2clusters_file_name} | sort -u)"', shell=True)
+        if output:
+            raise Exception(f"Cluster identities differ between cells2cluster and identities files for the '{data_set}' data set!")
+    except subprocess.CalledProcessError as e:
+        if e.returncode != 1:  # 1 means grep found no matches
+            raise Exception(f"Command 'comm' (4) failed with the error: '{e}'!")
 
     # CHECK: only up-regulated markers should be present
-    if (markers_df['avg_logFC'] < 0).any():
-        raise Exception(f"Down-regulated markers detected for the '{data_set}' data set!")
+    try:
+        output = subprocess.check_output(f'cut -f3 {markers_file_name} | grep "-"', shell=True)
+        if output:
+            raise Exception(f"Down-regulated markers detected for the '{data_set}' data set!")
+    except subprocess.CalledProcessError as e:
+        if e.returncode != 1:  # 1 means grep found no matches
+            raise Exception(f"Command 'cut' (5) failed with the error: '{e}'!")
     
     # CHECK: if the enrichment background is provided, then it must have at least one gene id in common with the expressed genes
     if not path_is_dummy(ENRICHMENT_BACKGROUND):
-        enrichment_background_df = pd.read_csv(ENRICHMENT_BACKGROUND[0],delimiter='\t',header=None,names=['gene_id'])
-        genes_in_common = set(enrichment_background_df['gene_id']).intersection(matrix_df.index)
-        if len(genes_in_common) == 0:
-            raise Exception(f"The enrichment background has no genes in common with the expressed genes in the '{data_set}' data set!")
+        try:
+            output = subprocess.check_output(f'bash -c "comm -12 <(cut -f1 {matrix_file_name} | sort -u) <(cut -f1 {ENRICHMENT_BACKGROUND[0]} | sort -u)"', shell=True)
+            if not output:
+                raise Exception(f"The enrichment background has no genes in common with the expressed genes in the '{data_set}' data set!")
+        except subprocess.CalledProcessError as e:
+            if e.returncode != 1:  # 1 means grep found no matches
+                raise Exception(f"Command 'comm' (6) failed with the error: '{e}'!")
 
     # collect statistics
-    stats_df.loc[data_set, 'cells'] = matrix_df.shape[1]
-    stats_df.loc[data_set, 'genes'] = matrix_df.shape[0]
-    stats_df.loc[data_set, 'clusters'] = len(identities_df.index)
-    stats_df.loc[data_set, 'tissues'] = len(identities_df[['cluster_annotation']].drop_duplicates().index)
+    stats_df.loc[data_set, 'cells'] = int(subprocess.check_output(f"head -n 1 {matrix_file_name} | awk -F'\t' '{{print NF}}'", shell=True).strip()) - 1
+    stats_df.loc[data_set, 'genes'] = int(subprocess.check_output(f"cat {matrix_file_name} | wc -l", shell=True).strip()) - 1
+    stats_df.loc[data_set, 'clusters'] = int(subprocess.check_output(f"cat {identities_file_name} | wc -l", shell=True).strip())
+    stats_df.loc[data_set, 'tissues'] = int(subprocess.check_output(f"cut -f2 {identities_file_name} | sort | uniq | wc -l", shell=True).strip())
 
 
 # if the process is here, that means that all the tests passed, otherwise an exception is raized and the process is interrupted
@@ -175,13 +196,13 @@ print(f"Seurat markers file(s)     : {' / '.join(MARKERS_OUT)}")
 print(f"Cells to clusters file(s)  : {' / '.join(CELLS2CLUSTERS)}")
 print(f"Cluster identities file(s) : {' / '.join(CLUSTER2IDENT)}")
 print(f"GRNBoost output file(s)    : {' / '.join(GRNBOOST_OUT) if not path_is_dummy(GRNBOOST_OUT) else 'NOT PROVIDED'}")
-print(f"Transcription factor file  : {' / '.join(TF_LIST)}")
-print(f"TF info file               : {' / '.join(INFO_TF)}")
-print(f"Gene aliases file          : {' / '.join(ALIAS)}")
-print(f"Motifs feature file        : {' / '.join(FEATURE_FILE_MOTIFS) if not path_is_dummy(FEATURE_FILE_MOTIFS) else 'NOT PROVIDED'}")
-print(f"GO file                    : {' / '.join(GO_FILE) if not path_is_dummy(GO_FILE) else 'NOT PROVIDED'}")
-print(f"Terms of interest file     : {' / '.join(TERMS_OF_INTEREST) if not path_is_dummy(TERMS_OF_INTEREST) else 'NOT PROVIDED'}")
-print(f"Enrichment background file : {' / '.join(ENRICHMENT_BACKGROUND) if not path_is_dummy(ENRICHMENT_BACKGROUND) else 'NOT PROVIDED'}")
+print(f"Transcription factor file  : {TF_LIST[0]}")
+print(f"TF info file               : {INFO_TF[0]}")
+print(f"Gene aliases file          : {ALIAS[0]}")
+print(f"Motifs feature file        : {FEATURE_FILE_MOTIFS[0] if not path_is_dummy(FEATURE_FILE_MOTIFS) else 'NOT PROVIDED'}")
+print(f"GO file                    : {GO_FILE[0] if not path_is_dummy(GO_FILE) else 'NOT PROVIDED'}")
+print(f"Terms of interest file     : {TERMS_OF_INTEREST[0] if not path_is_dummy(TERMS_OF_INTEREST) else 'NOT PROVIDED'}")
+print(f"Enrichment background file : {ENRICHMENT_BACKGROUND[0] if not path_is_dummy(ENRICHMENT_BACKGROUND) else 'NOT PROVIDED'}")
 print("")
 print("== MINI-EX PARAMETERS ========================================")
 if not path_is_dummy(TERMS_OF_INTEREST):
