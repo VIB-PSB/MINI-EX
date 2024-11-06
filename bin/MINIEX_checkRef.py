@@ -1,14 +1,13 @@
-
 """
-Identifies whether to use the standard Borda ranking or also take into account
-GO enrichment q-values.
+Identifies whether to use the standard or the reference Borda ranking.
 
 From the provided list of regulons, extracts their TFs and identifies the list
 of relevant TFs (i.e., having at least one entry in the GO annotation file
 containing in its description at least one term of interest).
 
-If at least two relevant TFs are found: GO enrichment q-value should be taken into account.
-Otherwise: standard Borda ranking should be computed.
+If at least two relevant TFs are found: use the reference procedure.
+Otherwise: use the standard procedure (which will also take into account
+the GO enrichment value).
 """
 
 import sys,pandas
