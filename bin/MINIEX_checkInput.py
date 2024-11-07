@@ -24,7 +24,10 @@ TOP_REGULONS=sys.argv[17]
 ########## HELPER FUNCTIONS ##########
 
 def path_is_dummy(path): # checks whether the user specified "null" as path to that file
-    return path[0].startswith('dummy_path')
+    if isinstance(path, list):
+        return path[0].startswith('dummy_path')
+    else:
+        return path.startswith('dummy_path')
 
 def find_symbol_in_file(file_name, symbol):
     result = False
@@ -39,6 +42,8 @@ def find_symbol_in_file(file_name, symbol):
 
 
 ########## NUMERICAL PARAMETERS ##########
+
+# CHECK: the parameters have correct values
 def value_is_a_positive_integer(value):
     try:
         int_value = int(value)
@@ -68,7 +73,8 @@ if not value_is_a_positive_integer(EXPRESSION_FILTER) or int(EXPRESSION_FILTER) 
 if path_is_dummy(GO_FILE):
     if not path_is_dummy(TERMS_OF_INTEREST):
         raise Exception("When the GO file is set to 'null', the terms of interest file should also be set to null!")
-        
+
+
 # CHECK: equal number of files was provided for each file category, one per dataset
 if len(EXPRESSION_MATRIX) != len(MARKERS_OUT):
     raise Exception(f"The number of expression matrix files ({len(EXPRESSION_MATRIX)}) is different from the number of markers files ({len(MARKERS_OUT)})!")
@@ -78,6 +84,24 @@ if len(EXPRESSION_MATRIX) != len(CLUSTER2IDENT):
     raise Exception(f"The number of expression matrix files ({len(EXPRESSION_MATRIX)}) is different from the number of identities files ({len(CLUSTER2IDENT)})!")
 if not path_is_dummy(GRNBOOST_OUT) and len(EXPRESSION_MATRIX) != len(GRNBOOST_OUT):
     raise Exception(f"The number of expression matrix files ({len(EXPRESSION_MATRIX)}) is different from the number of GRNBoost output files ({len(GRNBOOST_OUT)})!")
+
+
+# CHECK: input files, except the feature file motifs, are in plain text and not (g)zipped
+try:
+    all_dataset_file_names = EXPRESSION_MATRIX + MARKERS_OUT + CELLS2CLUSTERS + CLUSTER2IDENT
+    all_file_names = (all_dataset_file_names + TF_LIST + TERMS_OF_INTEREST + GRNBOOST_OUT +
+                                                INFO_TF + GO_FILE + ALIAS + ENRICHMENT_BACKGROUND)
+    for file_name in all_file_names:
+        if not path_is_dummy(file_name):
+            output = subprocess.check_output(f'file "$(readlink -f {file_name})"', shell=True)
+            if not "text" in output.strip().decode('utf-8'):
+                raise Exception(f"The file '{file_name}' is compressed!")
+        
+    output = subprocess.check_output(f'file "$(readlink -f {FEATURE_FILE_MOTIFS[0]})"', shell=True)
+    if not "gzip" in output.strip().decode('utf-8'):
+        raise Exception(f"The file '{FEATURE_FILE_MOTIFS[0]}' is not gzipped!")
+except subprocess.CalledProcessError as e:
+    raise Exception(f"Command 'file' (2) failed with the error '{e}'!")
 
 
 ########## DATASET-RELATED VERIFICATIONS ##########
@@ -92,8 +116,8 @@ stats_df = pd.DataFrame(columns=['dataset', 'cells', 'genes', 'clusters', 'tissu
 stats_df['dataset'] = data_sets
 stats_df.set_index('dataset', inplace=True)
 
+
 # CHECK: all dataset files should start with the name of dataset followed by an underscore
-all_dataset_file_names = EXPRESSION_MATRIX + MARKERS_OUT + CELLS2CLUSTERS + CLUSTER2IDENT
 if (not all('_' in file_name for file_name in all_dataset_file_names) or
     (GRNBOOST_OUT != None and not all('_' in file_name for file_name in GRNBOOST_OUT))):
     raise Exception("All input files must start with a dataset name followed by an underscore!")
@@ -104,10 +128,12 @@ def check_dataset_file(file_name: str):
     if find_symbol_in_file(file_name, '"'):
         raise Exception(f"Quotes (\") found in file'{file_name}'!")
         
+
     # CHECK: no trailing newlines present in the input files
     if find_symbol_in_file(file_name, '^$'):
         raise Exception(f"Empty lines found in '{file_name}'!")
     
+
     # CHECK: values in the first column of each data file must be unique
     # the only exception is the Seurat markers file, so it is not checked
     if file_name not in MARKERS_OUT:
@@ -116,7 +142,7 @@ def check_dataset_file(file_name: str):
             if output.strip():
                 raise Exception(f"Duplicated indexes detected in file '{file_name}'!")
         except subprocess.CalledProcessError as e:
-            raise Exception(f"Command 'cut' (2) failed with the error '{e}'!")
+            raise Exception(f"Command 'cut' (3) failed with the error '{e}'!")
     
 for file_name in all_dataset_file_names:
     check_dataset_file(file_name)
@@ -140,6 +166,23 @@ for data_set in data_sets:
     matrix_file_name = [file_name for file_name in EXPRESSION_MATRIX if file_name.startswith(prefix)][0]
     markers_file_name = [file_name for file_name in MARKERS_OUT if file_name.startswith(prefix)][0]
 
+
+    # CHECK: the right number of columns in the input files
+    identifies_column_cnt = int(subprocess.check_output(f"head -n 1 {identities_file_name} | cut -f1- | wc -w", shell=True).strip())
+    if identifies_column_cnt not in [2,3]: # can have an optional third column with indices
+        raise Exception(f"Incorrect number of columns in the file '{identities_file_name}': {identifies_column_cnt} instead of 2 (or 3)!")
+    cells2clusters_column_cnt = int(subprocess.check_output(f"head -n 1 {cells2clusters_file_name} | cut -f1- | wc -w", shell=True).strip())
+    if cells2clusters_column_cnt != 3:
+        raise Exception(f"Incorrect number of columns in the file '{identities_file_name}': {cells2clusters_column_cnt} instead of 3!")
+    markers_columns = subprocess.check_output(f"head -n 1 {markers_file_name}", shell=True).strip().decode('utf-8').split('\t')
+    if not "p_val_adj" in markers_columns:
+        raise Exception(f"The column 'p_val_adj' is missing in the file {markers_file_name}!")
+    if not "cluster" in markers_columns:
+        raise Exception(f"The column 'cluster' is missing in the file {markers_file_name}!")
+    if not "gene" in markers_columns:
+        raise Exception(f"The column 'gene' is missing in the file {markers_file_name}!")
+        
+
     # CHECK: no underscores allowed in cluster names
     try:
         output = subprocess.check_output(f'cut -f2 {identities_file_name} | grep "_"', shell=True)
@@ -147,8 +190,9 @@ for data_set in data_sets:
             raise Exception(f"Underscores detected in cluster names of the '{data_set}' data set!")
     except subprocess.CalledProcessError as e:
         if e.returncode != 1:  # 1 means grep found no matches
-            raise Exception(f"Command 'cut' (3) failed with the error: '{e}'!")
+            raise Exception(f"Command 'cut' (4) failed with the error: '{e}'!")
     
+
     # CHECK: cluster id and identities must correspond between cells2clusters and cluster2ident files
     try:
         output = subprocess.check_output(f'bash -c "comm -3 <(cut -f1 {identities_file_name} | sort -u) <(cut -f2 {cells2clusters_file_name} | sort -u)"', shell=True)
@@ -156,7 +200,8 @@ for data_set in data_sets:
             raise Exception(f"Cluster identities differ between cells2cluster and identities files for the '{data_set}' data set!")
     except subprocess.CalledProcessError as e:
         if e.returncode != 1:  # 1 means grep found no matches
-            raise Exception(f"Command 'comm' (4) failed with the error: '{e}'!")
+            raise Exception(f"Command 'comm' (5) failed with the error: '{e}'!")
+
 
     # CHECK: only up-regulated markers should be present
     try:
@@ -165,8 +210,9 @@ for data_set in data_sets:
             raise Exception(f"Down-regulated markers detected for the '{data_set}' data set!")
     except subprocess.CalledProcessError as e:
         if e.returncode != 1:  # 1 means grep found no matches
-            raise Exception(f"Command 'cut' (5) failed with the error: '{e}'!")
+            raise Exception(f"Command 'cut' (6) failed with the error: '{e}'!")
     
+
     # CHECK: if the enrichment background is provided, then it must have at least one gene id in common with the expressed genes
     if not path_is_dummy(ENRICHMENT_BACKGROUND):
         try:
@@ -175,7 +221,8 @@ for data_set in data_sets:
                 raise Exception(f"The enrichment background has no genes in common with the expressed genes in the '{data_set}' data set!")
         except subprocess.CalledProcessError as e:
             if e.returncode != 1:  # 1 means grep found no matches
-                raise Exception(f"Command 'comm' (6) failed with the error: '{e}'!")
+                raise Exception(f"Command 'comm' (7) failed with the error: '{e}'!")
+
 
     # collect statistics
     stats_df.loc[data_set, 'cells'] = int(subprocess.check_output(f"head -n 1 {matrix_file_name} | cut -f1- | wc -w", shell=True).strip()) - 1
