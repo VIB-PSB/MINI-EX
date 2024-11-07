@@ -129,19 +129,12 @@ for el in dic_enirch:
     else:
         dic_go[el]=[float('nan'),'-','-',float('nan')]
 
-clusters=["Cluster_"+i for i in cellTyp_mtx.keys()]
-clu2gene={}	
-for line in open(ALLMARKERS,'r').readlines()[1:]:
-    spl=line.rstrip().rsplit('\t')
-    if float(spl[5]) <=0.05:
-        if 'Cluster_'+spl[6] in clusters:
-            if 'Cluster_'+spl[6] in clu2gene:
-                clu2gene['Cluster_'+spl[6]]+=[spl[7]]
-            else:
-                clu2gene['Cluster_'+spl[6]]=[spl[7]]
-
-for clu in clu2gene:
-    clu2gene[clu]=list(set(clu2gene[clu]))
+# create a dictionary of clusters vs their DEGs
+markers_df = pandas.read_csv(ALLMARKERS, sep='\t',dtype={'cluster': str})
+markers_df = markers_df[markers_df['cluster'].isin(cellTyp_mtx.keys())]
+markers_df['cluster'] = markers_df['cluster'].apply(lambda x: f"Cluster_{x}")
+markers_df = markers_df[markers_df['p_val_adj'] <= 0.05]
+clu2gene = markers_df.groupby('cluster')['gene'].unique().apply(list).to_dict()
     
 tfclu2de={}
 for el in dic_reg:
