@@ -178,7 +178,7 @@ for data_set in data_sets:
                 raise Exception(f"Command 'comm' (6) failed with the error: '{e}'!")
 
     # collect statistics
-    stats_df.loc[data_set, 'cells'] = int(subprocess.check_output(f"head -n 1 {matrix_file_name} | awk -F'\t' '{{print NF}}'", shell=True).strip()) - 1
+    stats_df.loc[data_set, 'cells'] = int(subprocess.check_output(f"head -n 1 {matrix_file_name} | cut -f1- | wc -w", shell=True).strip()) - 1
     stats_df.loc[data_set, 'genes'] = int(subprocess.check_output(f"cat {matrix_file_name} | wc -l", shell=True).strip()) - 1
     stats_df.loc[data_set, 'clusters'] = int(subprocess.check_output(f"cat {identities_file_name} | wc -l", shell=True).strip())
     stats_df.loc[data_set, 'tissues'] = int(subprocess.check_output(f"cut -f2 {identities_file_name} | sort | uniq | wc -l", shell=True).strip())
