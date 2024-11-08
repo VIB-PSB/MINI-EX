@@ -146,13 +146,13 @@ process filter_motifs {
     input:
     path infoTf
     val motifFilter
-    tuple val(datasetId), path(enrichedModules)
+    tuple val(datasetId), path(enrichedRegulons)
 
     output:
-    tuple val("${datasetId}"), path("${datasetId}_enrichedRegulons.txt")
+    tuple val("${datasetId}"), path("${datasetId}_enrichedRegulonsFiltered.txt")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterMotifs.py" $infoTf "$enrichedModules" "${datasetId}_enrichedRegulons.txt" "$motifFilter"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterMotifs.py" $infoTf "$enrichedRegulons" "${datasetId}_enrichedRegulonsFiltered.txt" "$motifFilter"
     """
 }
 
