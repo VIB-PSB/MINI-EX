@@ -44,7 +44,7 @@ col_colors=[]
 for c in dic.columns:
     # if no annotation is provided, cluster names are in form "Cluster-X" -> we want the X
     # if annotation is provided, cluster names are in form "Tissue-X" -> we want the Tissue
-    tissue = c.rsplit('-')[1] if c.startswith("Cluster") else c.rsplit('-')[0]
+    tissue = c.split('-',1)[1] if c.startswith("Cluster") else c.rsplit('-')[0]
     col_colors.append([c,col_dic[tissue]])
 col_colors=pandas.DataFrame(col_colors,columns=['cluster','cell type'])
 
