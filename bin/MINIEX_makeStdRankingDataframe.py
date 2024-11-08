@@ -1,126 +1,94 @@
-import pandas, collections, sys
+"""
+Combines selected regulons with all their previously computed metrics into a single dataframe.
+"""
 
-###define which cell-types the cluster belong to
-CELLID=sys.argv[1]  
-REGULONS=sys.argv[2]
-FILE_ALIAS=sys.argv[3]
-TOPS=sys.argv[4]
-GOS=sys.argv[5]
-CENTRALITIES=sys.argv[6]
-ALLMARKERS=sys.argv[7]
-OUTFILE=sys.argv[8]
+import pandas as pd
+import sys
 
-cellTyp_mtx = {}
-for line in open(CELLID):
-    cellTyp_mtx[str(line.rstrip().rsplit('\t')[0])]=line.rstrip().rsplit('\t')[1]
-                                           
-###load final regulons (filtered for TF being expressed in at least 5% of cells in the cluster), #TGs and #TGswithGWAS
-dic_reg={}
-with open(REGULONS) as f:
-    for line in f:
-        spl=line.rstrip().rsplit('\t')
-        dic_reg[spl[0]+'_'+spl[1]]=len(spl[2].rsplit(','))
-allTFs=list(set(['_'.join(i.rsplit('_')[:-2]) for i in list(dic_reg.keys())]))   
-
-###define aliases for TFs
-aliases={}
-with open(FILE_ALIAS) as f:
-    for line in f:
-        geneID, geneSymbol = line.rstrip().split('\t')[0], line.rstrip().split('\t')[1]
-        if geneID in allTFs:
-            if geneID not in aliases:
-                aliases[geneID] = [geneSymbol]
-            else:
-                aliases[geneID].append(geneSymbol)
-
-for geneID, symbol in aliases.items():
-    aliases[geneID] = "/ ".join(aliases[geneID]) # merge the final list of aliases (gene symbols) into one string
-
-for tf in allTFs:
-    if tf not in aliases:
-        aliases[tf]=tf
-regPerClu=collections.Counter(['_'.join(i.rsplit('_')[-2:]) for i in dic_reg])
-
-###load output regulons to get qvals corresponding to regulons enrichment in clusters
-dic_enirch={}
-with open(TOPS) as f:
-    for line in f:
-        if line.startswith('#') or line.startswith('set_id'): # skip the comments and the header
-            pass
-        else:
-            spl=line.rstrip().rsplit('\t')
-            if spl[0]+'_'+spl[1] in dic_reg:
-                dic_enirch[spl[0]+'_'+spl[1]]=float(spl[3])
-            
-###do the same s above for non root GOs
-termsNOI={}
-genesNOI=[]
-gene2go={}
-
-if GOS != 'false':
-    with open(GOS) as f:
-        for line in f:
-            spl=line.rstrip().rsplit('\t')
-            termsNOI[spl[0]]=spl[3]
-            genesNOI.append(spl[1])
-            if spl[1] in gene2go:
-                gene2go[spl[1]]+=[spl[0]]
-            else:
-                gene2go[spl[1]]=[spl[0]]
-    genesNOI=list(set(genesNOI))
+CLUSTER_ID_FILE         = sys.argv[1]  
+REGULONS_FILE           = sys.argv[2]
+ALIASE_FILE             = sys.argv[3]
+REGULON_ENRICHMENT_FILE = sys.argv[4]
+CENTRALITIES_FILE       = sys.argv[5]
+ALL_MARKERS_FILE        = sys.argv[6]
+OUTPUT_FILE             = sys.argv[7]
 
 
-###load centrality measurments for regulons
-dic_centrality={}
-with open(CENTRALITIES) as f:
-    header=f.readlines()[0].rstrip().rsplit('\t')
-with open(CENTRALITIES) as f:
-    for line in f.readlines()[1:]:
-        spl=line.rstrip().rsplit('\t')
-        for j in range(len(header)):
-            clu='_'.join(header[j].rsplit('_')[1:3])
-            if spl[0]+'_'+clu in dic_reg:
-                wher=[i for i in range(len(header)) if header[i].endswith(clu)]
-                dic_centrality[spl[0]+'_'+clu]=[float(spl[wher[0]]),float(spl[wher[1]]),float(spl[wher[2]])]
-            else: ###add zeros for the gene_cluster for which measurements are not done
-                if spl[0]+'_'+clu in dic_enirch:
-                    dic_centrality[spl[0]+'_'+clu]=[0.0,0.0,0.0]
+# ======== dataframe that will collect all the metrics computed for the selected regulons ========
+ranking_df = pd.DataFrame()
 
 
+# ======== load regulons filtered according to parameters specified by the user ========
+regulons_df = pd.read_csv(REGULONS_FILE, sep='\t', names=['TF', 'Cluster', 'TGs'])  # here, clusters are identified as "Cluster_X"
+regulons_df['Regulon'] = regulons_df['TF'] + '_' + regulons_df['Cluster']  # combine TF and cluster names to create a unique regulon name
+regulons_df['#TGs'] = regulons_df['TGs'].str.split(',').str.len()  # count TGs of each regulon
+regulons_dict = regulons_df.set_index('Regulon')['#TGs'].to_dict()
+# collect the relevant data
+ranking_df = regulons_df[['TF', 'Cluster', '#TGs']].copy()  # collect regulon identifiers + #TGs per regulon
+regulons_per_cluster_dict = regulons_df.groupby('Cluster')['Regulon'].count().to_dict()
+ranking_df['totRegInCluster'] = ranking_df['Cluster'].apply(lambda x: regulons_per_cluster_dict[x])
 
-clusters=["Cluster_"+i for i in cellTyp_mtx.keys()]
-clu2gene={}	
-for line in open(ALLMARKERS,'r').readlines()[1:]:
-    spl=line.rstrip().rsplit('\t')
-    if float(spl[5]) <=0.05:# and float(spl[2])>=0.5 and float(spl[3]) >= 0.5:
-        if 'Cluster_'+spl[6] in clusters:
-            if 'Cluster_'+spl[6] in clu2gene:
-                clu2gene['Cluster_'+spl[6]]+=[spl[7]]
-            else:
-                clu2gene['Cluster_'+spl[6]]=[spl[7]]
 
-for clu in clu2gene:
-    clu2gene[clu]=list(set(clu2gene[clu]))
-    
-tfclu2de={}
-for el in dic_reg:
-    if '_'.join(el.rsplit('_')[:-2]) in clu2gene["Cluster_"+el.rsplit('_')[-1]]:
-        tfclu2de[el]=1
-    else:
-        tfclu2de[el]=0
+# ======== load gene aliases for the retrieved TFs ========
+tf_alias_df = pd.read_csv(ALIASE_FILE, sep='\t') # columns: 'locus_name' - 'symbol' - 'full_name'
+tf_alias_df.columns = ['TF', 'alias', 'description']
+tf_alias_df = tf_alias_df.fillna("")
+# add entries for the missing TFs, using TF identifiers for the three columns
+missing_tfs = set(ranking_df['TF'].unique()) - set(tf_alias_df['TF'])
+tf_alias_df = pd.concat([tf_alias_df, pd.DataFrame({ 'TF': list(missing_tfs), 'alias': list(missing_tfs), 'description': list(missing_tfs)})], ignore_index=True)
+tf_alias_dict = tf_alias_df.groupby('TF')['alias'].agg('/ '.join).to_dict()
+# collect the relevant data
+ranking_df['alias'] = ranking_df['TF'].apply(lambda x: tf_alias_dict[x])
+ranking_df['clusterId'] = ranking_df['Cluster'].apply(lambda x: x.split('_')[1])
 
-df=[]
-for ele in dic_enirch:
-    geneid='_'.join(ele.rsplit('_')[:-2])
-    clusterid='_'.join(ele.rsplit('_')[-2:])
-    if geneid in genesNOI:
-        whichGO=sorted([goo for goo in gene2go[geneid] if goo in termsNOI])
-        whichGOdesc=[termsNOI[goo] for goo in whichGO]
-        df.append([geneid,aliases[geneid],'known_TF',','.join(whichGO),','.join(whichGOdesc),cellTyp_mtx[clusterid.replace('Cluster_','')]+'_'+clusterid,cellTyp_mtx[clusterid.replace('Cluster_','')],tfclu2de[ele],regPerClu[clusterid],dic_reg[ele],dic_enirch[ele]]+dic_centrality[ele])
-    else:
-        df.append([geneid,aliases[geneid],'unknown_TF','-','-',cellTyp_mtx[clusterid.replace('Cluster_','')]+'_'+clusterid,cellTyp_mtx[clusterid.replace('Cluster_','')],tfclu2de[ele],regPerClu[clusterid],dic_reg[ele],dic_enirch[ele]]+dic_centrality[ele])
 
-df=pandas.DataFrame(df)   
-df.columns=['TF','alias','hasTFrelevantGOterm','GOterm','GOdescription','cluster','celltype','isTF_DE','totRegInCluster','#TGs','qval_cluster','out-degree','closeness','betweenness']
+# ======== load cluster annotations ========
+cluster_id_annotation_df = pd.read_csv(CLUSTER_ID_FILE, sep='\t', names=['clusterId', 'celltype'], dtype={'clusterId': 'str'})
+# collect the relevant data
+ranking_df = ranking_df.merge(cluster_id_annotation_df, on='clusterId', how='left')  # add 'celltype' column
+ranking_df['cluster'] = ranking_df['celltype'] + "_" + ranking_df['Cluster']
 
-df.to_csv(OUTFILE,sep='\t',index=None)
+
+# ======== load cluster specificity for the list of regulons retrieved previously ========
+regulon_enrichment_df = pd.read_csv(REGULON_ENRICHMENT_FILE, sep='\t', comment='#')
+regulon_enrichment_df = regulon_enrichment_df.rename(columns={'set_id': 'TF', 'ftr_id': 'Cluster', 'q-val': 'qval_cluster'})
+regulon_enrichment_df['Regulon'] = regulon_enrichment_df['TF'] + '_' + regulon_enrichment_df['Cluster']  # combine TF and cluster names to create a unique regulon name
+regulon_enrichment_df = regulon_enrichment_df[['TF', 'Cluster', 'qval_cluster']]
+# collect the relevant data
+ranking_df = ranking_df.merge(regulon_enrichment_df, on=['TF', 'Cluster'], how='left')  # add 'qval_cluster' column
+
+
+# ======== load network centrality measures ========
+# the original dataframe contains TFs as rows, and, for each cluster, three columns: 'degout_Cluster_X', 'clos_Cluster_X' and 'bet_Cluster_X'
+centrality_orig_df = pd.read_csv(CENTRALITIES_FILE, sep='\t', index_col=0)
+centrality_df = regulons_df[['TF', 'Cluster']].copy()  # retrieve identifiers of the selected regulons
+centrality_df['out-degree'] = centrality_df.apply(lambda row: centrality_orig_df.loc[row['TF'], f"degout_{row['Cluster']}"], axis=1)
+centrality_df['closeness'] = centrality_df.apply(lambda row: centrality_orig_df.loc[row['TF'], f"clos_{row['Cluster']}"], axis=1)
+centrality_df['betweenness'] = centrality_df.apply(lambda row: centrality_orig_df.loc[row['TF'], f"bet_{row['Cluster']}"], axis=1)
+# collect the relevant data
+ranking_df = ranking_df.merge(centrality_df, on=['TF', 'Cluster'], how='left')  # add 'out-degree', 'closeness' and 'betweenness' columns
+
+
+# ======== load cluster DEGs ========
+# this is needed to check whether TFs are DE or not
+markers_df = pd.read_csv(ALL_MARKERS_FILE, sep='\t',dtype={'cluster': str})
+markers_df = markers_df.rename(columns={'gene': 'TF', 'cluster': 'clusterId'})
+markers_df = markers_df[markers_df['p_val_adj'] <= 0.05]
+# collect the relevant data
+ranking_df['isTF_DE'] = ranking_df.merge(markers_df, on=['TF', 'clusterId'], how='left', indicator=True)['_merge'].map({'both': 1, 'left_only': 0}).astype(int)
+
+
+# ======== add GO-related information ========
+# as this is a standard procedure, GO annotations aren't used --> add default values
+ranking_df['hasTFrelevantGOterm'] = "unknown_TF"
+ranking_df['GOterm'] = "-"
+ranking_df['GOdescription'] = "-"
+
+
+# ======== select final columns and reorder them ========
+ranking_df = ranking_df[['TF', 'alias', 'hasTFrelevantGOterm', 'GOterm', 'GOdescription', 'cluster', 'celltype', 'isTF_DE',
+                         'totRegInCluster', '#TGs', 'qval_cluster', 'out-degree', 'closeness', 'betweenness']]
+
+
+# ======== save the resulting dataframe ========
+ranking_df.to_csv(OUTPUT_FILE, sep='\t', index=None)
