@@ -65,7 +65,7 @@ process check_user_input {
     """
     echo -n "MINI-EX" "$miniexVersion" "\nPipeline started on: " > "processLog.log"
     date >> "processLog.log"
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkInput.py" "$expressionMatrix" "$markersOut" "$cellsToClusters" "$clustersToIdentities" \
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkUserInput.py" "$expressionMatrix" "$markersOut" "$cellsToClusters" "$clustersToIdentities" \
                                                                   "$tfList" "$termsOfInterest" "$grnboostOut" "$featureFileMotifs" "$infoTf" \
                                                                   "$goFile" "$geneAliases" "$enrichmentBackground" "$doMotifAnalysis" "$topMarkers" \
                                                                    "$expressionFilter" "$motifFilter" "$topRegulons" >> "processLog.log"
@@ -100,7 +100,7 @@ process run_grnboost {
     tuple val("${datasetId}"), path("${datasetId}_grnboost2.tsv")
 
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_grnboostMultiprocess.py" $tfList "$matrix" "${task.cpus}" "${datasetId}_grnboost2.tsv"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_runGrnboost.py" $tfList "$matrix" "${task.cpus}" "${datasetId}_grnboost2.tsv"
     """
 }
 
@@ -152,7 +152,7 @@ process filter_motifs {
     tuple val("${datasetId}"), path("${datasetId}_enrichedRegulons.txt")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterForMotifs.py" $infoTf "$enrichedModules" "${datasetId}_enrichedRegulons.txt" "$motifFilter"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterMotifs.py" $infoTf "$enrichedModules" "${datasetId}_enrichedRegulons.txt" "$motifFilter"
     """
 }
 
@@ -181,7 +181,7 @@ process get_top_degs {
     tuple val("${datasetId}"), path("${datasetId}_top${topMarkers}cellClusters.out")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_selectTopDEGs.py" $allMarkers "$topMarkers" "${datasetId}_top${topMarkers}cellClusters.out"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_getTopDegs.py" $allMarkers "$topMarkers" "${datasetId}_top${topMarkers}cellClusters.out"
     """
 }
 
@@ -219,7 +219,7 @@ process filter_expression {
     tuple val("${datasetId}"), path("${datasetId}_regulons.tsv")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterForTFExp.py" "$expressionMatrix" $infoTf $cellClusters "$expressionFilter" "$regulons" "${datasetId}_regulons.tsv"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterExpression.py" "$expressionMatrix" $infoTf $cellClusters "$expressionFilter" "$regulons" "${datasetId}_regulons.tsv"
     """
 }
 
@@ -251,7 +251,7 @@ process make_regulon_clustermap {
     tuple val("${datasetId}"), path("${datasetId}_clustermap.svg"), path("${datasetId}_clustermap.png")
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_visualClustermap.py" "$clusterIdentities" "$finalRegulons" "${datasetId}_clustermap"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRegulonClustermap.py" "$clusterIdentities" "$finalRegulons" "${datasetId}_clustermap"
     """
 }
 
@@ -265,7 +265,7 @@ process get_network_centrality {
     tuple val("${datasetId}"), path("${datasetId}_networkCentrality.txt")
 
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_network_analysis.py" "$finalRegulons" "${datasetId}_networkCentrality.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_getNetworkCentrality.py" "$finalRegulons" "${datasetId}_networkCentrality.txt"
     """
 }
 
@@ -279,7 +279,7 @@ process make_go_enrichment_files {
     tuple val("${datasetId}"), path("${datasetId}_setFileRegulons.out"), path("${datasetId}_featureFileGO.out")
 
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeFilesEnrichment.py" "$finalRegulons" "$goFile" "${datasetId}_setFileRegulons.out" "${datasetId}_featureFileGO.out"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeGoEnrichmentFile.py" "$finalRegulons" "$goFile" "${datasetId}_setFileRegulons.out" "${datasetId}_featureFileGO.out"
     """
 }
 
@@ -316,7 +316,7 @@ process check_reference {
     tuple val("${datasetId}"), stdout
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkRef.py" "$finalRegulons" "$goFile" "$termsOfInterest" 
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkReference.py" "$finalRegulons" "$goFile" "$termsOfInterest" 
     """
 }
 
@@ -332,7 +332,7 @@ process make_ref_ranking_dataframe {
     tuple val("${datasetId}"), path("${datasetId}_dfForRanking.txt")
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRankingDf_ref.py" "$clusterIdentities" "$finalRegulons" "$geneAliases" "$qValueCluster" "$goFile" "$termsOfInterest" "$networkCentrality" "$goEnrichment" "$allMarkers" "${datasetId}_dfForRanking.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRefRankingDataframe.py" "$clusterIdentities" "$finalRegulons" "$geneAliases" "$qValueCluster" "$goFile" "$termsOfInterest" "$networkCentrality" "$goEnrichment" "$allMarkers" "${datasetId}_dfForRanking.txt"
     """  
 }
 
@@ -347,7 +347,7 @@ process make_std_ranking_dataframe {
     tuple val("${datasetId}"), path("${datasetId}_dfForRanking.txt")
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRankingDf_std.py" "$clusterIdentities" "$finalRegulons" "$geneAliases" "$qValueCluster" "$goFile" "$networkCentrality" "$allMarkers" "${datasetId}_dfForRanking.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeStdRankingDataframe.py" "$clusterIdentities" "$finalRegulons" "$geneAliases" "$qValueCluster" "$goFile" "$networkCentrality" "$allMarkers" "${datasetId}_dfForRanking.txt"
     """  
 }
 
@@ -395,7 +395,7 @@ process make_top_regulons_heatmaps {
     tuple val(datasetId), path("${datasetId}_heatmapSpecificity.svg"), path("${datasetId}_heatmapSpecificity.png"), path("${datasetId}_heatmapDEcalls.svg"), path("${datasetId}_heatmapDEcalls.png")
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_visualHeatmapTop150.py" "$rankedRegulons" "${datasetId}_heatmapSpecificity" "${datasetId}_heatmapDEcalls" "$topRegulons"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeTopRegulonsHeatmap.py" "$rankedRegulons" "${datasetId}_heatmapSpecificity" "${datasetId}_heatmapDEcalls" "$topRegulons"
     """
 }
 
@@ -411,12 +411,12 @@ process make_regmaps {
     tuple val(datasetId), path("${datasetId}_regmap_*.svg"), path("${datasetId}_regmap_*.png")
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_visualRegmap.py" -c $cellClusters \
-                                                                    -i $clusterIdentities \
-                                                                    -r $rankedRegulons \
-                                                                    -m $expressionMatrix \
-                                                                    -t 10,25,50,100,$topRegulons \
-                                                                    -d $datasetId
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRegmaps.py" -c $cellClusters \
+                                                                   -i $clusterIdentities \
+                                                                   -r $rankedRegulons \
+                                                                   -m $expressionMatrix \
+                                                                   -t 10,25,50,100,$topRegulons \
+                                                                   -d $datasetId
     """
 }
 
