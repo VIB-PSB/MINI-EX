@@ -330,10 +330,11 @@ process make_ranking_dataframe {
     path termsOfInterest
 
     output:
-    tuple val("${datasetId}"), path("${datasetId}_dfForRanking.txt")
+    tuple val("${datasetId}"), path("${datasetId}_dfForRanking.txt"), emit: processOut
+    tuple val("${datasetId}"), path("${datasetId}_rankingDataframeLog.log"), emit: processLog
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRankingDataframe.py" "$geneAliases" "$clusterIdentities" "$finalRegulons" "$regulonEnrichment" "$networkCentrality" "$allMarkers" "$goEnrichment" "$goAnnotations" "$termsOfInterest" "${datasetId}_dfForRanking.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRankingDataframe.py" "$geneAliases" "$clusterIdentities" "$finalRegulons" "$regulonEnrichment" "$networkCentrality" "$allMarkers" "$goEnrichment" "$goAnnotations" "$termsOfInterest" "${datasetId}_dfForRanking.txt" > "${datasetId}_rankingDataframeLog.log"
     """  
 }
 
@@ -411,13 +412,13 @@ process make_log_file {
     publishDir logDir, mode: 'copy'
 
     input:
-    tuple path(checkInputLog), val(datasetId), path(regulonInfoLog), path(bordaLog)
+    tuple path(checkInputLog), val(datasetId), path(rankingDataframeLog), path(regulonInfoLog), path(bordaLog)
 
     output:
     path("${datasetId}_log.txt")
 
     """
-    cat "$checkInputLog" "$regulonInfoLog" "$bordaLog" > "${datasetId}_log.txt"
+    cat "$checkInputLog" "$rankingDataframeLog" "$regulonInfoLog" "$bordaLog" > "${datasetId}_log.txt"
     echo -n "Pipeline ended on: " >> "${datasetId}_log.txt"
     date >> "${datasetId}_log.txt"
     """
@@ -527,7 +528,7 @@ workflow {
 
     select_borda_procedure(enrichment_files_input_ch, terms_of_interest_file)
     select_borda_procedure_trimmed = select_borda_procedure.out.map { n,it -> [ n, it.trim() ] }
-    borda_input_ch = make_ranking_dataframe.out.join(select_borda_procedure_trimmed)
+    borda_input_ch = make_ranking_dataframe.out.processOut.join(select_borda_procedure_trimmed)
 
     make_borda(borda_input_ch)
     
@@ -539,7 +540,7 @@ workflow {
     make_regmaps_input_ch = matrix_ch.join(cluster_ch).join(cluster_ids_ch).join(make_borda.out.processOut)    
     make_regmaps(make_regmaps_input_ch, params.topRegulons)
 
-    make_log_file(check_user_input.out.processLog.combine(make_info_file.out.processLog.join(make_borda.out.processLog)))
+    make_log_file(check_user_input.out.processLog.combine(make_ranking_dataframe.out.processLog.join(make_info_file.out.processLog).join(make_borda.out.processLog)))
 }
 
 workflow.onComplete {

@@ -10,41 +10,37 @@ Otherwise: use the standard procedure (which will also take into account
 the GO enrichment value).
 """
 
-import sys,pandas
+import pandas as pd
+import sys
              
-REGULONS_FILE=sys.argv[1]
-GO_ANNOTATIONS_FILE=sys.argv[2]
-TERMS_OF_INTEREST_FILE=sys.argv[3]
-
-# collect TFs from the list of regulons
-all_tfs = []
-with open(REGULONS_FILE) as f:
-    for line in f:
-        spl=line.rstrip().rsplit('\t')
-        all_tfs += [spl[0]]
-all_tfs = list(set(all_tfs))
+REGULONS_FILE          = sys.argv[1]
+GO_ANNOTATIONS_FILE    = sys.argv[2]
+TERMS_OF_INTEREST_FILE = sys.argv[3]
 
 
 if TERMS_OF_INTEREST_FILE.startswith('.dummy_path'):
     # if terms of interest aren't provided: use the standard procedure
     print("std")
 else:
-    terms_of_interest = list(set(pandas.read_csv(TERMS_OF_INTEREST_FILE,sep='\t',header=None)[0]))
+    # collect TFs from the list of regulons (first column)
+    all_tfs = set(pd.read_csv(REGULONS_FILE, sep='\t', header=None)[0].unique())
+    
+    terms_of_interest = pd.read_csv(TERMS_OF_INTEREST_FILE, sep='\t', header=None)[0].unique().tolist()
 
     # collect list of relevant TFs: are present in the GO annotations file 
     # and their description contains at least one term of interest
-    relevant_tfs = []
-    with open(GO_ANNOTATIONS_FILE) as f:
-        for line in f:
-            spl=line.rstrip().rsplit('\t')  # columns are: GO term - gene - evidence code - GO description
-            gene_id = spl[1]
-            go_description = spl[3]
-            if any(term_of_interest in go_description for term_of_interest in terms_of_interest) and gene_id in all_tfs:
-                relevant_tfs.append(gene_id)
-    myTFs=list(set(relevant_tfs))   
+
+    go_annotations_df = pd.read_csv(GO_ANNOTATIONS_FILE, sep='\t', header=None, names=['go_term', 'gene_id', 'evidence_code', 'go_description'])
+
+    # a term is relevant if either its term or description contain at least one term of interest
+    pattern = '|'.join(terms_of_interest)
+    go_annotations_df['term_is_relevant'] = go_annotations_df[['go_term', 'go_description']].apply(lambda x: x.str.contains(pattern, case=False, na=False)).any(axis=1)
+    releavant_annotated_genes = set(go_annotations_df[go_annotations_df['term_is_relevant']]['gene_id'])
+    
+    relevant_tfs = all_tfs.intersection(releavant_annotated_genes)
 
     # if at least two relevant TFs were found: use "ref" approach, otherwise: use "std" procedure
-    if len(myTFs)<2:
+    if len(relevant_tfs) < 2:
         print('std')
     else:
         print('ref')

@@ -147,6 +147,7 @@ else:  # add GO-related columns
     go_enrichment_df = go_enrichment_df.rename(columns={'go_description': 'GO_enrich_desc'})
     go_enrichment_df = go_enrichment_df[['Regulon', 'GO_enrich_qval', 'GO_enrich_term', 'GO_enrich_desc', '#TGs_withGO']]  # select relevant columns
     go_enrichment_df = go_enrichment_df.loc[go_enrichment_df.groupby('Regulon')['GO_enrich_qval'].idxmin()]  # select elements with the lowest enrichment q-value
+    
     # collect the relevant data: 'GO_enrich_qval', 'GO_enrich_term', 'GO_enrich_desc' and '#TGs_withGO'
     ranking_df = ranking_df.merge(go_enrichment_df, on=['Regulon'], how='left')
     ranking_df[['GO_enrich_term', 'GO_enrich_desc']] = ranking_df[['GO_enrich_term', 'GO_enrich_desc']].fillna('-')
@@ -158,3 +159,12 @@ else:  # add GO-related columns
 
 # ======== save the resulting dataframe ========
 ranking_df.to_csv(OUTPUT_FILE, sep='\t', index=None)
+
+
+# write log information (only if the user provided terms of interest)
+if not path_is_dummy(TERMS_OF_INTEREST_FILE):
+    print("== SELECTED GO TERMS =========================================")
+    print("Following GO terms were retrieved for selected terms of interest:")
+    with pd.option_context('display.max_rows', None):  # do not truncate rows for large dataframes
+        print(go_annotations_df[go_annotations_df['term_is_relevant'] == True][['go_term', 'go_description']].drop_duplicates().sort_values(by='go_term').to_string(index=False))
+    print("")
