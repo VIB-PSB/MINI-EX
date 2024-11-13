@@ -306,7 +306,7 @@ process run_enricher_go {
 }
 
 
-process check_reference {
+process select_borda_procedure {
     
     input:
     tuple val(datasetId), path(finalRegulons), path(goFile)
@@ -316,7 +316,7 @@ process check_reference {
     tuple val("${datasetId}"), stdout
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkReference.py" "$finalRegulons" "$goFile" "$termsOfInterest" 
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_selectBordaProcedure.py" "$finalRegulons" "$goFile" "$termsOfInterest" 
     """
 }
 
@@ -507,9 +507,8 @@ workflow {
     get_network_centrality(filter_expression.out)
 
     if ( params.goFile != null ){
-
-        make_go_enrichment_files_input_ch = filter_expression.out.combine(Channel.fromPath(params.goFile))
-        make_go_enrichment_files_ch = make_go_enrichment_files(make_go_enrichment_files_input_ch)
+        enrichment_files_input_ch = filter_expression.out.combine(Channel.fromPath(params.goFile))
+        make_go_enrichment_files_ch = make_go_enrichment_files(enrichment_files_input_ch)
 
         // add enrichment background (use join in case of expressed genes (as dataset dependent) or combine in case of a user specified enrichment background)
         if (params.enrichmentBackground == null) { make_go_enrichment_files_combined_ch = make_go_enrichment_files_ch.join(enrichment_background_ch)}
@@ -519,16 +518,16 @@ workflow {
         ranking_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(deg_ch).join(run_enricher_go.out)
     }
     else {
-        // no GO enrichment were performed: add a dummy path for GO enrichment result
-        make_go_enrichment_files_input_ch = filter_expression.out.combine(Channel.fromPath("/.dummy_path_go_annotations"))
+        // no GO enrichment was performed: add dummy paths for GO-related files
+        enrichment_files_input_ch = filter_expression.out.combine(Channel.fromPath("/.dummy_path_go_annotations"))
         ranking_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(deg_ch).combine(Channel.fromPath("/.dummy_path_go_enrichment"))
     }
     
     make_ranking_dataframe(gene_aliases_file, ranking_combined_ch, go_file, terms_of_interest_file)
 
-    check_reference(make_go_enrichment_files_input_ch, terms_of_interest_file)
-    check_reference_trimmed = check_reference.out.map { n,it -> [ n, it.trim() ] }
-    borda_input_ch = make_ranking_dataframe.out.join(check_reference_trimmed)
+    select_borda_procedure(enrichment_files_input_ch, terms_of_interest_file)
+    select_borda_procedure_trimmed = select_borda_procedure.out.map { n,it -> [ n, it.trim() ] }
+    borda_input_ch = make_ranking_dataframe.out.join(select_borda_procedure_trimmed)
 
     make_borda(borda_input_ch)
     
