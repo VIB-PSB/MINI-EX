@@ -321,33 +321,19 @@ process check_reference {
 }
 
 
-process make_ref_ranking_dataframe {
-    
-    input:
-    path geneAliases
-    path termsOfInterest
-    tuple val(datasetId), path(clusterIdentities), path(finalRegulons), path(qValueCluster), path(networkCentrality), path(goEnrichment), path(allMarkers), path(goFile)
-
-    output:
-    tuple val("${datasetId}"), path("${datasetId}_dfForRanking.txt")
-     
-    """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRefRankingDataframe.py" "$clusterIdentities" "$finalRegulons" "$geneAliases" "$qValueCluster" "$goFile" "$termsOfInterest" "$networkCentrality" "$goEnrichment" "$allMarkers" "${datasetId}_dfForRanking.txt"
-    """  
-}
-
-
-process make_std_ranking_dataframe {
+process make_ranking_dataframe {
     
     input:  
     path geneAliases
-    tuple val(datasetId), path(clusterIdentities), path(finalRegulons), path(qValueCluster), path(networkCentrality), path(allMarkers), val(goFile)
+    tuple val(datasetId), path(clusterIdentities), path(finalRegulons), path(regulonEnrichment), path(networkCentrality), path(allMarkers), path(goEnrichment)
+    path goAnnotations
+    path termsOfInterest
 
     output:
     tuple val("${datasetId}"), path("${datasetId}_dfForRanking.txt")
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeStdRankingDataframe.py" "$clusterIdentities" "$finalRegulons" "$geneAliases" "$qValueCluster" "$goFile" "$networkCentrality" "$allMarkers" "${datasetId}_dfForRanking.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRankingDataframe.py" "$geneAliases" "$clusterIdentities" "$finalRegulons" "$regulonEnrichment" "$networkCentrality" "$allMarkers" "$goEnrichment" "$goAnnotations" "$termsOfInterest" "${datasetId}_dfForRanking.txt"
     """  
 }
 
@@ -439,19 +425,27 @@ process make_log_file {
 
 
 workflow {
+    // handle files with null values (cannot be provided as parameters to a Nextflow process -> replaced with dummy names)
+    terms_of_interest_file     = params.termsOfInterest      != null ? Channel.fromPath(params.termsOfInterest, checkIfExists:true).collect()      : "/.dummy_path_terms_of_interest"
+    grnboost_file              = params.grnboostOut          != null ? Channel.fromPath(params.grnboostOut, checkIfExists:true).collect()          : "/.dummy_path_grnboost"
+    motif_mapping_file         = params.doMotifAnalysis      == true ? Channel.fromPath(params.featureFileMotifs, checkIfExists:true).collect()    : "/.dummy_path_motif_mapping"
+    go_file                    = params.goFile               != null ? Channel.fromPath(params.goFile, checkIfExists:true).collect()               : "/.dummy_path_go_annotations"
+    gene_aliases_file          = params.geneAliases          != null ? Channel.fromPath(params.geneAliases, checkIfExists:true).collect()          : "/.dummy_path_gene_aliases"
+    enrichment_background_file = params.enrichmentBackground != null ? Channel.fromPath(params.enrichmentBackground, checkIfExists:true).collect() : "/.dummy_path_enrichment_background"
+
     check_user_input(
         Channel.fromPath(params.expressionMatrix, checkIfExists:true).collect(),
         Channel.fromPath(params.markersOut, checkIfExists:true).collect(),
         Channel.fromPath(params.cellsToClusters, checkIfExists:true).collect(),
         Channel.fromPath(params.clustersToIdentities, checkIfExists:true).collect(),
         Channel.fromPath(params.tfList, checkIfExists:true).collect(),
-        params.termsOfInterest != null ? Channel.fromPath(params.termsOfInterest, checkIfExists:true).collect() : "/dummy_path_tof",
-        params.grnboostOut != null ? Channel.fromPath(params.grnboostOut, checkIfExists:true).collect() : "/dummy_path_grnb",
-        params.doMotifAnalysis == true? Channel.fromPath(params.featureFileMotifs, checkIfExists:true) : "/dummy_path_motif",
+        terms_of_interest_file,
+        grnboost_file,
+        motif_mapping_file,
         Channel.fromPath(params.infoTf, checkIfExists:true).collect(),
-        params.goFile != null ? Channel.fromPath(params.goFile, checkIfExists:true).collect() : "/dummy_path_go",
-        params.geneAliases != null ? Channel.fromPath(params.geneAliases, checkIfExists:true).collect() : "/dummy_gene_aliases",
-        params.enrichmentBackground != null ? Channel.fromPath(params.enrichmentBackground, checkIfExists:true).collect() : "/dummy_path_enrichment_background",
+        go_file,
+        gene_aliases_file,
+        enrichment_background_file,
         params.doMotifAnalysis,
         params.topMarkers,
         params.expressionFilter,
@@ -521,30 +515,20 @@ workflow {
         if (params.enrichmentBackground == null) { make_go_enrichment_files_combined_ch = make_go_enrichment_files_ch.join(enrichment_background_ch)}
         else { make_go_enrichment_files_combined_ch = make_go_enrichment_files_ch.combine(enrichment_background_ch) }
 
-        run_enricher_go(scriptEnricher,make_go_enrichment_files_combined_ch)   
+        run_enricher_go(scriptEnricher,make_go_enrichment_files_combined_ch)
+        ranking_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(deg_ch).join(run_enricher_go.out)
     }
-
-    if ( params.geneAliases == null )
-        gene_aliases_path = "$baseDir/data/.dummy_empty_file.txt"
-    else
-        gene_aliases_path = params.geneAliases
-
-    if ( params.goFile != null && params.termsOfInterest != null ){        
-        check_reference(make_go_enrichment_files_input_ch,params.termsOfInterest)
-        check_reference_trimmed = check_reference.out.map { n,it -> [ n, it.trim() ] }
-    
-        rankingRef_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(run_enricher_go.out).join(deg_ch).combine(Channel.fromPath(params.goFile))
-        
-        make_ref_ranking_dataframe(gene_aliases_path,params.termsOfInterest,rankingRef_combined_ch)
-    
-        borda_input_ch = make_ref_ranking_dataframe.out.join(check_reference_trimmed)
-    
-    } else {
-        rankingStd_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(deg_ch).combine(Channel.value(false))
-        make_std_ranking_dataframe(gene_aliases_path,rankingStd_combined_ch)    
-        
-        borda_input_ch = make_std_ranking_dataframe.out.combine(Channel.value('std'))        
+    else {
+        // no GO enrichment were performed: add a dummy path for GO enrichment result
+        make_go_enrichment_files_input_ch = filter_expression.out.combine(Channel.fromPath("/.dummy_path_go_annotations"))
+        ranking_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(deg_ch).combine(Channel.fromPath("/.dummy_path_go_enrichment"))
     }
+    
+    make_ranking_dataframe(gene_aliases_file, ranking_combined_ch, go_file, terms_of_interest_file)
+
+    check_reference(make_go_enrichment_files_input_ch, terms_of_interest_file)
+    check_reference_trimmed = check_reference.out.map { n,it -> [ n, it.trim() ] }
+    borda_input_ch = make_ranking_dataframe.out.join(check_reference_trimmed)
 
     make_borda(borda_input_ch)
     

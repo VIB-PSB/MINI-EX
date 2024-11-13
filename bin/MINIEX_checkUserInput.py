@@ -6,14 +6,14 @@ EXPRESSION_MATRIX=sys.argv[1].split(' ')
 MARKERS_OUT=sys.argv[2].split(' ')
 CELLS2CLUSTERS=sys.argv[3].split(' ')
 CLUSTER2IDENT=sys.argv[4].split(' ')
-TF_LIST=sys.argv[5].split(' ')
-TERMS_OF_INTEREST=sys.argv[6].split(' ')
+TF_LIST=sys.argv[5]
+TERMS_OF_INTEREST=sys.argv[6]
 GRNBOOST_OUT=sys.argv[7].split(' ')
-FEATURE_FILE_MOTIFS=sys.argv[8].split(' ')
-INFO_TF=sys.argv[9].split(' ')
-GO_FILE=sys.argv[10].split(' ')
-ALIAS=sys.argv[11].split(' ')
-ENRICHMENT_BACKGROUND=sys.argv[12].split(' ')
+FEATURE_FILE_MOTIFS=sys.argv[8]
+INFO_TF=sys.argv[9]
+GO_FILE=sys.argv[10]
+ALIAS=sys.argv[11]
+ENRICHMENT_BACKGROUND=sys.argv[12]
 DO_MOTIF_ANALYSIS=sys.argv[13]
 TOP_MARKERS=sys.argv[14]
 EXPRESSION_FILTER=sys.argv[15]
@@ -24,10 +24,7 @@ TOP_REGULONS=sys.argv[17]
 ########## HELPER FUNCTIONS ##########
 
 def path_is_dummy(path): # checks whether the user specified "null" as path to that file
-    if isinstance(path, list):
-        return path[0].startswith('dummy_path')
-    else:
-        return path.startswith('dummy_path')
+        return path.startswith('.dummy_path')
 
 def find_symbol_in_file(file_name, symbol):
     result = False
@@ -82,24 +79,23 @@ if len(EXPRESSION_MATRIX) != len(CELLS2CLUSTERS):
     raise Exception(f"The number of expression matrix files ({len(EXPRESSION_MATRIX)}) is different from the number of cell2clusters files ({len(CELLS2CLUSTERS)})!")
 if len(EXPRESSION_MATRIX) != len(CLUSTER2IDENT):
     raise Exception(f"The number of expression matrix files ({len(EXPRESSION_MATRIX)}) is different from the number of identities files ({len(CLUSTER2IDENT)})!")
-if not path_is_dummy(GRNBOOST_OUT) and len(EXPRESSION_MATRIX) != len(GRNBOOST_OUT):
+if not path_is_dummy(GRNBOOST_OUT[0]) and len(EXPRESSION_MATRIX) != len(GRNBOOST_OUT):
     raise Exception(f"The number of expression matrix files ({len(EXPRESSION_MATRIX)}) is different from the number of GRNBoost output files ({len(GRNBOOST_OUT)})!")
 
 
 # CHECK: input files, except the feature file motifs, are in plain text and not (g)zipped
 try:
     all_dataset_file_names = EXPRESSION_MATRIX + MARKERS_OUT + CELLS2CLUSTERS + CLUSTER2IDENT
-    all_file_names = (all_dataset_file_names + TF_LIST + TERMS_OF_INTEREST + GRNBOOST_OUT +
-                                                INFO_TF + GO_FILE + ALIAS + ENRICHMENT_BACKGROUND)
+    all_file_names = all_dataset_file_names + GRNBOOST_OUT + [TF_LIST, TERMS_OF_INTEREST, INFO_TF, GO_FILE, ALIAS, ENRICHMENT_BACKGROUND]
     for file_name in all_file_names:
         if not path_is_dummy(file_name):
             output = subprocess.check_output(f'file "$(readlink -f {file_name})"', shell=True)
             if not "text" in output.strip().decode('utf-8'):
                 raise Exception(f"The file '{file_name}' is compressed!")
         
-    output = subprocess.check_output(f'file "$(readlink -f {FEATURE_FILE_MOTIFS[0]})"', shell=True)
+    output = subprocess.check_output(f'file "$(readlink -f {FEATURE_FILE_MOTIFS})"', shell=True)
     if not "gzip" in output.strip().decode('utf-8'):
-        raise Exception(f"The file '{FEATURE_FILE_MOTIFS[0]}' is not gzipped!")
+        raise Exception(f"The file '{FEATURE_FILE_MOTIFS}' is not gzipped!")
 except subprocess.CalledProcessError as e:
     raise Exception(f"Command 'file' (2) failed with the error '{e}'!")
 
@@ -157,7 +153,7 @@ for data_set in data_sets:
         raise Exception(f"No cells2clusters file provided for the dataset {data_set}!")
     if not any(file_name.startswith(prefix) for file_name in CLUSTER2IDENT):
         raise Exception(f"No identities file provided for the dataset {data_set}!")
-    if not path_is_dummy(GRNBOOST_OUT) and not any(file_name.startswith(prefix) for file_name in GRNBOOST_OUT):
+    if not path_is_dummy(GRNBOOST_OUT[0]) and not any(file_name.startswith(prefix) for file_name in GRNBOOST_OUT):
         raise Exception(f"No GRNBoost output file provided for the dataset {data_set}!")
     
     # retrieve the names of the dataset-related input files
@@ -216,7 +212,7 @@ for data_set in data_sets:
     # CHECK: if the enrichment background is provided, then it must have at least one gene id in common with the expressed genes
     if not path_is_dummy(ENRICHMENT_BACKGROUND):
         try:
-            output = subprocess.check_output(f'bash -c "comm -12 <(cut -f1 {matrix_file_name} | sort -u) <(cut -f1 {ENRICHMENT_BACKGROUND[0]} | sort -u)"', shell=True)
+            output = subprocess.check_output(f'bash -c "comm -12 <(cut -f1 {matrix_file_name} | sort -u) <(cut -f1 {ENRICHMENT_BACKGROUND} | sort -u)"', shell=True)
             if not output:
                 raise Exception(f"The enrichment background has no genes in common with the expressed genes in the '{data_set}' data set!")
         except subprocess.CalledProcessError as e:
@@ -242,18 +238,18 @@ print(f"Expression matrix file(s)  : {' / '.join(EXPRESSION_MATRIX)}")
 print(f"Seurat markers file(s)     : {' / '.join(MARKERS_OUT)}")
 print(f"Cells to clusters file(s)  : {' / '.join(CELLS2CLUSTERS)}")
 print(f"Cluster identities file(s) : {' / '.join(CLUSTER2IDENT)}")
-print(f"GRNBoost output file(s)    : {' / '.join(GRNBOOST_OUT) if not path_is_dummy(GRNBOOST_OUT) else 'NOT PROVIDED'}")
-print(f"Transcription factor file  : {TF_LIST[0]}")
-print(f"TF info file               : {INFO_TF[0]}")
-print(f"Gene aliases file          : {ALIAS[0]}")
-print(f"Motifs feature file        : {FEATURE_FILE_MOTIFS[0] if not path_is_dummy(FEATURE_FILE_MOTIFS) else 'NOT PROVIDED'}")
-print(f"GO file                    : {GO_FILE[0] if not path_is_dummy(GO_FILE) else 'NOT PROVIDED'}")
-print(f"Terms of interest file     : {TERMS_OF_INTEREST[0] if not path_is_dummy(TERMS_OF_INTEREST) else 'NOT PROVIDED'}")
-print(f"Enrichment background file : {ENRICHMENT_BACKGROUND[0] if not path_is_dummy(ENRICHMENT_BACKGROUND) else 'NOT PROVIDED'}")
+print(f"GRNBoost output file(s)    : {' / '.join(GRNBOOST_OUT) if not path_is_dummy(GRNBOOST_OUT[0]) else 'NOT PROVIDED'}")
+print(f"Transcription factor file  : {TF_LIST}")
+print(f"TF info file               : {INFO_TF}")
+print(f"Gene aliases file          : {ALIAS}")
+print(f"Motifs feature file        : {FEATURE_FILE_MOTIFS if not path_is_dummy(FEATURE_FILE_MOTIFS) else 'NOT PROVIDED'}")
+print(f"GO file                    : {GO_FILE if not path_is_dummy(GO_FILE) else 'NOT PROVIDED'}")
+print(f"Terms of interest file     : {TERMS_OF_INTEREST if not path_is_dummy(TERMS_OF_INTEREST) else 'NOT PROVIDED'}")
+print(f"Enrichment background file : {ENRICHMENT_BACKGROUND if not path_is_dummy(ENRICHMENT_BACKGROUND) else 'NOT PROVIDED'}")
 print("")
 print("== MINI-EX PARAMETERS ========================================")
 if not path_is_dummy(TERMS_OF_INTEREST):
-    terms_of_interest_df = pd.read_csv(TERMS_OF_INTEREST[0], names=['term'])
+    terms_of_interest_df = pd.read_csv(TERMS_OF_INTEREST, names=['term'])
     print(f"Terms of interest          : {' / '.join(terms_of_interest_df['term'])}")
 print(f"doMotifAnalysis            : {DO_MOTIF_ANALYSIS}")
 print(f"topMarkers                 : {TOP_MARKERS}")
