@@ -165,11 +165,11 @@ for data_set in data_sets:
 
     # CHECK: the right number of columns in the input files
     identifies_column_cnt = int(subprocess.check_output(f"head -n 1 {identities_file_name} | cut -f1- | wc -w", shell=True).strip())
-    if identifies_column_cnt not in [2,3]: # can have an optional third column with indices
+    if identifies_column_cnt not in [2,3]:  # can have an optional third column with indices
         raise Exception(f"Incorrect number of columns in the file '{identities_file_name}': {identifies_column_cnt} instead of 2 (or 3)!")
     cells2clusters_column_cnt = int(subprocess.check_output(f"head -n 1 {cells2clusters_file_name} | cut -f1- | wc -w", shell=True).strip())
-    if cells2clusters_column_cnt != 3:
-        raise Exception(f"Incorrect number of columns in the file '{identities_file_name}': {cells2clusters_column_cnt} instead of 3!")
+    if cells2clusters_column_cnt not in [2,3]:  # can have an optional third column with cluster identities
+        raise Exception(f"Incorrect number of columns in the file '{cells2clusters_file_name}': {cells2clusters_column_cnt} instead of 2 (or 3)!")
     markers_columns = subprocess.check_output(f"head -n 1 {markers_file_name}", shell=True).strip().decode('utf-8').split('\t')
     if not "p_val_adj" in markers_columns:
         raise Exception(f"The column 'p_val_adj' is missing in the file {markers_file_name}!")
