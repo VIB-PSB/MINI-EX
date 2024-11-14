@@ -103,7 +103,10 @@ if path_is_dummy(GO_ENRICHMENT_FILE):  # no GO enrichment was performed --> keep
 
 else:  # add GO-related columns
     # ======== load the list of terms of interest ========
-    terms_of_interest = pd.read_csv(TERMS_OF_INTEREST_FILE, sep='\t', header=None)[0].unique()
+    if path_is_dummy(TERMS_OF_INTEREST_FILE):
+        terms_of_interest = ["DUMMY_TERM_OF_INTEREST"]  # nothing will be matched --> no terms will be considered as relevant
+    else:
+        terms_of_interest = pd.read_csv(TERMS_OF_INTEREST_FILE, sep='\t', header=None)[0].unique()
 
     # ======== load GO annotation to determine the list of relevant genes ========
     go_annotations_df = pd.read_csv(GO_ANNOTATIONS_FILE, sep='\t', header=None, names=['go_term', 'gene_id', 'evidence_code', 'go_description']).sort_values(by=['gene_id', 'go_term'])
