@@ -1,3 +1,9 @@
+"""
+Filters the regulons based on two criteria:
+- expression percentage (in each regulon, its TF must be expressed in at least X percent of cells of its cluster)
+- target gene cluster specificity (in each regulon, only target genes that are DE in its cluster are kept)
+"""
+
 import collections
 import pandas as pd
 import sys
