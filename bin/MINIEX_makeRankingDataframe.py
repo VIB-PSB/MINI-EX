@@ -8,7 +8,7 @@ import sys
 ALIASES_FILE            = sys.argv[1]
 CLUSTER_ID_FILE         = sys.argv[2]  
 REGULONS_FILE           = sys.argv[3]
-REGULON_ENRICHMENT_FILE = sys.argv[4]
+CLUSTER_ENRICHMENT_FILE = sys.argv[4]
 CENTRALITIES_FILE       = sys.argv[5]
 ALL_MARKERS_FILE        = sys.argv[6]
 GO_ENRICHMENT_FILE      = sys.argv[7]
@@ -61,9 +61,8 @@ ranking_df['cluster'] = ranking_df['celltype'] + "_" + ranking_df['Cluster']
 
 
 # ======== load cluster specificity for the list of regulons retrieved previously ========
-cluster_enrichment_df = pd.read_csv(REGULON_ENRICHMENT_FILE, sep='\t', comment='#')
+cluster_enrichment_df = pd.read_csv(CLUSTER_ENRICHMENT_FILE, sep='\t', comment='#')
 cluster_enrichment_df = cluster_enrichment_df.rename(columns={'set_id': 'TF', 'ftr_id': 'Cluster', 'q-val': 'qval_cluster'})
-cluster_enrichment_df['Regulon'] = cluster_enrichment_df['TF'] + '_' + cluster_enrichment_df['Cluster']  # combine TF and cluster names to create a unique regulon name
 cluster_enrichment_df = cluster_enrichment_df[['TF', 'Cluster', 'qval_cluster']]
 # collect the relevant data: 'qval_cluster'
 # only regulons having significant cluster enrichment are kept (inner merge)
