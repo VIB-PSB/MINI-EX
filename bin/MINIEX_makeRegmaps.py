@@ -197,7 +197,6 @@ if __name__ == '__main__':
     # cells2clusters 
     cells2clusters = pd.read_csv(args.cells2clusters, sep='\t', header=None, dtype={0:"str", 1:"str"})\
                        .rename(columns={0:'cell', 1:'cluster'})
-    #cells2clusters.columns = ['cell', 'cluster','name']
     cells2clusters.cluster = cells2clusters.cluster.apply(lambda x: 'Cluster_{}'.format(x))
     cells2clusters = cells2clusters.set_index('cell')
 
