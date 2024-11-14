@@ -36,11 +36,10 @@ else:
     pattern = '|'.join(terms_of_interest)
     go_annotations_df['term_is_relevant'] = go_annotations_df[['go_term', 'go_description']].apply(lambda x: x.str.contains(pattern, case=False, na=False)).any(axis=1)
     releavant_annotated_genes = set(go_annotations_df[go_annotations_df['term_is_relevant']]['gene_id'])
-    
     relevant_tfs = all_tfs.intersection(releavant_annotated_genes)
 
     # if at least two relevant TFs were found: use "ref" approach, otherwise: use "std" procedure
     if len(relevant_tfs) < 2:
-        print('std')
+        print("std")
     else:
-        print('ref')
+        print("ref")
