@@ -96,12 +96,7 @@ ranking_df['GOterm'] = "-"
 ranking_df['GOdescription'] = "-"
 
 
-if path_is_dummy(GO_ENRICHMENT_FILE):  # no GO enrichment was performed --> keep the default values
-    # select final columns and reorder them
-    ranking_df = ranking_df[['TF', 'alias', 'hasTFrelevantGOterm', 'GOterm', 'GOdescription', 'cluster', 'celltype', 'isTF_DE',
-                             'totRegInCluster', '#TGs', 'qval_cluster', 'out-degree', 'closeness', 'betweenness']]
-
-else:  # add GO-related columns
+if not path_is_dummy(GO_ENRICHMENT_FILE):  # GO enrichment was performed --> add GO-related information
     # ======== load the list of terms of interest ========
     if path_is_dummy(TERMS_OF_INTEREST_FILE):
         terms_of_interest = ["DUMMY_TERM_OF_INTEREST"]  # nothing will be matched --> no terms will be considered as relevant
@@ -154,7 +149,12 @@ else:  # add GO-related columns
     ranking_df = ranking_df.merge(go_enrichment_df, on=['Regulon'], how='left')
     ranking_df[['GO_enrich_term', 'GO_enrich_desc']] = ranking_df[['GO_enrich_term', 'GO_enrich_desc']].fillna('-')
 
-    # select final columns and reorder them
+
+# select final columns and reorder them
+if path_is_dummy(TERMS_OF_INTEREST_FILE):  # ignore GO-related columns
+    ranking_df = ranking_df[['TF', 'alias', 'hasTFrelevantGOterm', 'GOterm', 'GOdescription', 'cluster', 'celltype', 'isTF_DE',
+                             'totRegInCluster', '#TGs', 'qval_cluster', 'out-degree', 'closeness', 'betweenness']]
+else:  # add GO-related columns
     ranking_df = ranking_df[['TF', 'alias', 'hasTFrelevantGOterm', 'GOterm', 'GOdescription', 'cluster', 'celltype', 'isTF_DE', 'totRegInCluster', '#TGs',
                              'qval_cluster', 'out-degree', 'closeness', 'betweenness', 'GO_enrich_qval', 'GO_enrich_term', 'GO_enrich_desc', '#TGs_withGO']]
 
