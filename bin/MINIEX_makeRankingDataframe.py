@@ -54,7 +54,7 @@ ranking_df['clusterId'] = ranking_df['Cluster'].apply(lambda x: x.split('_')[1])
 
 
 # ======== load cluster annotations ========
-cluster_id_annotation_df = pd.read_csv(CLUSTER_ID_FILE, sep='\t', names=['clusterId', 'celltype'], dtype={'clusterId': 'str'})
+cluster_id_annotation_df = pd.read_csv(CLUSTER_ID_FILE, sep='\t', names=['clusterId', 'celltype'], dtype={'clusterId': 'str', 'celltype': 'str'})
 # collect the relevant data: 'cellType' and 'cluster'
 ranking_df = ranking_df.merge(cluster_id_annotation_df, on='clusterId', how='left')
 ranking_df['cluster'] = ranking_df['celltype'] + "_" + ranking_df['Cluster']
