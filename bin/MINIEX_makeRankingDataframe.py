@@ -40,6 +40,8 @@ ranking_df['totRegInCluster'] = ranking_df['Cluster'].apply(lambda x: regulons_p
 alias_column_names = ['TF', 'alias', 'description']
 if not path_is_dummy(ALIASES_FILE):
     tf_alias_df = pd.read_csv(ALIASES_FILE, sep='\t')  # original columns: 'locus_name' - 'symbol' - 'full_name'
+    if tf_alias_df.shape[1] == 2:  # if the 'full_name' column is missing
+        tf_alias_df['description'] = ''  # add it
     tf_alias_df.columns = alias_column_names
     tf_alias_df = tf_alias_df.fillna("")
 else:
