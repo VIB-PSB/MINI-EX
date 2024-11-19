@@ -37,18 +37,16 @@ ranking_df['totRegInCluster'] = ranking_df['Cluster'].apply(lambda x: regulons_p
 
 
 # ======== load gene aliases for the retrieved TFs ========
-alias_column_names = ['TF', 'alias', 'description']
+alias_column_names = ['TF', 'alias']
 if not path_is_dummy(ALIASES_FILE):
-    tf_alias_df = pd.read_csv(ALIASES_FILE, sep='\t')  # original columns: 'locus_name' - 'symbol' - 'full_name'
-    if tf_alias_df.shape[1] == 2:  # if the 'full_name' column is missing
-        tf_alias_df['description'] = ''  # add it
+    tf_alias_df = pd.read_csv(ALIASES_FILE, sep='\t')
     tf_alias_df.columns = alias_column_names
     tf_alias_df = tf_alias_df.fillna("")
 else:
     tf_alias_df = pd.DataFrame(columns=alias_column_names)  # create an empty dataframe
 # add entries for the missing TFs, using TF identifiers for the three columns
 missing_tfs = set(ranking_df['TF'].unique()) - set(tf_alias_df['TF'])
-tf_alias_df = pd.concat([tf_alias_df, pd.DataFrame({ 'TF': list(missing_tfs), 'alias': list(missing_tfs), 'description': list(missing_tfs)})], ignore_index=True)
+tf_alias_df = pd.concat([tf_alias_df, pd.DataFrame({ 'TF': list(missing_tfs), 'alias': list(missing_tfs)})], ignore_index=True)
 tf_alias_dict = tf_alias_df.groupby('TF')['alias'].agg('/ '.join).to_dict()
 # collect the relevant data: 'alias' and 'clusterId'
 ranking_df['alias'] = ranking_df['TF'].apply(lambda x: tf_alias_dict[x])
