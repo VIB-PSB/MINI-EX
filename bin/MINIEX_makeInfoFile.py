@@ -117,24 +117,33 @@ print("")
 
 # Get all regulon numbers and regulon sizes for all clusters
 cluster2nb_of_regulons = {cluster: len(tf2nb_of_tgs) for cluster, tf2nb_of_tgs in cluster2tf2nb_of_tgs_expression_filtered.items()}
+target_gene_counts = [count for cluster_dict in cluster2tf2nb_of_tgs_expression_filtered.values() for count in cluster_dict.values()]
 cluster2median_size = {cluster: statistics.median(tf2nb_of_tgs.values()) for cluster, tf2nb_of_tgs in cluster2tf2nb_of_tgs_expression_filtered.items()}
 
-# Display the number of TFs and the median number of TGs for each filtering step
-data = {'Number of regulons': [len(tf2nb_of_tgs_grnboost), \
-                                len(tf2nb_of_tgs_motif_enrichment), \
-                                round(statistics.mean(cluster2nb_of_regulons.values()))],
-        'Regulon size (median number of TGs)': [statistics.median(tf2nb_of_tgs_grnboost.values()), \
-                                                statistics.median(tf2nb_of_tgs_motif_enrichment.values()), \
-                                                round(statistics.mean(cluster2median_size.values()))]}
+# Prepare data to display in the log file for each filtering step
+data = {'Unique regulators': [len(set(tf2nb_of_tgs_grnboost.keys())), \
+                              len(set(tf2nb_of_tgs_motif_enrichment.keys())), \
+                              len(tfs_expression_filtered)],
+        'Regulons': [len(tf2nb_of_tgs_grnboost), \
+                     len(tf2nb_of_tgs_motif_enrichment), \
+                     sum(cluster2nb_of_regulons.values())],
+        'Median regulon size': [statistics.median(tf2nb_of_tgs_grnboost.values()), \
+                                statistics.median(tf2nb_of_tgs_motif_enrichment.values()), \
+                                statistics.median(target_gene_counts)]}
+
+# Update Pandas display parameters so that the dataframes are not truncated
+pandas.set_option('display.max_columns', None)
+pandas.set_option('display.width', 1000)
 print("== GRN FILTERING =============================================")
-print(pandas.DataFrame(data, index=['GRN after step 1 (GRNBoost2)', 'GRN after step 2 (motif filtering)', 'GRN after step 3 (expression filtering)']))
+print(pandas.DataFrame(data, index=['Step 1 (GRNBoost2)', 'Step 2 (motif filtering)', 'Step 3 (expression filtering)']))
 print("")
-print("For the statistics of the final GRN (after step 3) above, a mean over all clusters is shown.")
-print("")
-print("More detaled numbers are given below:")
+print("Per cluster statistics of the final GRN:")
 print("")
 clusters = natsort.natsorted(cluster2nb_of_regulons.keys())
 data = {'Number of regulons': [cluster2nb_of_regulons[cluster] for cluster in clusters], \
         'Regulon size (median number of TGs)': [cluster2median_size[cluster] for cluster in clusters]}
-print(pandas.DataFrame(data, index=clusters))
+per_cluster_df = pandas.DataFrame(data, index=clusters)
+medians = per_cluster_df.median()
+per_cluster_df = per_cluster_df.append(medians.rename('MEDIAN VALUE'))
+print(per_cluster_df)
 print("")
