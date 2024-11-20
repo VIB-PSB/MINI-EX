@@ -70,12 +70,12 @@ ranking_df = ranking_df.merge(cluster_enrichment_df, on=['TF', 'Cluster'], how='
 
 
 # ======== load network centrality measures ========
-# the original dataframe contains TFs as rows, and, for each cluster, three columns: 'degout_Cluster_X', 'clos_Cluster_X' and 'bet_Cluster_X'
+# the original dataframe contains TFs as rows, and, for each cluster, three columns: 'out-degree_Cluster_X', 'closeness_Cluster_X' and 'betweenness_Cluster_X'
 centrality_orig_df = pd.read_csv(CENTRALITIES_FILE, sep='\t', index_col=0)
 centrality_df = regulons_df[['TF', 'Cluster']].copy()  # retrieve identifiers of the selected regulons
-centrality_df['out-degree'] = centrality_df.apply(lambda row: centrality_orig_df.loc[row['TF'], f"degout_{row['Cluster']}"], axis=1)
-centrality_df['closeness'] = centrality_df.apply(lambda row: centrality_orig_df.loc[row['TF'], f"clos_{row['Cluster']}"], axis=1)
-centrality_df['betweenness'] = centrality_df.apply(lambda row: centrality_orig_df.loc[row['TF'], f"bet_{row['Cluster']}"], axis=1)
+centrality_df['out-degree'] = centrality_df.apply(lambda row: centrality_orig_df.loc[row['TF'], f"out-degree_{row['Cluster']}"], axis=1)
+centrality_df['closeness'] = centrality_df.apply(lambda row: centrality_orig_df.loc[row['TF'], f"closeness_{row['Cluster']}"], axis=1)
+centrality_df['betweenness'] = centrality_df.apply(lambda row: centrality_orig_df.loc[row['TF'], f"betweenness_{row['Cluster']}"], axis=1)
 # collect the relevant data: 'out-degree', 'closeness' and 'betweenness'
 ranking_df = ranking_df.merge(centrality_df, on=['TF', 'Cluster'], how='left')
 
