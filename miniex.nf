@@ -16,7 +16,7 @@ if (params.doMotifAnalysis){
     motifLog = "Skipping motif enrichment filtering"
 }
 
-miniexVersion = "v2.2"
+miniexVersion = "v3.0"
 log.info"""\
          Motif-Informed Network Inference from gene EXpression ${miniexVersion}
          ===========================================================
@@ -259,13 +259,13 @@ process make_regulon_clustermap {
 process get_network_centrality {
     
     input:
-    tuple val(datasetId), path(finalRegulons)
+    tuple val(datasetId), path(finalRegulons), path(originalRegulons)
 
     output:
     tuple val("${datasetId}"), path("${datasetId}_networkCentrality.txt")
 
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_getNetworkCentrality.py" "$finalRegulons" "${datasetId}_networkCentrality.txt"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_getNetworkCentrality.py" "$finalRegulons" "$originalRegulons" "${datasetId}_networkCentrality.txt"
     """
 }
 
@@ -325,7 +325,7 @@ process make_ranking_dataframe {
     
     input:  
     path geneAliases
-    tuple val(datasetId), path(clusterIdentities), path(finalRegulons), path(regulonEnrichment), path(networkCentrality), path(allMarkers), path(goEnrichment)
+    tuple val(datasetId), path(clusterIdentities), path(finalRegulons), path(regulonEnrichment), path(networkCentrality), path(allMarkers), path(grnBoost), path(goEnrichment)
     path goAnnotations
     path termsOfInterest
 
@@ -334,7 +334,7 @@ process make_ranking_dataframe {
     tuple val("${datasetId}"), path("${datasetId}_rankingDataframeLog.log"), emit: processLog
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRankingDataframe.py" "$geneAliases" "$clusterIdentities" "$finalRegulons" "$regulonEnrichment" "$networkCentrality" "$allMarkers" "$goEnrichment" "$goAnnotations" "$termsOfInterest" "${datasetId}_dfForRanking.txt" > "${datasetId}_rankingDataframeLog.log"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRankingDataframe.py" "$geneAliases" "$clusterIdentities" "$finalRegulons" "$regulonEnrichment" "$networkCentrality" "$allMarkers" "$grnBoost" "$goEnrichment" "$goAnnotations" "$termsOfInterest" "${datasetId}_dfForRanking.txt" > "${datasetId}_rankingDataframeLog.log"
     """  
 }
 
@@ -505,7 +505,7 @@ workflow {
     regulons_ident_ch = cluster_ids_ch.join(filter_expression.out)
     make_regulon_clustermap(regulons_ident_ch)
     
-    get_network_centrality(filter_expression.out)
+    get_network_centrality(filter_expression.out.join(filter_motifs_ch))
 
     if ( params.goFile != null ){
         enrichment_files_input_ch = filter_expression.out.combine(Channel.fromPath(params.goFile))
@@ -516,12 +516,12 @@ workflow {
         else { make_go_enrichment_files_combined_ch = make_go_enrichment_files_ch.combine(enrichment_background_ch) }
 
         run_enricher_go(scriptEnricher,make_go_enrichment_files_combined_ch)
-        ranking_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(deg_ch).join(run_enricher_go.out)
+        ranking_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(deg_ch).join(grnboost_ch).join(run_enricher_go.out)
     }
     else {
         // no GO enrichment was performed: add dummy paths for GO-related files
         enrichment_files_input_ch = filter_expression.out.combine(Channel.fromPath("/.dummy_path_go_annotations"))
-        ranking_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(deg_ch).combine(Channel.fromPath("/.dummy_path_go_enrichment"))
+        ranking_combined_ch = cluster_ids_ch.join(filter_expression.out).join(run_enricher_cluster.out).join(get_network_centrality.out).join(deg_ch).join(grnboost_ch).combine(Channel.fromPath("/.dummy_path_go_enrichment"))
     }
     
     make_ranking_dataframe(gene_aliases_file, ranking_combined_ch, go_file, terms_of_interest_file)

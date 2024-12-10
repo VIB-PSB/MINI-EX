@@ -4,19 +4,18 @@ from scipy import stats
 import sys
 import pandas as pd
 
-
-REGULONS_FILE_NAME=sys.argv[1]
-OUTPUT_FILE_NAME=sys.argv[2]
-PROCEDURE=sys.argv[3]
+REGULONS_FILE = sys.argv[1]
+OUTPUT_FILE   = sys.argv[2]
+PROCEDURE     = sys.argv[3]
 
 
 def run_borda():
     # the regulons dataframe provides all the information about the regulons
     # collected so far, including the values of the individual metrics
-    regulons_df = pd.read_csv(REGULONS_FILE_NAME, sep='\t')
+    regulons_df = pd.read_csv(REGULONS_FILE, sep='\t')
 
     # list of metrics that can be used for borda ranking + their sorting order ('ascending' = lower values have better rank)
-    metrics = {'qval_cluster': 'ascending', 'out-degree': 'descending', 'betweenness': 'descending', 'closeness': 'descending', 'GO_enrich_qval': 'ascending'}
+    metrics = {'qval_cluster': 'ascending', 'out-degree': 'descending', 'betweenness': 'descending', 'closeness': 'descending', 'TF_qval': 'ascending', 'med_coexpr': 'descending', 'GO_enrich_qval': 'ascending'}
     if 'GO_enrich_qval' not in regulons_df.columns:  # if no GO enrichment information is available: remove this metric
         metrics.pop('GO_enrich_qval')
 
@@ -32,8 +31,8 @@ def run_borda():
     regulons_df = remove_temporary_columns(regulons_df) # remove metric ranks & Borda values => only keep Borda ranks
     regulons_df = regulons_df.sort_values(by="borda_rank")  # sort rows by global Borda ranking
 
-    regulons_df.to_excel(f"{OUTPUT_FILE_NAME}.xlsx", index=None)
-    regulons_df.to_csv(f"{OUTPUT_FILE_NAME}.tsv", sep='\t', index=None)
+    regulons_df.to_excel(f"{OUTPUT_FILE}.xlsx", index=None)
+    regulons_df.to_csv(f"{OUTPUT_FILE}.tsv", sep='\t', index=None)
 
 
 def add_metric_rankings(regulons_df: pd.DataFrame, metrics: Dict):
@@ -115,12 +114,16 @@ def run_borda_std(regulons_df: pd.DataFrame, metrics: Dict):
 def run_borda_ref(regulons_df: pd.DataFrame, metrics: Dict):
     """
     Computes Borda ranks using the reference approach:
-    - for each metric, compute its weighted ranks by dividing the original ranks by the metric's R50
-    - for each combination of metrics (going from a single metric to all the metrics),
-      compute its Borda R50, with Borda values defined as a sum of all the weighted
-      ranks of the metrics in that combination
+    - for each metric, computes its scaling factor (=1 for the metrics with the lowest R50,
+      =0 for the metric assigning random ranks)
+    - discards metrics with scaling factors <= 0
+    - for each retained metric, computes its weighted ranks by multiplying the original
+      ranks by their scaling factor
+    - for each combination of retained metrics (going from a single metric to all the metrics),
+      computes the sum of the weighted ranks of the individual metrics, sorts them from lowest to highest,
+      and computes the R50 corresponding to that ranking (=Borda R50)
     - select the best combination of metrics, defined as having the lowest Borda R50
-    - using the selected combination of metrics, compute the global Borda rank (resulting
+    - using the selected combination of metrics, computes the global Borda rank (resulting
       in the 'borda_rank' column) and per-cluster Borda rank (resulting in the 'borda_clusterRank'
       column)
 
@@ -138,14 +141,26 @@ def run_borda_ref(regulons_df: pd.DataFrame, metrics: Dict):
     """
     print("Borda procedure: REFERENCE")
 
-    # compute weighted metric ranks: the initial ranks are divided by the R50 of that metric
-    for metric in metrics.keys():
-        r50 = get_r50_for_metric(regulons_df, metric)
-        regulons_df[f'{metric}_metricRankWeighted'] = regulons_df[f'{metric}_metricRank']/r50
-        regulons_df[f'{metric}_metricClusterRankWeighted'] = regulons_df[f'{metric}_metricClusterRank']/r50
+    # get R50 values for each metric
+    metric_r50_dict = { metric: get_r50_for_metric(regulons_df, metric) for metric in metrics.keys() }
+
+    # identify best (= lowest R50) and worst (half of unique regulons) ranks
+    best_rank = min(metric_r50_dict.values())
+    worst_rank = round(regulons_df['TF'].nunique() / 2)
+
+    # compute scaling factor for each metric (=1 for the best metric, =0 for the worst metric, and between 0 and 1 for everything else)
+    metric_r50_scaling_factor_dict = {key: max(0, (worst_rank - rank) / (worst_rank - best_rank)) for key, rank in metric_r50_dict.items() }
+
+    # compute weighted ranks, by multiplying the ranks by the scaling factor
+    for metric, scaling_factor in metric_r50_scaling_factor_dict.items():
+        regulons_df[f'{metric}_metricRankWeighted'] = regulons_df[f'{metric}_metricRank'] * scaling_factor
+        regulons_df[f'{metric}_metricClusterRankWeighted'] = regulons_df[f'{metric}_metricClusterRank'] * scaling_factor
+
+    # only select metrics with positive scaling factors
+    selected_metrics = [metric for metric, scaling_factor in metric_r50_scaling_factor_dict.items() if scaling_factor > 0]
 
     # generate all the combinations of the metrics
-    metric_combinations = [comb for i in range(1, len(metrics.keys()) + 1) for comb in combinations(metrics.keys(), i)]
+    metric_combinations = [comb for i in range(1, len(selected_metrics) + 1) for comb in combinations(selected_metrics, i)]
 
     # compute Borda R50 for each combination of metrics and store it into a dictionary
     metric_combination_r50 = {}
@@ -158,17 +173,24 @@ def run_borda_ref(regulons_df: pd.DataFrame, metrics: Dict):
 
     # identify the best combination of metrics (=having the lowest Borda R50)
     best_metric_combination = min(metric_combination_r50, key=lambda k: metric_combination_r50[k]).split(',')
+
+    # selecting TF q-value alone is not allowed as it is not defined for all the regulons
+    if (len(best_metric_combination) == 1 and best_metric_combination[0] == 'TF_qval'):
+        del metric_combination_r50['TF_qval']
+        best_metric_combination = min(metric_combination_r50, key=lambda k: metric_combination_r50[k]).split(',')
+    
+    # add the information about the selected metrics to the log file
     print(f"Selected metrics: {', '.join(best_metric_combination)}")
 
     # compute final Borda rank based on the best combination of metrics
     weighted_metric_combination = [item + '_metricRankWeighted' for item in best_metric_combination]
     regulons_df['borda'] = regulons_df[weighted_metric_combination].sum(axis=1)
-    regulons_df['borda_rank']=regulons_df['borda'].rank(method='max', ascending=True)
+    regulons_df['borda_rank'] = regulons_df['borda'].rank(method='max', ascending=True)
     
     # compute final Borda rank per cluster based on the best combination of metrics
     weighted_cluster_metric_combination = [item + '_metricClusterRankWeighted' for item in best_metric_combination]
     regulons_df['bordaCluster'] = regulons_df[weighted_cluster_metric_combination].sum(axis=1)
-    regulons_df['borda_clusterRank'] = regulons_df.groupby('cluster')['bordaCluster'].rank(method ='max', ascending=True)
+    regulons_df['borda_clusterRank'] = regulons_df.groupby('cluster')['bordaCluster'].rank(method='max', ascending=True)
 
     return regulons_df
 
@@ -178,6 +200,9 @@ def get_r50_for_metric(regulons_df: pd.DataFrame, metric_name: str):
     Computes the R50 value for the provided metric.
     R50 corresponds to the rank at which half of the TFs
     annotated as relevant are recovered using the provided metric.
+    Only unique TFs are considered: if a TF is present in several clusters,
+    its position corresponding to the lowest rank is retrieved.
+    The selected TFs then received reassigned ranks: from 1 to the number of unique TFs.
 
     Parameters
     ----------
@@ -191,10 +216,23 @@ def get_r50_for_metric(regulons_df: pd.DataFrame, metric_name: str):
     int
         R50 for the provided metric
     """
-    sorted_regulons_df=regulons_df.sort_values(by=f"{metric_name}_metricRank")
-    relevant_tfs_df = sorted_regulons_df[sorted_regulons_df['hasTFrelevantGOterm'] == 'relevant_known_TF']
-    relevant_tfs_to_find = round(len(relevant_tfs_df)/2)
-    r50 = relevant_tfs_df[f"{metric_name}_metricRank"].iloc[relevant_tfs_to_find - 1]
+    # for each TF: get indices corresponding to their lowest ranks and retrieve the list of selected TFs
+    min_rank_indices = regulons_df.groupby("TF")[f"{metric_name}_metricRank"].idxmin()
+    unique_tfs_df = regulons_df.loc[min_rank_indices]
+
+    # sort the selected TFs by the original metric rank
+    sorted_unique_tfs_df = unique_tfs_df.sort_values(by=f"{metric_name}_metricRank")
+
+    # reassign ranks incrementally (1-based indexing)
+    sorted_unique_tfs_df['ReassignedRank'] = range(1, len(sorted_unique_tfs_df) + 1)
+
+    # select the relevant TFs
+    relevant_tfs_df = sorted_unique_tfs_df[sorted_unique_tfs_df['hasTFrelevantGOterm'] == 'relevant_known_TF']
+
+    # compute the median reassigned rank for the relevant TFs
+    relevant_tfs_to_find = round(len(relevant_tfs_df) / 2)
+    r50 = relevant_tfs_df['ReassignedRank'].iloc[relevant_tfs_to_find - 1]
+
     return r50
 
 
