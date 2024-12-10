@@ -23,7 +23,7 @@ def path_is_dummy(path): # checks whether the user specified "null" as path to t
     return path.startswith('.dummy_path')  # file names of unspecified files are replaced with "dummy_path" by the Nextflow pipeline
 
 
-def retrieve_regulons(ranking_df: pd.DataFrame):
+def retrieve_regulons(ranking_df: pd.DataFrame) -> pd.DataFrame:
     # load regulons filtered according to parameters specified by the user
     regulons_df = pd.read_csv(REGULONS_FILE, sep='\t', names=['TF', 'Cluster', 'TGs'])  # here, clusters are identified as "Cluster_X"
     regulons_df['Regulon'] = regulons_df['TF'] + '_' + regulons_df['Cluster']  # combine TF and cluster names to create a unique regulon name
@@ -37,7 +37,7 @@ def retrieve_regulons(ranking_df: pd.DataFrame):
     return regulons_df
 
 
-def retrieve_gene_aliases(ranking_df: pd.DateOffset):
+def retrieve_gene_aliases(ranking_df: pd.DataFrame):
     # load gene aliases for the retrieved TFs
     alias_column_names = ['TF', 'alias']
     if not path_is_dummy(ALIASES_FILE):
@@ -133,23 +133,22 @@ def retrieve_coexpression(ranking_df: pd.DataFrame):
         .to_dict()
     )
 
-    # for each row of the regulons dataframe: split its TGs, extraits the corresponding coexpression values
-    # and returns the median value
-    def compute_median_expression(row):
+    # for each row of the regulons dataframe: split its TGs, extracts the corresponding
+    # coexpression values and returns the median value
+    def compute_median_coexpression(row) -> float:
         tgs = row['TGs'].split(',')
         coexpr_values = [tf_to_tg_coexpr[row['TF']][tg] for tg in tgs]
         return np.median(coexpr_values)
     
     # collect the relevant columns: 'med_coexpr'
-    ranking_df['med_coexpr'] = ranking_df.apply(compute_median_expression, axis=1)
+    ranking_df['med_coexpr'] = ranking_df.apply(compute_median_coexpression, axis=1)
 
 
-def retrieve_go_information(ranking_df: pd.DataFrame):
+def retrieve_go_information(ranking_df: pd.DataFrame) -> pd.DataFrame:
     # add default values for the GO-terlated columns
     ranking_df['hasTFrelevantGOterm'] = "unknown_TF"
     ranking_df['GOterm'] = "-"
     ranking_df['GOdescription'] = "-"
-
 
     if not path_is_dummy(GO_ENRICHMENT_FILE):  # GO enrichment was performed --> add GO-related information
         # load the list of terms of interest
@@ -175,7 +174,7 @@ def retrieve_go_information(ranking_df: pd.DataFrame):
         # retrieve GO terms and descriptions
         # for genes associated with at least one relevant term: only relevant terms will be displayed
         # for other genes associated with at least one term: all the terms will be displayed
-        def create_go_mapping(df, relevant_only=False):
+        def create_go_mapping(df, relevant_only=False) -> dict:
             if relevant_only:
                 df = df[df['term_is_relevant']]
             return df.groupby('gene_id').agg(lambda x: ','.join(x)).to_dict()
