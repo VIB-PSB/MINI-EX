@@ -162,6 +162,9 @@ def run_borda_ref(regulons_df: pd.DataFrame, metrics: Dict):
     # generate all the combinations of the metrics
     metric_combinations = [comb for i in range(1, len(selected_metrics) + 1) for comb in combinations(selected_metrics, i)]
 
+    print(f"Metric R50 values: {metric_r50_dict}")
+    print(f"Best R50: {best_rank}, worst R50 (= random ranking): {worst_rank}")
+
     # compute Borda R50 for each combination of metrics and store it into a dictionary
     metric_combination_r50 = {}
     for metric_combination in metric_combinations:
