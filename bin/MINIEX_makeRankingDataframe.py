@@ -23,7 +23,7 @@ def path_is_dummy(path): # checks whether the user specified "null" as path to t
     return path.startswith('.dummy_path')  # file names of unspecified files are replaced with "dummy_path" by the Nextflow pipeline
 
 
-def retrieve_regulons(ranking_df: pd.DataFrame) -> pd.DataFrame:
+def retrieve_regulons() -> pd.DataFrame:
     # load regulons filtered according to parameters specified by the user
     regulons_df = pd.read_csv(REGULONS_FILE, sep='\t', names=['TF', 'Cluster', 'TGs'])  # here, clusters are identified as "Cluster_X"
     regulons_df['Regulon'] = regulons_df['TF'] + '_' + regulons_df['Cluster']  # combine TF and cluster names to create a unique regulon name
@@ -34,7 +34,7 @@ def retrieve_regulons(ranking_df: pd.DataFrame) -> pd.DataFrame:
     regulons_per_cluster_dict = regulons_df.groupby('Cluster')['Regulon'].count().to_dict()
     ranking_df['totRegInCluster'] = ranking_df['Cluster'].apply(lambda x: regulons_per_cluster_dict[x])
 
-    return regulons_df
+    return ranking_df, regulons_df
 
 
 def retrieve_gene_aliases(ranking_df: pd.DataFrame):
@@ -62,7 +62,8 @@ def retrieve_cluster_annotations(ranking_df: pd.DataFrame):
     cluster_id_annotation_df = pd.read_csv(CLUSTER_ID_FILE, sep='\t', names=['clusterId', 'celltype'], dtype={'clusterId': 'str', 'celltype': 'str'})
 
     # collect the relevant columns: 'cellType' and 'cluster'
-    ranking_df = ranking_df.merge(cluster_id_annotation_df, on='clusterId', how='left')
+    merged_df = ranking_df.merge(cluster_id_annotation_df, on='clusterId', how='left')
+    ranking_df['celltype'] = merged_df['celltype']
     ranking_df['cluster'] = ranking_df['celltype'] + "_" + ranking_df['Cluster']
 
 
@@ -74,7 +75,8 @@ def retrieve_cluster_specificity(ranking_df: pd.DataFrame):
     
     # collect the relevant columns: 'qval_cluster'
     # only regulons having significant cluster enrichment are kept (inner merge)
-    ranking_df = ranking_df.merge(cluster_enrichment_df, on=['TF', 'Cluster'], how='inner')
+    merged_df = ranking_df.merge(cluster_enrichment_df, on=['TF', 'Cluster'], how='inner')
+    ranking_df['qval_cluster'] = merged_df['qval_cluster']
 
 
 def retrieve_network_centrality(ranking_df: pd.DataFrame, regulons_df: pd.DataFrame):
@@ -107,7 +109,10 @@ def retrieve_network_centrality(ranking_df: pd.DataFrame, regulons_df: pd.DataFr
     centrality_df = centrality_df[['TF', 'Cluster', 'out-degree', 'closeness', 'betweenness']]
 
     # collect the relevant columns: 'out-degree', 'closeness' and 'betweenness'
-    ranking_df = ranking_df.merge(centrality_df, on=['TF', 'Cluster'], how='left')
+    merged_df = ranking_df.merge(centrality_df, on=['TF', 'Cluster'], how='left')
+    ranking_df['out-degree'] = merged_df['out-degree']
+    ranking_df['closeness'] = merged_df['closeness']
+    ranking_df['betweenness'] = merged_df['betweenness']
 
 
 def retrieve_de_information(ranking_df: pd.DataFrame):
@@ -200,7 +205,11 @@ def retrieve_go_information(ranking_df: pd.DataFrame) -> pd.DataFrame:
         go_enrichment_df = go_enrichment_df.loc[go_enrichment_df.groupby('Regulon')['GO_enrich_qval'].idxmin()]  # select elements with the lowest enrichment q-value
         
         # collect the relevant data: 'GO_enrich_qval', 'GO_enrich_term', 'GO_enrich_desc' and '#TGs_withGO'
-        ranking_df = ranking_df.merge(go_enrichment_df, on=['Regulon'], how='left')
+        merged_df = ranking_df.merge(go_enrichment_df, on=['Regulon'], how='left')
+        ranking_df['GO_enrich_qval'] = merged_df['GO_enrich_qval']
+        ranking_df['GO_enrich_term'] = merged_df['GO_enrich_term']
+        ranking_df['GO_enrich_desc'] = merged_df['GO_enrich_desc']
+        ranking_df['#TGs_withGO'] = merged_df['#TGs_withGO']
         ranking_df[['GO_enrich_term', 'GO_enrich_desc']] = ranking_df[['GO_enrich_term', 'GO_enrich_desc']].fillna('-')
 
 
@@ -216,10 +225,9 @@ def retrieve_go_information(ranking_df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ======== dataframe that will collect all the metrics computed for the selected regulons ========
-ranking_df = pd.DataFrame()
 
 # ======== collect the information from different sources ========
-regulons_df = retrieve_regulons(ranking_df)
+ranking_df, regulons_df = retrieve_regulons()
 retrieve_gene_aliases(ranking_df)
 retrieve_cluster_annotations(ranking_df)
 retrieve_cluster_specificity(ranking_df)
