@@ -162,8 +162,14 @@ def run_borda_ref(regulons_df: pd.DataFrame, metrics: Dict):
     # generate all the combinations of the metrics
     metric_combinations = [comb for i in range(1, len(selected_metrics) + 1) for comb in combinations(selected_metrics, i)]
 
-    print(f"Metric R50 values: {metric_r50_dict}")
-    print(f"Best R50: {best_rank}, worst R50 (= random ranking): {worst_rank}")
+    # print R50 in the log
+    log_df = pd.DataFrame(columns=['R50'])
+    for metric, r50 in metric_r50_dict.items():
+        log_df.loc[metric] = f"{r50}"
+    log_df.loc["----------------------------"] = "---"
+    log_df.loc["best R50"] = f"{best_rank}"
+    log_df.loc["worst R50 (= random ranking)"] = f"{worst_rank}"
+    print(log_df)
 
     # compute Borda R50 for each combination of metrics and store it into a dictionary
     metric_combination_r50 = {}
@@ -172,30 +178,73 @@ def run_borda_ref(regulons_df: pd.DataFrame, metrics: Dict):
         regulons_df['borda'] = regulons_df[weighted_metric_combination].sum(axis=1)
         regulons_df['borda_metricRank']=regulons_df['borda'].rank(method='max', ascending=True)
         borda_r50 = get_r50_for_metric(regulons_df, 'borda')
-        metric_combination_r50[','.join(metric_combination)] = borda_r50
+        metric_combination_r50[','.join(metric_combination)] = borda_r50    
 
-    # identify the best combination of metrics (=having the lowest Borda R50)
-    best_metric_combination = min(metric_combination_r50, key=lambda k: metric_combination_r50[k]).split(',')
+    # compute global Borda rank
+    best_metric_combination_found = False
+    while not best_metric_combination_found:
+         # identify the best combination of metrics (=having the lowest Borda R50)
+        best_metric_combination = min(metric_combination_r50, key=lambda k: metric_combination_r50[k])
+        best_metric_combination_list = best_metric_combination.split(',')
 
-    # selecting TF q-value alone is not allowed as it is not defined for all the regulons
-    if (len(best_metric_combination) == 1 and best_metric_combination[0] == 'TF_qval'):
-        del metric_combination_r50['TF_qval']
-        best_metric_combination = min(metric_combination_r50, key=lambda k: metric_combination_r50[k]).split(',')
-    
-    # add the information about the selected metrics to the log file
-    print(f"Selected metrics: {', '.join(best_metric_combination)}")
+        # compute final Borda rank based on the best combination of metrics
+        weighted_metric_combination = [item + '_metricRankWeighted' for item in best_metric_combination_list]
+        regulons_df['borda'] = regulons_df[weighted_metric_combination].sum(axis=1)
+        regulons_df['borda_rank'] = regulons_df['borda'].rank(method='max', ascending=True)
 
-    # compute final Borda rank based on the best combination of metrics
-    weighted_metric_combination = [item + '_metricRankWeighted' for item in best_metric_combination]
-    regulons_df['borda'] = regulons_df[weighted_metric_combination].sum(axis=1)
-    regulons_df['borda_rank'] = regulons_df['borda'].rank(method='max', ascending=True)
+        # ranks are valid if the first 10 or the last 50% of the regulons are not assigned to the same Borda rank
+        if borda_ranks_are_valid(regulons_df, best_metric_combination):
+            best_metric_combination_found = True
+            # add the information about the selected metrics to the log file
+            print(f"R50 for the selected metrics  {metric_combination_r50[best_metric_combination]}")
+            print("----------------------------  ---")
+            print(f"Selected metrics              {best_metric_combination}")
+        else:
+            # remove that combination of the dictionary and check the next best combination
+            del metric_combination_r50[best_metric_combination]
     
     # compute final Borda rank per cluster based on the best combination of metrics
-    weighted_cluster_metric_combination = [item + '_metricClusterRankWeighted' for item in best_metric_combination]
+    weighted_cluster_metric_combination = [item + '_metricClusterRankWeighted' for item in best_metric_combination_list]
     regulons_df['bordaCluster'] = regulons_df[weighted_cluster_metric_combination].sum(axis=1)
     regulons_df['borda_clusterRank'] = regulons_df.groupby('cluster')['bordaCluster'].rank(method='max', ascending=True)
 
     return regulons_df
+
+
+def borda_ranks_are_valid(regulons_df: pd.DataFrame, metric_combination: str) -> bool:
+    """
+    Validates the Borda ranking for the provided metric combination.
+
+    Borda ranking can be invalid if:
+    - the first 10 elements are assigned to the same rank
+    - the last 50% of elements are assigned to the same rank
+
+    Parameters
+    ----------
+    regulons_df : pd.DataFrame
+        The dataframe containing the regulons and their Borda ranks.
+    metric_combination : str
+        The metric combination being evaluated.
+
+    Returns
+    -------
+    bool
+        True if the Borda ranks are valid, False if there are ties in the first
+        10 ranks or the last 50% of ranks.
+    """
+    sorted_df = regulons_df.sort_values(by="borda_rank")
+    
+    first_elements = sorted_df['borda_rank'].iloc[:10]
+    if first_elements.nunique() == 1:
+        print(f"WARNING: the best metric combination '{metric_combination}' was discarded as it assigned equal ranks for the first 10 regulons.")
+        return False
+    
+    last_elements = sorted_df['borda_rank'].iloc[(len(sorted_df) // 2):]
+    if last_elements.nunique() == 1:
+        print(f"WARNING: the best metric combination '{metric_combination}' was discarded as it assigned equal ranks for the last 50% of regulons.")
+        return False
+    
+    return True
 
 
 def get_r50_for_metric(regulons_df: pd.DataFrame, metric_name: str):
