@@ -162,7 +162,7 @@ def run_borda_ref(regulons_df: pd.DataFrame, metrics: Dict):
     # generate all the combinations of the metrics
     metric_combinations = [comb for i in range(1, len(selected_metrics) + 1) for comb in combinations(selected_metrics, i)]
 
-    # print R50 in the log
+    # print R50-related info in the log
     log_df = pd.DataFrame(columns=['R50'])
     for metric, r50 in metric_r50_dict.items():
         log_df.loc[metric] = f"{r50}"
@@ -252,9 +252,10 @@ def get_r50_for_metric(regulons_df: pd.DataFrame, metric_name: str):
     Computes the R50 value for the provided metric.
     R50 corresponds to the rank at which half of the TFs
     annotated as relevant are recovered using the provided metric.
-    Only unique TFs are considered: if a TF is present in several clusters,
-    its position corresponding to the lowest rank is retrieved.
-    The selected TFs then received reassigned ranks: from 1 to the number of unique TFs.
+    Only unique TFs are considered: a TF present in several clusters
+    is considered only once, with its lowest rank.
+    The selected TFs then receive reassigned ranks: from 1 to the number of unique TFs.
+    TFs with the same original rank are assigned the same rank.
 
     Parameters
     ----------
@@ -273,19 +274,31 @@ def get_r50_for_metric(regulons_df: pd.DataFrame, metric_name: str):
     unique_tfs_df = regulons_df.loc[min_rank_indices]
 
     # sort the selected TFs by the original metric rank
-    sorted_unique_tfs_df = unique_tfs_df.sort_values(by=f"{metric_name}_metricRank")
+    unique_tfs_df = unique_tfs_df.sort_values(by=f"{metric_name}_metricRank")
 
-    # reassign ranks incrementally (1-based indexing)
-    sorted_unique_tfs_df['ReassignedRank'] = range(1, len(sorted_unique_tfs_df) + 1)
+    # reassign ranks: from 1 to the number of unique TFs
+    unique_tfs_df['ReassignedRank'] = None
+    current_rank = 0
+    last_original_rank = 0
+    for i in range(len(unique_tfs_df)):
+        current_rank += 1
+        if unique_tfs_df.iloc[i][f"{metric_name}_metricRank"] != last_original_rank:
+            last_original_rank = unique_tfs_df.iloc[i][f"{metric_name}_metricRank"]
+        else:
+            # ensure that the regulons with the same duplicated rank are assigned the same rank, equal to the max rank
+            # --> increment the previously assigned rank
+            # ex: original ranks: 1, 12, 23, 23, 24, 28 -> reassigned ranks: 1, 2, 4, 4, 5, 6
+            unique_tfs_df['ReassignedRank'] = unique_tfs_df['ReassignedRank'].replace(current_rank - 1, current_rank)
+        unique_tfs_df.at[unique_tfs_df.index[i], 'ReassignedRank'] = current_rank
 
     # select the relevant TFs
-    relevant_tfs_df = sorted_unique_tfs_df[sorted_unique_tfs_df['hasTFrelevantGOterm'] == 'relevant_known_TF']
+    relevant_tfs_df = unique_tfs_df[unique_tfs_df['hasTFrelevantGOterm'] == 'relevant_known_TF']
 
     # compute the median reassigned rank for the relevant TFs
     relevant_tfs_to_find = round(len(relevant_tfs_df) / 2)
     r50 = relevant_tfs_df['ReassignedRank'].iloc[relevant_tfs_to_find - 1]
 
-    return r50
+    return int(r50)
 
 
 print("== BORDA RANKING =============================================")
