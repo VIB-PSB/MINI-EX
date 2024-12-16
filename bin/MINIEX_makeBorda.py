@@ -1,8 +1,9 @@
 from itertools import combinations
-from typing import Dict
+import math
+import pandas as pd
 from scipy import stats
 import sys
-import pandas as pd
+from typing import Dict
 
 REGULONS_FILE = sys.argv[1]
 OUTPUT_FILE   = sys.argv[2]
@@ -35,7 +36,7 @@ def run_borda():
     regulons_df.to_csv(f"{OUTPUT_FILE}.tsv", sep='\t', index=None)
 
 
-def add_metric_rankings(regulons_df: pd.DataFrame, metrics: Dict):
+def add_metric_rankings(regulons_df: pd.DataFrame, metrics: Dict) -> pd.DataFrame:
     """
     For each metric, adds two columns to the original dataframe:
     - metricName_metricRank: ranks regulons by sorting the entire dataset
@@ -76,7 +77,7 @@ def remove_temporary_columns(regulons_df: pd.DataFrame):
     return regulons_df
 
 
-def run_borda_std(regulons_df: pd.DataFrame, metrics: Dict):
+def run_borda_std(regulons_df: pd.DataFrame, metrics: Dict) -> pd.DataFrame:
     """
     Computes Borda ranks using the standard approach:
     - for each regulon, its Borda value corresponds to the geometric mean of its metrics
@@ -111,7 +112,7 @@ def run_borda_std(regulons_df: pd.DataFrame, metrics: Dict):
     return regulons_df
 
 
-def run_borda_ref(regulons_df: pd.DataFrame, metrics: Dict):
+def run_borda_ref(regulons_df: pd.DataFrame, metrics: Dict) -> pd.DataFrame:
     """
     Computes Borda ranks using the reference approach:
     - for each metric, computes its scaling factor (=1 for the metrics with the lowest R50,
@@ -247,7 +248,7 @@ def borda_ranks_are_valid(regulons_df: pd.DataFrame, metric_combination: str) ->
     return True
 
 
-def get_r50_for_metric(regulons_df: pd.DataFrame, metric_name: str):
+def get_r50_for_metric(regulons_df: pd.DataFrame, metric_name: str) -> int:
     """
     Computes the R50 value for the provided metric.
     R50 corresponds to the rank at which half of the TFs
@@ -277,7 +278,7 @@ def get_r50_for_metric(regulons_df: pd.DataFrame, metric_name: str):
     unique_tfs_df = unique_tfs_df.sort_values(by=f"{metric_name}_metricRank")
 
     # reassign ranks: from 1 to the number of unique TFs
-    unique_tfs_df['ReassignedRank'] = None
+    unique_tfs_df['reassignedRank'] = None
     current_rank = 0
     last_original_rank = 0
     for i in range(len(unique_tfs_df)):
@@ -288,17 +289,79 @@ def get_r50_for_metric(regulons_df: pd.DataFrame, metric_name: str):
             # ensure that the regulons with the same duplicated rank are assigned the same rank, equal to the max rank
             # --> increment the previously assigned rank
             # ex: original ranks: 1, 12, 23, 23, 24, 28 -> reassigned ranks: 1, 2, 4, 4, 5, 6
-            unique_tfs_df['ReassignedRank'] = unique_tfs_df['ReassignedRank'].replace(current_rank - 1, current_rank)
-        unique_tfs_df.at[unique_tfs_df.index[i], 'ReassignedRank'] = current_rank
+            unique_tfs_df['reassignedRank'] = unique_tfs_df['reassignedRank'].replace(current_rank - 1, current_rank)
+        unique_tfs_df.at[unique_tfs_df.index[i], 'reassignedRank'] = current_rank
 
     # select the relevant TFs
     relevant_tfs_df = unique_tfs_df[unique_tfs_df['hasTFrelevantGOterm'] == 'relevant_known_TF']
 
     # compute the median reassigned rank for the relevant TFs
     relevant_tfs_to_find = round(len(relevant_tfs_df) / 2)
-    r50 = relevant_tfs_df['ReassignedRank'].iloc[relevant_tfs_to_find - 1]
+    r50 = relevant_tfs_df['reassignedRank'].iloc[relevant_tfs_to_find - 1]
+
+    if r50 == len(relevant_tfs_df):
+        print(f"WARNING: at least half of relevant TFs have duplicated ranks for '{metric_name}'. Interplotating R50...")
+        r50 = interpolate_r50(relevant_tfs_df)
 
     return int(r50)
+
+
+def interpolate_r50(all_relevant_tfs_df: pd.DataFrame) -> int:
+    """
+    Performs linear interpolation to find R50.
+    For interpolation, following valures are needed: P1(x1, y1), P2(x2, y2),
+    and half_relevant, defined as follows:
+        - x1: rank of the last relevant TF, which is different from the max rank
+        - y1: how many relevant TFs were found before x1
+        - x2: max rank
+        - y2: total number of relevant TFs
+        - half_relevant: number of relevant TFs to find
+    
+    y axis
+    |                                                P2
+    |                                          .      |
+    |                                    .            |
+    |                              .                  |
+    |                        .                        |
+    |------------------X------------------------------|  <- half_relevant
+    |            .                                    |
+    |      P1_________________________________________|
+    |     /    
+    |  __/
+    |_/________________|______________________________ x axis
+                      R50
+    
+    with:
+        - x axis representing reassigned ranks for unique TFs
+        - y axis representing cumulative number of relevant TFs
+
+    Parameters
+    ----------
+    all_relevant_tfs_df : pd.DataFrame
+        dataframe of all relevant TFs with their reassigned ranks
+
+    Returns
+    -------
+    int
+        interpolated R50
+    """
+    max_rank = all_relevant_tfs_df['reassignedRank'].max()
+
+    # identify max rank and filter out TFs with that rank for interpolation
+    relevant_non_max_df = all_relevant_tfs_df[all_relevant_tfs_df['reassignedRank'] != max_rank]
+    last_defined_rank = relevant_non_max_df['reassignedRank'].max()
+
+    #  linear interpolation to find R50
+    x1 = last_defined_rank
+    y1 = len(relevant_non_max_df)
+    x2 = max_rank
+    y2 = len(all_relevant_tfs_df)
+    half_relevant = len(all_relevant_tfs_df) / 2
+
+    r50 = x1 + (half_relevant - y1) * (x2 - x1) / (y2 - y1)
+
+    return int(math.floor(r50))
+
 
 
 print("== BORDA RANKING =============================================")
