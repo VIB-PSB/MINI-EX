@@ -67,17 +67,19 @@ Note: all ancestral terms are included and terms associated with more than 30% o
     // --> if GO data is not available, replace the line above by: goFile = null 
     //     (when doing so, termsOfInterest should also be set to <null>)
 ```
-The **fourth block** consists of MINI-EX parameters that can be adapted to change the behavior of MINI-EX.
+The **fourth block** consists of MINI-EX parameters that can be adapted to change the behavior of MINI-EX:
 
-When the first parameter `doMotifAnalysis` is set to `false`, the motif mapping step in the MINI-EX workflow (step 2) is omitted. This yields less precise GRNs, but allows to run MINI-EX without species-specific information which are only shipped with MINI-EX for supported species.
+* When the first parameter `doMotifAnalysis` is set to `false`, the motif mapping step in the MINI-EX workflow (step 2) is omitted. This yields less precise GRNs, but allows to run MINI-EX without species-specific information which are only shipped with MINI-EX for supported species.
 
-The `termsOfInterest` parameter is the path to a user-defined file with GO terms of interest. This file should contain terms (e.g. root, phloem, xylem, etc.) related to the process or tissue of interest and will affect the ranking of the final regulons. When set to `null`, no GO information is taken into account for ranking the regulons and MINI-EX will use its standard ranking procedure.
+* The `termsOfInterest` parameter is the path to a user-defined file with GO terms of interest. This file should contain terms (e.g. root, phloem, xylem, etc.) related to the process or tissue of interest and will affect the ranking of the final regulons. When set to `null`, no GO information is taken into account for ranking the regulons and MINI-EX will use its standard ranking procedure.
 
-The `topMarkers` parameter refers to the number of upregulated genes per cluster (sorted by q-value) to use during the cell cluster enrichment. `expressionFilter` refers to the percentage of cells that need to express the TF to retain the regulon for the specific cell cluster. Default values for both parameters have been chosen by benchmarking different filters against a root gold standard of known protein-DNA interactions.
+* The `topMarkers` parameter refers to the number of upregulated genes per cluster (sorted by q-value) to use during the cell cluster enrichment. `expressionFilter` refers to the percentage of cells that need to express the TF to retain the regulon for the specific cell cluster. Default values for both parameters have been chosen by benchmarking different filters against a root gold standard of known protein-DNA interactions.
 
 * `motifFilter` can be set to either **TF-F_motifs** (default) or **TF_motifs**. The default option keeps regulons in the motif filtering step (step 2) if the regulon is enriched for any motif of that TF family. When setting the parameter to **TF_motifs**, then only regulons are retained if they are enriched for direct TF-motifs.
 
 * `topRegulons` defines the top regulons to show in the two output heatmaps. It can be changed according to the user needs.
+
+* The `enrichmentBackground` is the path to a user-defined file containing a list of genes to be used as the background for the enrichment analysis. The file should have one gene id per line. If set to `null`, the background defaults to the list of genes expressed in the single-cell experiment.
 
 ```	
     // PARAMETERS //
@@ -92,6 +94,8 @@ The `topMarkers` parameter refers to the number of upregulated genes per cluster
     // --> to use the motifs of the TF family: motifFilter = "TF-F_motifs"
     // --> to only use the motifs known for a TF: motifFilter =  "TF_motifs"
     topRegulons = "150"
+    enrichmentBackground = null
+    // --> to specify an enrichment background: enrichmentBackground = "pathToTheFile", with file containing one gene id per line
 ```
 
 The **last block** specifies the output directory.  
