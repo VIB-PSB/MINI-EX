@@ -221,10 +221,8 @@ def retrieve_go_information(ranking_df: pd.DataFrame) -> pd.DataFrame:
         ranking_df = ranking_df[['TF', 'alias', 'hasTFrelevantGOterm', 'GOterm', 'GOdescription', 'cluster', 'celltype', 'isTF_DE', 'totRegInCluster', '#TGs',
                                 'qval_cluster', 'out-degree', 'closeness', 'betweenness', 'med_coexpr', 'TF_qval', 'GO_enrich_qval', 'GO_enrich_term', 'GO_enrich_desc', '#TGs_withGO']]
         
-    return go_annotations_df
+    return ranking_df, go_annotations_df
 
-
-# ======== dataframe that will collect all the metrics computed for the selected regulons ========
 
 # ======== collect the information from different sources ========
 ranking_df, regulons_df = retrieve_regulons()
@@ -234,7 +232,7 @@ retrieve_cluster_specificity(ranking_df)
 retrieve_network_centrality(ranking_df, regulons_df)
 retrieve_de_information(ranking_df)
 retrieve_coexpression(ranking_df)
-go_annotations_df = retrieve_go_information(ranking_df)
+ranking_df, go_annotations_df = retrieve_go_information(ranking_df)
 
 # ======== save the resulting dataframe ========
 ranking_df.to_csv(OUTPUT_FILE, sep='\t', index=None)
