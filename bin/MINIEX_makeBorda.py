@@ -268,7 +268,7 @@ def get_r50_for_metric(regulons_df: pd.DataFrame, metric_name: str) -> int:
     Returns
     -------
     int
-        R50 for the provided metric
+        interpolated R50 for the provided metric
     """
     # for each TF: get indices corresponding to their lowest ranks and retrieve the list of selected TFs
     min_rank_indices = regulons_df.groupby("TF")[f"{metric_name}_metricRank"].idxmin()
@@ -299,7 +299,7 @@ def get_r50_for_metric(regulons_df: pd.DataFrame, metric_name: str) -> int:
     relevant_tfs_to_find = round(len(relevant_tfs_df) / 2)
     r50 = relevant_tfs_df['reassignedRank'].iloc[relevant_tfs_to_find - 1]
 
-    if r50 == len(relevant_tfs_df):
+    if r50 == len(unique_tfs_df):
         print(f"WARNING: at least half of relevant TFs have duplicated ranks for '{metric_name}'. Interplotating R50...")
         r50 = interpolate_r50(relevant_tfs_df)
 
