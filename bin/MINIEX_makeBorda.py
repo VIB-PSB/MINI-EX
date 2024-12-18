@@ -361,7 +361,7 @@ def interpolate_r50(all_relevant_tfs_df: pd.DataFrame, all_unique_tfs_df: pd.Dat
     x2 = max_rank
     y2 = len(all_relevant_tfs_df)
 
-    print(f"x1: {x1}, y1: {y1}, x2: {x2}, y2: {y2}, relevant_tfs_to_find: {relevant_tfs_to_find}")
+    r50 = x1 + (relevant_tfs_to_find - y1) * (x2 - x1) / (y2 - y1)
 
     return int(math.floor(r50))
 
