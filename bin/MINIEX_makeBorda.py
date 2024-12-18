@@ -301,35 +301,35 @@ def get_r50_for_metric(regulons_df: pd.DataFrame, metric_name: str) -> int:
 
     if r50 == len(unique_tfs_df) and metric_name != "borda":  # only do interpolation for individual metrics
         print(f"WARNING: at least half of relevant TFs have duplicated ranks for '{metric_name}'. Interplotating R50...")
-        r50 = interpolate_r50(relevant_tfs_df)
+        r50 = interpolate_r50(relevant_tfs_df, unique_tfs_df, relevant_tfs_to_find)
 
     return int(r50)
 
 
-def interpolate_r50(all_relevant_tfs_df: pd.DataFrame) -> int:
+def interpolate_r50(all_relevant_tfs_df: pd.DataFrame, all_unique_tfs_df: pd.DataFrame, relevant_tfs_to_find: int) -> int:
     """
-    Performs linear interpolation to find R50.
+        Performs linear interpolation to find R50.
     For interpolation, following valures are needed: P1(x1, y1), P2(x2, y2),
     and half_relevant, defined as follows:
-        - x1: rank of the last relevant TF, which is different from the max rank
+        - x1: last defined rank (= different from the max rank)
         - y1: how many relevant TFs were found before x1
         - x2: max rank
         - y2: total number of relevant TFs
         - half_relevant: number of relevant TFs to find
     
     y axis
-    |                                                P2
-    |                                          .      |
-    |                                    .            |
-    |                              .                  |
-    |                        .                        |
-    |------------------X------------------------------|  <- half_relevant
-    |            .                                    |
-    |      P1_________________________________________|
+    |                                                   P2
+    |                                             .      |
+    |                                       .            |
+    |                                 .                  |
+    |                           .                        |
+    |---------------------X------------------------------|  <- relevant_tfs_to_find
+    |               .                                    |
+    |      ___P1_________________________________________|
     |     /    
     |  __/
-    |_/________________|______________________________ x axis
-                      R50
+    |_/___________________|______________________________ x axis
+                        R50
     
     with:
         - x axis representing reassigned ranks for unique TFs
@@ -338,27 +338,30 @@ def interpolate_r50(all_relevant_tfs_df: pd.DataFrame) -> int:
     Parameters
     ----------
     all_relevant_tfs_df : pd.DataFrame
-        dataframe of all relevant TFs with their reassigned ranks
+        Dataframe containing all relevant TFs with their reassigned ranks.
+    all_unique_tfs_df : pd.DataFrame
+        Dataframe containing all unique TFs with their reassigned ranks.
+    relevant_tfs_to_find : int
+        The number of relevant TFs to find the R50 for.
 
     Returns
     -------
     int
-        interpolated R50
+        The interpolated R50 rank.
     """
-    max_rank = all_relevant_tfs_df['reassignedRank'].max()
-
     # identify max rank and filter out TFs with that rank for interpolation
+    max_rank = all_unique_tfs_df['reassignedRank'].max()
     relevant_non_max_df = all_relevant_tfs_df[all_relevant_tfs_df['reassignedRank'] != max_rank]
-    last_defined_rank = relevant_non_max_df['reassignedRank'].max()
+    unique_non_max_df = all_unique_tfs_df[all_unique_tfs_df['reassignedRank'] != max_rank]
+    last_defined_rank = unique_non_max_df['reassignedRank'].max()
 
-    #  linear interpolation to find R50
+    # linear interpolation to find R50
     x1 = last_defined_rank
     y1 = len(relevant_non_max_df)
     x2 = max_rank
     y2 = len(all_relevant_tfs_df)
-    half_relevant = len(all_relevant_tfs_df) / 2
 
-    r50 = x1 + (half_relevant - y1) * (x2 - x1) / (y2 - y1)
+    r50 = x1 + (relevant_tfs_to_find - y1) * (x2 - x1) / (y2 - y1)
 
     return int(math.floor(r50))
 
