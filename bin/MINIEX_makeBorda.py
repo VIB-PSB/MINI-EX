@@ -296,7 +296,7 @@ def get_r50_for_metric(regulons_df: pd.DataFrame, metric_name: str) -> int:
     relevant_tfs_df = unique_tfs_df[unique_tfs_df['hasTFrelevantGOterm'] == 'relevant_known_TF']
 
     # compute the median reassigned rank for the relevant TFs
-    relevant_tfs_to_find = round(len(relevant_tfs_df) / 2)
+    relevant_tfs_to_find = math.ceil(len(relevant_tfs_df) / 2)
     r50 = relevant_tfs_df['reassignedRank'].iloc[relevant_tfs_to_find - 1]
 
     if r50 == len(unique_tfs_df) and metric_name != "borda":  # only do interpolation for individual metrics
@@ -361,7 +361,7 @@ def interpolate_r50(all_relevant_tfs_df: pd.DataFrame, all_unique_tfs_df: pd.Dat
     x2 = max_rank
     y2 = len(all_relevant_tfs_df)
 
-    r50 = x1 + (relevant_tfs_to_find - y1) * (x2 - x1) / (y2 - y1)
+    print(f"x1: {x1}, y1: {y1}, x2: {x2}, y2: {y2}, relevant_tfs_to_find: {relevant_tfs_to_find}")
 
     return int(math.floor(r50))
 
