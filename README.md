@@ -84,4 +84,6 @@ Should you encounter a bug, please [open an issue](https://github.com/VIB-PSB/MI
 
 When publishing results generated using MINI-EX, please cite:
 
-Ferrari C, Manosalva Pérez N, Vandepoele K. MINI-EX: Integrative inference of single-cell gene regulatory networks in plants. Mol Plant. 2022 Nov 7;15(11):1807-1824. doi: [10.1016/j.molp.2022.10.016](https://doi.org/10.1016/j.molp.2022.10.016). Epub 2022 Oct 27. PMID: 36307979.
+Ferrari C., Manosalva Pérez N., Vandepoele K. MINI-EX: Integrative inference of single-cell gene regulatory networks in plants. Mol Plant. 2022 Nov 7;15(11):1807-1824. doi: [10.1016/j.molp.2022.10.016](https://doi.org/10.1016/j.molp.2022.10.016). Epub 2022 Oct 27. PMID: 36307979.
+
+Staut, J., Manosalva Pérez, N., Depuydt, T., Vandepoele, K., Lukicheva, S. MINI-EX version 2: cell-type-specific gene regulatory network inference using an integrative single-cell transcriptomics approach. bioRxiv. 24 Dec 2023;573246. doi: [10.1101/2023.12.24.573246](https://doi.org:10.1101/2023.12.24.573246).
