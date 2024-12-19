@@ -33,11 +33,11 @@ The [OUTPUTS folder](OUTPUTS/) contains four sub-folders + the log file:
 		- totRegInCluster: number of total regulons within the cell cluster     
 		- #TGs: number of TGs controlled by the regulon    
 		- qval_cluster: FDR-corrected p-value of cell cluster enrichment of target genes (cluster specificity)
-                - out-degree: out-degree of the TF 
+		- out-degree: out-degree of the TF 
 		- closeness: closeness-centrality  
 		- betweenness: betweenness-centrality
-                - med_coexpr: median coexpression of the TF with its target genes
-                - TF_qval: FDR-corrected p-value of cluster specificity of the TF
+		- med_coexpr: median coexpression of the TF with its target genes
+		- TF_qval: FDR-corrected p-value of cluster specificity of the TF
 		- GO_enrich_qval (only present if 'termsOfInterest' is not null): FDR-corrected p-value of functional enrichment of the regulon's TGs (functional specificity - reporting only the lowest p-value among the relevant terms)  
 		- GO_enrich_term (only present if 'termsOfInterest' is not null): the relevant GO term (relative to [GOsIwant.tsv](https://github.com/VIB-PSB/MINI-EX/tree/main/example/INPUTS/GOsIwant.tsv)) for which the regulon's TGs showed the most significant enrichment    
 		- GO_enrich_desc (only present if 'termsOfInterest' is not null): description of the GO term for which the regulon's TGs showed the most significant enrichment    

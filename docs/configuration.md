@@ -79,7 +79,7 @@ The **fourth block** consists of MINI-EX parameters that can be adapted to chang
 
 * `topRegulons` defines the top regulons to show in the two output heatmaps. It can be changed according to the user needs.
 
-* The `enrichmentBackground` is the path to a user-defined file containing a list of genes to be used as the background for the enrichment analysis. The file should have one gene id per line. If set to `null`, the background defaults to the list of genes expressed in the single-cell experiment.
+* The `enrichmentBackground` is the path to a user-defined file containing a list of genes to be used as the background for the enrichment analysis. The file should have one gene id per line. If set to `null`, the background defaults to the list of genes that are present in the expression matrix.
 
 ```	
     // PARAMETERS //
