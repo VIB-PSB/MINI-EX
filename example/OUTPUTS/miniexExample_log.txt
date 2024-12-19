@@ -1,5 +1,5 @@
-MINI-EX v2.2 
-Pipeline started on: Thu Jan 11 11:44:24 CET 2024
+MINI-EX v3.0 
+Pipeline started on: Tue Dec 17 16:36:15 CET 2024
 
 == INPUT VALIDATION ==========================================
 Input files passed validation tests. Retrieved following data:
@@ -8,25 +8,110 @@ dataset
 miniexExample   1541   4999        41       14
 
 == INPUT FILES ===============================================
-Expression matrix file(s) : miniexExample_matrix.tsv
-Seurat markers file(s)    : miniexExample_allMarkers.tsv
-Cells to clusters file(s) : miniexExample_cells2clusters.tsv
-Cluster identities file(s): miniexExample_identities.tsv
-GRNBoost output file(s)   : miniexExample_grnboost2.tsv
-Transcription factor file : ath_TF_list.tsv
-TF info file              : ath_TF2fam2mot.tsv
-Gene aliases file         : ath_gene_aliases.tsv
-Motifs feature file       : ath_2021.1_motifMapping.out.gz
-GO file                   : ath_full_BP_expcur_ext_names.tsv
-Terms of interest file    : GOsIwant.tsv
+Expression matrix file(s)  : miniexExample_matrix.tsv
+Seurat markers file(s)     : miniexExample_allMarkers.tsv
+Cells to clusters file(s)  : miniexExample_cells2clusters.tsv
+Cluster identities file(s) : miniexExample_identities.tsv
+GRNBoost output file(s)    : miniexExample_grnboost2.tsv
+Transcription factor file  : ath_TF_list.tsv
+TF info file               : ath_TF2fam2mot.tsv
+Gene aliases file          : ath_gene_aliases.tsv
+Motifs feature file        : ath_2021.1_motifMapping.out.gz
+GO file                    : ath_full_BP_expcur_ext_names.tsv
+Terms of interest file     : GOsIwant.tsv
+Enrichment background file : NOT PROVIDED
 
 == MINI-EX PARAMETERS ========================================
-Terms of interest         : xylem / phloem / trichome / root  / vasculature / trichoblast / vascular / stele / tracheary / procambium / sieve
-doMotifAnalysis           : true
-topMarkers                : 700
-expressionFilter          : 10
-motifFilter               : TF-F_motifs
-topRegulons               : 150
+Terms of interest          : xylem / phloem / trichome / root  / vasculature / trichoblast / vascular / stele / tracheary / procambium / sieve
+doMotifAnalysis            : true
+topMarkers                 : 700
+expressionFilter           : 10
+motifFilter                : TF-F_motifs
+topRegulons                : 150
+
+== SELECTED GO TERMS =========================================
+Following GO terms were retrieved for selected terms of interest:
+    go_term                                     go_description
+ GO:0003018             vascular process in circulatory system
+ GO:0009915                             phloem sucrose loading
+ GO:0010015                                 root morphogenesis
+ GO:0010026                           trichome differentiation
+ GO:0010051                 xylem and phloem pattern formation
+ GO:0010053                root epidermal cell differentiation
+ GO:0010054                        trichoblast differentiation
+ GO:0010055                       atrichoblast differentiation
+ GO:0010056                    atrichoblast fate specification
+ GO:0010057                     trichoblast fate specification
+ GO:0010058      regulation of atrichoblast fate specification
+ GO:0010059  positive regulation of atrichoblast fate speci...
+ GO:0010061       regulation of trichoblast fate specification
+ GO:0010062  negative regulation of trichoblast fate specif...
+ GO:0010063  positive regulation of trichoblast fate specif...
+ GO:0010067                            procambium histogenesis
+ GO:0010071                        root meristem specification
+ GO:0010078              maintenance of root meristem identity
+ GO:0010082                 regulation of root meristem growth
+ GO:0010086                       embryonic root morphogenesis
+ GO:0010087                       phloem or xylem histogenesis
+ GO:0010088                                 phloem development
+ GO:0010089                                  xylem development
+ GO:0010090                             trichome morphogenesis
+ GO:0010091                                 trichome branching
+ GO:0010101                  post-embryonic root morphogenesis
+ GO:0010102                         lateral root morphogenesis
+ GO:0010222             stem vascular tissue pattern formation
+ GO:0010232                                 vascular transport
+ GO:0010233                                   phloem transport
+ GO:0010305             leaf vascular tissue pattern formation
+ GO:0010311                             lateral root formation
+ GO:0010449                               root meristem growth
+ GO:0010479                                  stele development
+ GO:0010588        cotyledon vascular tissue pattern formation
+ GO:0022622                            root system development
+ GO:0048364                                   root development
+ GO:0048527                           lateral root development
+ GO:0048528                    post-embryonic root development
+ GO:0048629                                trichome patterning
+ GO:0048756                         sieve cell differentiation
+ GO:0048759           xylem vessel member cell differentiation
+ GO:0048764                             trichoblast maturation
+ GO:0048765                     root hair cell differentiation
+ GO:0048766                               root hair initiation
+ GO:0048767                               root hair elongation
+ GO:0048768                          root hair cell tip growth
+ GO:0048829                               root cap development
+ GO:0048830                      adventitious root development
+ GO:0062211                                  root regeneration
+ GO:0080022                           primary root development
+ GO:0080056            petal vascular tissue pattern formation
+ GO:0080057            sepal vascular tissue pattern formation
+ GO:0080147                         root hair cell development
+ GO:0080165           callose deposition in phloem sieve plate
+ GO:0080181                             lateral root branching
+ GO:0090057                      root radial pattern formation
+ GO:0090058                              metaxylem development
+ GO:0090059                             protoxylem development
+ GO:0090408                             phloem nitrate loading
+ GO:0090449                       phloem glucosinolate loading
+ GO:0090602                          sieve element enucleation
+ GO:0090603                      sieve element differentiation
+ GO:0110126                                     phloem loading
+ GO:0110127                                   phloem unloading
+ GO:0110128                           phloem sucrose unloading
+ GO:1900032                  regulation of trichome patterning
+ GO:1900033         negative regulation of trichome patterning
+ GO:1901332    negative regulation of lateral root development
+ GO:1901333    positive regulation of lateral root development
+ GO:1902890                 regulation of root hair elongation
+ GO:1902892        positive regulation of root hair elongation
+ GO:1905177                  tracheary element differentiation
+ GO:1905499                         trichome papilla formation
+ GO:1990388                     xylem-to-phloem iron transport
+ GO:2000023             regulation of lateral root development
+ GO:2000039               regulation of trichome morphogenesis
+ GO:2000067                   regulation of root morphogenesis
+ GO:2000069      regulation of post-embryonic root development
+ GO:2000280                     regulation of root development
 
 == INITIAL TF SET ============================================
                Number of TFs
@@ -34,45 +119,44 @@ All TFs                 1877
 Expressed TFs            346
 
 == GRN FILTERING =============================================
-                                         Number of regulons  Regulon size (median number of TGs)
-GRN after step 1 (GRNBoost2)                            346                               3276.5
-GRN after step 2 (motif filtering)                       13                               1206.0
-GRN after step 3 (expression filtering)                   2                                119.0
+                               Unique regulators  Regulons  Median regulon size
+Step 1 (GRNBoost2)                           346       346               3276.5
+Step 2 (motif filtering)                      13        13               1206.0
+Step 3 (expression filtering)                 11        61                120.0
 
-For the statistics of the final GRN (after step 3) above, a mean over all clusters is shown.
-
-More detaled numbers are given below:
+Per cluster statistics of the final GRN:
 
               Number of regulons  Regulon size (median number of TGs)
-Cluster_1                      2                                159.0
-Cluster_3                      3                                157.0
-Cluster_4                      5                                127.0
-Cluster_6                      1                                122.0
-Cluster_8                      1                                 99.0
-Cluster_11                     2                                132.5
-Cluster_12                     1                                112.0
-Cluster_13                     1                                149.0
-Cluster_16.1                   2                                 89.5
-Cluster_17                     1                                110.0
-Cluster_20                     4                                121.5
-Cluster_21                     8                                157.0
-Cluster_22.1                   6                                 87.0
-Cluster_23                     1                                 41.0
-Cluster_25                     1                                164.0
-Cluster_26                     2                                107.5
-Cluster_28                     3                                110.0
-Cluster_29                     4                                124.5
-Cluster_30                     2                                118.5
-Cluster_31                     1                                123.0
-Cluster_32                     3                                132.0
-Cluster_33                     2                                130.5
-Cluster_34                     2                                 56.0
-Cluster_35                     1                                120.0
-Cluster_36                     2                                137.5
+Cluster_1                    2.0                                159.0
+Cluster_3                    3.0                                157.0
+Cluster_4                    5.0                                127.0
+Cluster_6                    1.0                                122.0
+Cluster_8                    1.0                                 99.0
+Cluster_11                   2.0                                132.5
+Cluster_12                   1.0                                112.0
+Cluster_13                   1.0                                149.0
+Cluster_16.1                 2.0                                 89.5
+Cluster_17                   1.0                                110.0
+Cluster_20                   4.0                                121.5
+Cluster_21                   8.0                                157.0
+Cluster_22.1                 6.0                                 87.0
+Cluster_23                   1.0                                 41.0
+Cluster_25                   1.0                                164.0
+Cluster_26                   2.0                                107.5
+Cluster_28                   3.0                                110.0
+Cluster_29                   4.0                                124.5
+Cluster_30                   2.0                                118.5
+Cluster_31                   1.0                                123.0
+Cluster_32                   3.0                                132.0
+Cluster_33                   2.0                                130.5
+Cluster_34                   2.0                                 56.0
+Cluster_35                   1.0                                120.0
+Cluster_36                   2.0                                137.5
+MEDIAN VALUE                 2.0                                122.0
 
 == BORDA RANKING =============================================
 Borda procedure: STANDARD
-Default metrics: qval_cluster, out-degree, betweenness, closeness, GO_enrich_qval
+Default metrics: qval_cluster, out-degree, betweenness, closeness, TF_qval, med_coexpr, GO_enrich_qval
 
 ==============================================================
-Pipeline ended on: Thu Jan 11 11:45:09 CET 2024
+Pipeline ended on: Tue Dec 17 16:38:42 CET 2024

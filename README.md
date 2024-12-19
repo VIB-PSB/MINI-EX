@@ -19,15 +19,15 @@ MINI-EX uses a [dual license](https://github.com/VIB-PSB/MINI-EX/blob/main/LICEN
 **2\.** Run TF binding site (TFBS) enrichment on the expression-based regulons and filter for TF or TF-Family motifs (default TF-Family)<br/>
 **3a.** Filter the previously identified regulons by target genes' (TGs) expression among the defined cell clusters (cluster specificity) using the provided markers<br/>
 **3b.** Filter the cell cluster specific regulons by TF expression<br/>
-**4a.** Calculate network statistics (out-degree, betweenness, closeness), cluster specificity and functional (GO) enrichment of the target genes of each regulon (if a list of GO terms is provided)<br/>
+**4a.** Calculate network statistics (out-degree, betweenness, closeness), median coexpression score, cluster specificity of TF, cluster specificity of TGs, and functional (GO) enrichment of the target genes of each regulon (if a list of GO terms is provided)<br/>
 **4b.** Generate a list of ranked regulons based on Borda ranking and generate an edge table containing edge scores
 
 For the last step, if a list of GO terms of interest is provided:
-- First all the combinations of weighted metrics (network statistics, cluster specificity and functional enrichment) are evaluated
+- First all the combinations of weighted metrics (network statistics, median coexpression score, cluster specificity of the TF, cluster specificity of TGs, and functional enrichment) are evaluated
 - The combination which returns half of the expected regulons earlier in the ranks (R50) is chosen for the weighted Borda ranking
 
 else:
-- The network statistics and cluster specificity are used to calculate the Borda ranking (calculated on the geometric mean of the single metrics)
+- The network statistics, median coexpression score, cluster specificity of the TF, and cluster specificity of TGs are used to calculate the Borda ranking (calculated on the geometric mean of the single metrics)
 
 **Note**: step 2 can be omitted when no motif mapping data is available (motif mapping data is provided for Arabidopsis, rice and maize). However, use with caution as without motif data the networks will be less precise.
 
@@ -44,7 +44,7 @@ else:
 * (Optional) List of GO terms of interest
 
 As the pipeline can be run in parallel for multiple datasets all the inputs can be provided as a path to the dedicated directories.  
-All input files should have specific extensions and names as shown in [here](docs/data_preparation.md).  
+All input files should have specific extensions and names as shown in our [guide on data preparation](docs/data_preparation.md).  
 
 ## Outputs
 * **regulons folder** containing a tab-separated files with the inferred regulons, an edge table, info per TF, and an excel file with the ranked regulons and relative metadata
@@ -65,7 +65,7 @@ A detailed overview on necessary input files and expected output files can be fo
 
 ## Usage
 
-Define paths in the [config file](docs/configuration.md) to all the required inputs.
+Define paths in the config file to all the required inputs (check our guide on preparing the config file [here](docs/configuration.md)).
 
 ```
 nextflow -C miniex.config run miniex.nf
@@ -84,4 +84,6 @@ Should you encounter a bug, please [open an issue](https://github.com/VIB-PSB/MI
 
 When publishing results generated using MINI-EX, please cite:
 
-Ferrari C, Manosalva Pérez N, Vandepoele K. MINI-EX: Integrative inference of single-cell gene regulatory networks in plants. Mol Plant. 2022 Nov 7;15(11):1807-1824. doi: [10.1016/j.molp.2022.10.016](https://doi.org/10.1016/j.molp.2022.10.016). Epub 2022 Oct 27. PMID: 36307979.
+Ferrari C., Manosalva Pérez N., Vandepoele K. MINI-EX: Integrative inference of single-cell gene regulatory networks in plants. Mol Plant. 2022 Nov 7;15(11):1807-1824. doi: [10.1016/j.molp.2022.10.016](https://doi.org/10.1016/j.molp.2022.10.016). Epub 2022 Oct 27. PMID: 36307979.
+
+Staut, J., Manosalva Pérez, N., Depuydt, T., Vandepoele, K., Lukicheva, S. MINI-EX version 2: cell-type-specific gene regulatory network inference using an integrative single-cell transcriptomics approach. bioRxiv. 24 Dec 2023;573246. doi: [10.1101/2023.12.24.573246](https://doi.org:10.1101/2023.12.24.573246).
