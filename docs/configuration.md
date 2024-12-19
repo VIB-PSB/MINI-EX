@@ -96,6 +96,7 @@ The **fourth block** consists of MINI-EX parameters that can be adapted to chang
     topRegulons = "150"
     enrichmentBackground = null
     // --> to specify an enrichment background: enrichmentBackground = "pathToTheFile", with file containing one gene id per line
+    //     (when not specified, the background defaults to the list of genes that are present in the expression matrix)
 ```
 
 The **last block** specifies the output directory.  
