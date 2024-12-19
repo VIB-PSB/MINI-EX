@@ -6,12 +6,11 @@ The [INPUTS folder](INPUTS/) contains:
  
 - **miniexExample_matrix.tsv**: a reduced gene-to-count matrix containing 1500 genes and 1542 cells  
 - **miniexExample_allMarkers.tsv**: the output of Seurat FindAllMarkers filtered for genes present in the reduced expression matrix  
-- **miniexExample_cell2clusters.tsv**: the file containing the identity of each cell present in the reduced expression matrix  
+- **miniexExample_cells2clusters.tsv**: the file containing the identity of each cell present in the reduced expression matrix  
 - **miniexExample_identities.tsv**: the file containing the identity of each cell cluster
 - **miniexExample_identities_with_idx.tsv**: the file containing the identity and index (for sorting clusters in the regulator heatmap) of each cell cluster. Only one of `miniexExample_identities.txt` or `miniexExample_identities_with_idx.txt` should be provided.
-- **TF_list.tsv**: the file containing 1879 Arabidopsis TFs  
-- **GOIwant.tsv**: (optional, it can be set to null) the file containing terms related to the regulons's expected functions  
-- **miniexExample_grnboost2.txt**: (optional, it is set to null by default) if GRNBoost2, or another expression-based network, was already run, the output can be provided here     
+- **GOsIwant.tsv**: (optional, it can be set to null) the file containing terms related to the regulons's expected functions
+- **EnrichmentBackground.tsv**: (optional, it can be set to null) the file containing gene IDs to be used as background for the enrichment analysis
   
 The [OUTPUTS folder](OUTPUTS/) contains four sub-folders + the log file:
 - **Log file** containing statistics on the provided dataset(s), information on the provided input files and parameters, as well as intermediary results in the workflow
