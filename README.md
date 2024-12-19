@@ -19,15 +19,15 @@ MINI-EX uses a [dual license](https://github.com/VIB-PSB/MINI-EX/blob/main/LICEN
 **2\.** Run TF binding site (TFBS) enrichment on the expression-based regulons and filter for TF or TF-Family motifs (default TF-Family)<br/>
 **3a.** Filter the previously identified regulons by target genes' (TGs) expression among the defined cell clusters (cluster specificity) using the provided markers<br/>
 **3b.** Filter the cell cluster specific regulons by TF expression<br/>
-**4a.** Calculate network statistics (out-degree, betweenness, closeness), cluster specificity and functional (GO) enrichment of the target genes of each regulon (if a list of GO terms is provided)<br/>
+**4a.** Calculate network statistics (out-degree, betweenness, closeness), median coexpression score, cluster specificity of TF, cluster specificity of TGs, and functional (GO) enrichment of the target genes of each regulon (if a list of GO terms is provided)<br/>
 **4b.** Generate a list of ranked regulons based on Borda ranking and generate an edge table containing edge scores
 
 For the last step, if a list of GO terms of interest is provided:
-- First all the combinations of weighted metrics (network statistics, cluster specificity and functional enrichment) are evaluated
+- First all the combinations of weighted metrics (network statistics, median coexpression score, cluster specificity of the TF, cluster specificity of TGs, and functional enrichment) are evaluated
 - The combination which returns half of the expected regulons earlier in the ranks (R50) is chosen for the weighted Borda ranking
 
 else:
-- The network statistics and cluster specificity are used to calculate the Borda ranking (calculated on the geometric mean of the single metrics)
+- The network statistics, median coexpression score, cluster specificity of the TF, and cluster specificity of TGs are used to calculate the Borda ranking (calculated on the geometric mean of the single metrics)
 
 **Note**: step 2 can be omitted when no motif mapping data is available (motif mapping data is provided for Arabidopsis, rice and maize). However, use with caution as without motif data the networks will be less precise.
 
