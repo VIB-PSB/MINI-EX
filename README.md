@@ -44,7 +44,7 @@ else:
 * (Optional) List of GO terms of interest
 
 As the pipeline can be run in parallel for multiple datasets all the inputs can be provided as a path to the dedicated directories.  
-All input files should have specific extensions and names as shown in [here](docs/data_preparation.md).  
+All input files should have specific extensions and names as shown in our [guide on data preparation](docs/data_preparation.md).  
 
 ## Outputs
 * **regulons folder** containing a tab-separated files with the inferred regulons, an edge table, info per TF, and an excel file with the ranked regulons and relative metadata
@@ -65,7 +65,7 @@ A detailed overview on necessary input files and expected output files can be fo
 
 ## Usage
 
-Define paths in the [config file](docs/configuration.md) to all the required inputs.
+Define paths in the config file to all the required inputs (check our guide on preparing the config file [here](docs/configuration.md)).
 
 ```
 nextflow -C miniex.config run miniex.nf
