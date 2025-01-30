@@ -68,7 +68,7 @@ for cluster, tf_to_tg_dict in cluster_to_tf_to_tg_dict.items():
 
 
 # ======== compute the original metrics ========
-original_regulons_df = pd.read_csv(ORIGINAL_REGULONS_FILE, sep='\t', header=None, names=['TF', 'TG']).drop_duplicates()
+original_regulons_df = pd.read_csv(ORIGINAL_REGULONS_FILE, sep='\t', header=None, usecols=[0, 1], names=['TF', 'TG']).drop_duplicates()
 
 # create a directed graph for the original network
 original_graph = nx.from_pandas_edgelist(original_regulons_df, source='TF', target='TG', create_using=nx.DiGraph())

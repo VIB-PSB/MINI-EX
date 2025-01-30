@@ -93,9 +93,10 @@ try:
             if not "text" in output.strip().decode('utf-8'):
                 raise Exception(f"The file '{file_name}' is compressed!")
         
-    output = subprocess.check_output(f'file "$(readlink -f {FEATURE_FILE_MOTIFS})"', shell=True)
-    if not "gzip" in output.strip().decode('utf-8'):
-        raise Exception(f"The file '{FEATURE_FILE_MOTIFS}' is not gzipped!")
+    if not path_is_dummy(FEATURE_FILE_MOTIFS):
+        output = subprocess.check_output(f'file "$(readlink -f {FEATURE_FILE_MOTIFS})"', shell=True)
+        if not "gzip" in output.strip().decode('utf-8'):
+            raise Exception(f"The file '{FEATURE_FILE_MOTIFS}' is not gzipped!")
 except subprocess.CalledProcessError as e:
     raise Exception(f"Command 'file' (2) failed with the error '{e}'!")
 

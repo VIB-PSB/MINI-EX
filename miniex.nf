@@ -166,7 +166,7 @@ process filter_motifs_dummy {
     tuple val("${datasetId}"), path("${datasetId}_enrichedRegulons.txt")
     
     """
-    cp "$modules" "${datasetId}_enrichedRegulons.txt"
+    cut -f 1,2 "$modules" > "${datasetId}_enrichedRegulons.txt"
     """
 }
 
