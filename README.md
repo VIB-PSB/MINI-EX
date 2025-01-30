@@ -6,13 +6,17 @@ The pipeline is built using Nextflow DSL2 and has the purpose of infer cell-type
 
 MINI-EX uses a [dual license](https://github.com/VIB-PSB/MINI-EX/blob/main/LICENSE) to offer the distribution of the software under a proprietary model as well as an open source model.
 
-**MINI-EX v2.\* is released!** Main features:
-* Added support for _Solanum lycopersicum_ (tomato)
-* Added support for maize AGPv5
-* It is now possible to omit the motif enrichment analysis, enabling MINI-EX to run on all possible species (Please note: in this mode, resulting networks are more susceptible to false positives)
-* Introducing a new output format: edge table with regulon ranks and edge weights
-* Added regulator heatmap as additional output figure ([example](/example/OUTPUTS/figures/miniexExample_regmap_8.svg))
-* The complete list of new features can be found in the release notes for [v2.0](https://github.com/VIB-PSB/MINI-EX/releases/tag/v2.0), [v2.1](https://github.com/VIB-PSB/MINI-EX/releases/tag/v2.1) and [v2.2](https://github.com/VIB-PSB/MINI-EX/releases/tag/v2.2)
+**MINI-EX v3.0 is released!** Main features:
+* Added new metrics:
+  * transcription factor cluster specificity
+  * median coexpression score of transcription factors and their target genes
+* Updated centrality metrics:
+  * for regulons where closeness and betweenness are not defined at the cluster level (e.g., when the TF doesn’t have incoming edges), the closeness and betweenness values are now computed based on the original network after motif mapping filtering
+  * per-cluster closeness and betweenness are always assigned better ranks compared to the original closeness and betweenness values
+* Improved TF prioritization in the Reference procedure (used when a list of (GO) terms of interest is specified by the user)
+* New parameter: users can now specify a custom background for the enrichment analysis (when not specified, the background defaults to the list of genes that are present in the expression matrix)
+* Expanded input options: terms of interest can now also be specified as ontology terms (e.g., GO:0009819), in addition to (or instead of) plain English words (e.g., drought)
+* The complete list of new features can be found in the [release notes](https://github.com/VIB-PSB/MINI-EX/releases/tag/v3.0)
 
 ## Pipeline summary
 **1\.** Run expression-based gene regulatory network (GRN) inference ([GRNBoost2](https://arboreto.readthedocs.io/en/latest/algorithms.html#grnboost2)) given a list of transcription factors (TFs) and a gene-to-cell count matrix<br/>
