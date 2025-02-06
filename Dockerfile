@@ -13,3 +13,5 @@ RUN micromamba install -c conda-forge graph-tool=2.43
 # Installing remaining packages
 RUN pip install -r requirements.txt
 
+ENV PATH="/opt/conda/bin:$PATH"
+
