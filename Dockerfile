@@ -1,14 +1,15 @@
 
-FROM ubuntu:18.04
+FROM mambaorg/micromamba
 
 LABEL org.opencontainers.image.authors="Camilla FERRARI"
+ARG MAMBA_DOCKERFILE_ACTIVATE=1
 
 ADD requirements.txt requirements.txt
 
-# Installing python 3.6 and pip3
-RUN apt-get update
-RUN apt-get install -y python3.6 python3-pip 
-RUN pip3 install --upgrade pip
+# Installing python 3.6 and graph-tll
+RUN micromamba install -y python=3.6
+RUN micromamba install -c conda-forge graph-tool=2.43
 
-# Installing dependencies
-RUN pip3 install -r requirements.txt
+# Installing remaining packages
+RUN pip install -r requirements.txt
+
