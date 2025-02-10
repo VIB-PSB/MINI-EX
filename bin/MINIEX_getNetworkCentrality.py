@@ -11,9 +11,13 @@ TF1              0.5            0.2             0.14             0.3            
 TF2              0.2            0.2              0.6            0.58            0.3             0.28            0.43               0.6
 """
 
+import sys
 import pandas as pd
 import networkx as nx
-import sys
+import graph_tool as gt
+
+from graph_tool.centrality import betweenness as betweenness_centrality
+
        
 FINAL_REGULONS_FILE    = sys.argv[1]  # per cluster regulons
 ORIGINAL_REGULONS_FILE = sys.argv[2]  # regulons after the motif filtering step
@@ -51,14 +55,26 @@ centralities_df = pd.DataFrame(float('nan'), index=all_tfs, columns=columns)
 # ======== compute per cluster metrics ========
 for cluster, tf_to_tg_dict in cluster_to_tf_to_tg_dict.items():
     # create a directed graph for the current cluster
-    graph = nx.DiGraph()
+    graph_nx = nx.DiGraph()
+    graph_gt = gt.Graph(directed=True)
     edges = [(tf, tg) for tf, tg_list in tf_to_tg_dict.items() for tg in tg_list]
-    graph.add_edges_from(edges)
+    graph_nx.add_edges_from(edges)
+
+    # Convert genes to numbers (for graph-tool) and store the conversion information for later
+    gene_to_number = {node: i for i, node in enumerate(set([node for edge in edges for node in edge]))}
+    number_to_gene = {i: node for i, node in enumerate(set([node for edge in edges for node in edge]))}
+    edges_numbers = [[gene_to_number[edge[0]], gene_to_number[edge[1]]] for edge in edges]
+
+    # Add edges to the graph
+    graph_gt.add_edge_list(edges_numbers)
 
     # calculate centralities
-    out_degree = nx.out_degree_centrality(graph)
-    closeness = nx.closeness_centrality(graph)
-    betweenness = nx.betweenness_centrality(graph)
+    out_degree = nx.out_degree_centrality(graph_nx)
+    closeness = nx.closeness_centrality(graph_nx)
+    betweenness = betweenness_centrality(graph_gt)
+
+    # Convert to dictionary with gene IDs
+    betweenness = {number_to_gene[i]: betweenness[0][i] for i in range(graph_gt.num_vertices())}
 
     # populate the centralities dataframe
     for tf in all_tfs:
@@ -73,9 +89,26 @@ original_regulons_df = pd.read_csv(ORIGINAL_REGULONS_FILE, sep='\t', header=None
 # create a directed graph for the original network
 original_graph = nx.from_pandas_edgelist(original_regulons_df, source='TF', target='TG', create_using=nx.DiGraph())
 
+# Create a directed graph
+original_graph_gt = gt.Graph(directed=True)
+
+# Convert dataframe to edge list
+edges = original_regulons_df.values.tolist()
+
+# Convert genes to numbers (for graph-tool) and store the conversion information for later
+gene_to_number = {node: i for i, node in enumerate(set([node for edge in edges for node in edge]))}
+number_to_gene = {i: node for i, node in enumerate(set([node for edge in edges for node in edge]))}
+edges_numbers = [[gene_to_number[edge[0]], gene_to_number[edge[1]]] for edge in edges]
+
+# Add edges to the graph
+original_graph_gt.add_edge_list(edges_numbers)
+
 # calculate centralities
 closeness = nx.closeness_centrality(original_graph)
-betweenness = nx.betweenness_centrality(original_graph)
+betweenness = betweenness_centrality(original_graph_gt)
+
+# Convert to dictionary with gene IDs
+betweenness = {number_to_gene[i]: betweenness[0][i] for i in range(original_graph_gt.num_vertices())}
 
 # populate the centralities dataframe
 centrality_data = pd.DataFrame({
