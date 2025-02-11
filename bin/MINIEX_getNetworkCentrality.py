@@ -14,7 +14,6 @@ TF2              0.2            0.2              0.6            0.58            
 import sys
 import numpy as np
 import pandas as pd
-import networkx as nx
 import graph_tool as gt
 
 from graph_tool.centrality import closeness, betweenness
@@ -25,35 +24,27 @@ ORIGINAL_REGULONS_FILE = sys.argv[2]  # regulons after the motif filtering step
 OUPUT_FILE             = sys.argv[3]
 
 
-# ======== read the per cluster regulons dataframe ========
-regulons_df = pd.read_csv(FINAL_REGULONS_FILE, sep='\t', header=None, names=['TF', 'cluster', 'TGs'])
-regulons_df['TGs'] = regulons_df['TGs'].str.split(',')  # convert to list of TGs
+# ======== define centrality functions ========
+def out_degree_centrality(tf_to_tg_dict):
 
-all_tfs = regulons_df['TF'].unique()
-all_clusters = regulons_df['cluster'].unique()
+    # compute the number of nodes in the graph
+    all_nodes = {tf for tf in tf_to_tg_dict} | {tg for tg_list in tf_to_tg_dict.values() for tg in tg_list}
+    number_of_nodes = len(all_nodes)
 
+    # when an empty edge list is provided, return an empty dict
+    if number_of_nodes == 0:
+        return dict()
+    
+    # check that there is more than 1 node
+    assert number_of_nodes != 1
 
-# ======== create dictionary associating clusters to a dictionary associating regulators of that cluster to their TGs ========
-# example: { 'Cluster0' : { 'TF1' : ['TG1', 'TG2'], 'TF2' : ['TG2', 'TG3', 'TG4'] } }
-cluster_to_tf_to_tg_dict = {
-    cluster: regulons_df[regulons_df['cluster'] == cluster]  # filter on each cluster
-    .groupby('TF')['TGs']                                    # for each TF of that cluster: collect its target genes
-    .apply(lambda tg_lists: list(set(sum(tg_lists, []))))    # flatten and deduplicate
-    .to_dict()
-    for cluster in all_clusters
-}
+    # calculate out-degree as (number of TGs) / (number of nodes - 1)
+    n_minus_one = number_of_nodes - 1
+    out_degree_dict = {tf: len(tg_list) / n_minus_one for tf, tg_list in tf_to_tg_dict.items()}
 
-
-# ======== prepare the centralities dataframe ========
-# the dataframe will contain one row per TF and three columns per cluster (one for each per cluster metric)
-# one column for original closeness and one for original betweenness
-centrality_metrics = ['out-degree', 'closeness', 'betweenness']
-columns = [f"{metric}_{cluster}" for cluster in sorted(all_clusters) for metric in centrality_metrics]  # per cluster metrics
-columns += ['orig_closeness', 'orig_betweenness']  # original metrics
-centralities_df = pd.DataFrame(float('nan'), index=all_tfs, columns=columns)
+    return out_degree_dict
 
 
-# ======== define closeness and betweenness functions ========
 def closeness_centrality(graph, number_to_gene):
     
     # create a reversed graph view for in-closeness (to match NetworkX's directionality)
@@ -91,6 +82,35 @@ def betweenness_centrality(graph, number_to_gene):
 
     return betweenness_dict
 
+
+# ======== read the per cluster regulons dataframe ========
+regulons_df = pd.read_csv(FINAL_REGULONS_FILE, sep='\t', header=None, names=['TF', 'cluster', 'TGs'])
+regulons_df['TGs'] = regulons_df['TGs'].str.split(',')  # convert to list of TGs
+
+all_tfs = regulons_df['TF'].unique()
+all_clusters = regulons_df['cluster'].unique()
+
+
+# ======== create dictionary associating clusters to a dictionary associating regulators of that cluster to their TGs ========
+# example: { 'Cluster0' : { 'TF1' : ['TG1', 'TG2'], 'TF2' : ['TG2', 'TG3', 'TG4'] } }
+cluster_to_tf_to_tg_dict = {
+    cluster: regulons_df[regulons_df['cluster'] == cluster]  # filter on each cluster
+    .groupby('TF')['TGs']                                    # for each TF of that cluster: collect its target genes
+    .apply(lambda tg_lists: list(set(sum(tg_lists, []))))    # flatten and deduplicate
+    .to_dict()
+    for cluster in all_clusters
+}
+
+
+# ======== prepare the centralities dataframe ========
+# the dataframe will contain one row per TF and three columns per cluster (one for each per cluster metric)
+# one column for original closeness and one for original betweenness
+centrality_metrics = ['out-degree', 'closeness', 'betweenness']
+columns = [f"{metric}_{cluster}" for cluster in sorted(all_clusters) for metric in centrality_metrics]  # per cluster metrics
+columns += ['orig_closeness', 'orig_betweenness']  # original metrics
+centralities_df = pd.DataFrame(float('nan'), index=all_tfs, columns=columns)
+
+
 # ======== compute per cluster metrics ========
 for cluster, tf_to_tg_dict in cluster_to_tf_to_tg_dict.items():
 
@@ -102,16 +122,12 @@ for cluster, tf_to_tg_dict in cluster_to_tf_to_tg_dict.items():
     number_to_gene = {i: node for i, node in enumerate(set([node for edge in edges for node in edge]))}
     edges_numbers = [[gene_to_number[edge[0]], gene_to_number[edge[1]]] for edge in edges]
 
-    # create a directed NetworkX graph
-    graph_nx = nx.DiGraph()
-    graph_nx.add_edges_from(edges)
-
     # create a directed Graph-tool graph
     graph_gt = gt.Graph(directed=True)
     graph_gt.add_edge_list(edges_numbers)
 
     # calculate centralities
-    out_degree_dict = nx.out_degree_centrality(graph_nx)
+    out_degree_dict = out_degree_centrality(tf_to_tg_dict)
     closeness_dict = closeness_centrality(graph_gt, number_to_gene)
     betweenness_dict = betweenness_centrality(graph_gt, number_to_gene)
 
