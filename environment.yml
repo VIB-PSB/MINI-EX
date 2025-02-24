@@ -1,0 +1,19 @@
+name: mini_ex
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.6
+  - graph-tool=2.43
+  - numpy=1.19.5 
+  - seaborn=0.11.2 
+  - pandas=0.25.3
+  - arboreto=0.1.5 
+  - scipy=1.5.3 
+  - networkx=2.5.1
+  - tqdm=4.40.0
+  - fsspec>=0.3.3
+  - openpyxl=3.0.9
+  - xlrd=1.2.0
+  - natsort=8.2.0
+
