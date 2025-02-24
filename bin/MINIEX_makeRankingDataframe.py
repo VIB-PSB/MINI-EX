@@ -155,6 +155,8 @@ def retrieve_go_information(ranking_df: pd.DataFrame) -> pd.DataFrame:
     ranking_df['GOterm'] = "-"
     ranking_df['GOdescription'] = "-"
 
+    go_annotations_df = pd.DataFrame()
+
     if not path_is_dummy(GO_ENRICHMENT_FILE):  # GO enrichment was performed --> add GO-related information
         # load the list of terms of interest
         if path_is_dummy(TERMS_OF_INTEREST_FILE):
