@@ -179,7 +179,7 @@ def run_borda_ref(regulons_df: pd.DataFrame, metrics: Dict) -> pd.DataFrame:
         regulons_df['borda'] = regulons_df[weighted_metric_combination].sum(axis=1)
         regulons_df['borda_metricRank']=regulons_df['borda'].rank(method='max', ascending=True)
         borda_r50 = get_r50_for_metric(regulons_df, 'borda')
-        metric_combination_r50[','.join(metric_combination)] = borda_r50    
+        metric_combination_r50[','.join(metric_combination)] = borda_r50
 
     # compute global Borda rank
     best_metric_combination_found = False
@@ -203,6 +203,10 @@ def run_borda_ref(regulons_df: pd.DataFrame, metrics: Dict) -> pd.DataFrame:
         else:
             # remove that combination of the dictionary and check the next best combination
             del metric_combination_r50[best_metric_combination]
+            if len(metric_combination_r50) == 0:
+                print("WARNING: no valid metric combinations left to run the REFERENCE procedure -> STANDARD is performed instead.")
+                print("--------------------------------------------------------------")
+                return run_borda_std(regulons_df, metrics)
     
     # compute final Borda rank per cluster based on the best combination of metrics
     weighted_cluster_metric_combination = [item + '_metricClusterRankWeighted' for item in best_metric_combination_list]
@@ -308,7 +312,7 @@ def get_r50_for_metric(regulons_df: pd.DataFrame, metric_name: str) -> int:
 
 def interpolate_r50(all_relevant_tfs_df: pd.DataFrame, all_unique_tfs_df: pd.DataFrame, relevant_tfs_to_find: int) -> int:
     """
-        Performs linear interpolation to find R50.
+    Performs linear interpolation to find R50.
     For interpolation, following valures are needed: P1(x1, y1), P2(x2, y2),
     and half_relevant, defined as follows:
         - x1: last defined rank (= different from the max rank)
@@ -329,7 +333,7 @@ def interpolate_r50(all_relevant_tfs_df: pd.DataFrame, all_unique_tfs_df: pd.Dat
     |     /    
     |  __/
     |_/___________________|______________________________ x axis
-                        R50
+                         R50
     
     with:
         - x axis representing reassigned ranks for unique TFs
