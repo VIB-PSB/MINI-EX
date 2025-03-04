@@ -26,6 +26,21 @@ OUPUT_FILE             = sys.argv[3]
 
 # ======== define centrality functions ========
 def out_degree_centrality(tf_to_tg_dict):
+    
+    """
+    Calculate out-degree centrality, in the same way as NetworkX's out_degree_centrality
+    implementation.
+
+    Parameters
+    ----------
+    tf_to_tg_dict : Dict
+        dictionary of TFs (key) to a list of TGs (value)
+
+    Returns
+    -------
+    out_degree_dict: Dict
+        dictionary of TFs (key) to out-degree centrality (value)
+    """
 
     # compute the number of nodes in the graph
     all_nodes = {tf for tf in tf_to_tg_dict} | {tg for tg_list in tf_to_tg_dict.values() for tg in tg_list}
@@ -46,6 +61,24 @@ def out_degree_centrality(tf_to_tg_dict):
 
 
 def closeness_centrality(graph, number_to_gene):
+
+    """
+    Calculate closeness centrality, using the graph-tool library (fast C++ implementation),
+    to obtain the same values as NetworkX's closeness_centrality implementation.
+
+    Parameters
+    ----------
+    graph : gt.Graph 
+        a directed graph-tool graph object
+    number_to_gene: Dict
+        dictionary of integers (key) to gene IDs (value)
+        --> because the gt.Graph contains numbered nodes, not gene IDs
+
+    Returns
+    -------
+    closeness_dict: Dict
+        dictionary of TFs (key) to closeness centrality (value)
+    """
     
     # create a reversed graph view for in-closeness (to match NetworkX's directionality)
     graph_reversed = gt.GraphView(graph, reversed=True)
@@ -63,7 +96,7 @@ def closeness_centrality(graph, number_to_gene):
     # apply NetworkX's scaling: multiply by (n_r - 1)/(N - 1)
     closeness_scaled = closeness_norm.a * (n_r_minus_1 / (N - 1))
 
-    # Handle isolated nodes (sum_d=0) and NaN values explicitly
+    # handle isolated nodes (sum_d=0) and NaN values explicitly
     closeness_scaled[np.isinf(closeness_raw.a) | np.isnan(closeness_scaled)] = 0.0
 
     # convert to dictionary with gene IDs
@@ -73,6 +106,24 @@ def closeness_centrality(graph, number_to_gene):
 
 
 def betweenness_centrality(graph, number_to_gene):
+
+    """
+    Calculate betweenness centrality, using the graph-tool library (fast C++ implementation),
+    to obtain the same values as NetworkX's betweenness_centrality implementation.
+
+    Parameters
+    ----------
+    graph : gt.Graph 
+        a directed graph-tool graph object
+    number_to_gene: Dict
+        dictionary of integers (key) to gene IDs (value)
+        --> because the gt.Graph contains numbered nodes, not gene IDs
+
+    Returns
+    -------
+    betweenness_dict: Dict
+        dictionary of TFs (key) to betweenness centrality (value)
+    """
 
     # compute betweenness using Graph-tool
     betweenness_gt = betweenness(graph)
