@@ -21,6 +21,5 @@ jobs:
           push: true
           tags: |
             vibpsb/mini-ex:latest
-            vibpsb/mini-ex:v3.0
+            vibpsb/mini-ex:v3.1
             vibpsb/mini-ex:dev
-          
