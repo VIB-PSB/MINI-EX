@@ -202,14 +202,20 @@ for data_set in data_sets:
     cells_from_cells_to_clusters = set(subprocess.check_output(command, shell=True).decode().split())
 
     # check the intersection
-    cells_in_common = len(cells_from_matrix & cells_from_cells_to_clusters)
-    cells_in_matrix = len(cells_from_matrix)
-    cells_in_matrix = len(cells_from_cells_to_clusters)
+    cells_in_common_count = len(cells_from_matrix & cells_from_cells_to_clusters)
+    cells_in_matrix_count = len(cells_from_matrix)
+    cells_in_cells_to_clusters_count = len(cells_from_cells_to_clusters)
 
-    if cells_in_common == 0:
-        raise Exception(f"Cell identities differ between matrix and cells2cluster files for the '{data_set}' data set!")
-    elif not(cells_in_common == cells_in_matrix and cells_in_common == cells_in_matrix):
-        WARNING_MESSAGES.append(f"WARNING: Some cell identities differ between matrix and cells2cluster files for the '{data_set}' data set!")
+    cell_id_example = ''  # random cell ID to show as example to the user
+    if cells_in_matrix_count > 0:
+        cell_id_example = next(iter(cells_from_matrix))
+    elif cells_in_cells_to_clusters_count > 0:
+        cell_id_example = next(iter(cells_from_cells_to_clusters))
+
+    if cells_in_common_count == 0:  # all cell identities differ
+        raise Exception(f"The cell identifiers (e.g. {cell_id_example}) don't correspond between the matrix and cells2cluster file for the '{data_set}' data set!")
+    elif not(cells_in_common_count == cells_in_matrix_count and cells_in_common_count == cells_in_cells_to_clusters_count):  # some cell identifiers differ
+        WARNING_MESSAGES.append(f"WARNING: The cell identifiers (e.g. {cell_id_example}) are not fully corresponding between the matrix and cells2cluster file for the '{data_set}' data set!")
 
     
     # CHECK: cluster ID and identities must correspond between cells2clusters and cluster2ident files
