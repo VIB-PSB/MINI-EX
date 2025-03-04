@@ -20,6 +20,8 @@ EXPRESSION_FILTER=sys.argv[15]
 MOTIF_FILTER=sys.argv[16]
 TOP_REGULONS=sys.argv[17]
 
+WARNING_MESSAGES = [] # will store warning messages to be displayed in the log
+
 
 ########## HELPER FUNCTIONS ##########
 
@@ -190,7 +192,27 @@ for data_set in data_sets:
             raise Exception(f"Command 'cut' (4) failed with the error: '{e}'!")
     
 
-    # CHECK: cluster id and identities must correspond between cells2clusters and cluster2ident files
+    # CHECK: cell ids correspond between the matrix and cells2clusters files
+    # retrieve matrix cell ids from column names
+    command = f"awk -F'\t' 'NR==1 {{for (i=2; i<=NF; i++) print $i}}' {matrix_file_name} | sort -u"
+    cells_from_matrix = set(subprocess.check_output(command, shell=True).decode().split())
+
+    # retrieve cells2clusters cell ids from the first column
+    command = f"cut -f1 {cells2clusters_file_name} | sort -u"
+    cells_from_cells_to_clusters = set(subprocess.check_output(command, shell=True).decode().split())
+
+    # check the intersection
+    cells_in_common = len(cells_from_matrix & cells_from_cells_to_clusters)
+    cells_in_matrix = len(cells_from_matrix)
+    cells_in_matrix = len(cells_from_cells_to_clusters)
+
+    if cells_in_common == 0:
+        raise Exception(f"Cell identities differ between matrix and cells2cluster files for the '{data_set}' data set!")
+    elif not(cells_in_common == cells_in_matrix and cells_in_common == cells_in_matrix):
+        WARNING_MESSAGES.append(f"WARNING: Some cell identities differ between matrix and cells2cluster files for the '{data_set}' data set!")
+
+    
+    # CHECK: cluster ID and identities must correspond between cells2clusters and cluster2ident files
     try:
         output = subprocess.check_output(f'bash -c "comm -3 <(cut -f1 {identities_file_name} | sort -u) <(cut -f2 {cells2clusters_file_name} | sort -u)"', shell=True)
         if output:
@@ -233,6 +255,8 @@ print("")
 print("== INPUT VALIDATION ==========================================")
 print("Input files passed validation tests. Retrieved following data:")
 print(stats_df)
+for warning in WARNING_MESSAGES:  # 
+    print(warning)
 print("")
 print("== INPUT FILES ===============================================")
 print(f"Expression matrix file(s)  : {' / '.join(EXPRESSION_MATRIX)}")
