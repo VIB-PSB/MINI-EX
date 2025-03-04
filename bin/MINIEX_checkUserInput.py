@@ -193,13 +193,21 @@ for data_set in data_sets:
     
 
     # CHECK: cell ids correspond between the matrix and cells2clusters files
-    # retrieve matrix cell ids from column names
-    command = f"awk -F'\t' 'NR==1 {{for (i=1; i<=NF; i++) print $i}}' {matrix_file_name} | sort -u"
-    cells_from_matrix = set(subprocess.check_output(command, shell=True).decode().split())
+    try:
+        # retrieve matrix cell ids from column names
+        command = f"head -n1 {matrix_file_name}| tr '\t' '\n' | sort -u"
+        cells_from_matrix = set(subprocess.check_output(command, shell=True).decode().split())
+    except subprocess.CalledProcessError as e:
+        if e.returncode != 1:  # 1 means grep found no matches
+            raise Exception(f"Command 'head' (5) failed with the error: '{e}'!")
 
-    # retrieve cells2clusters cell ids from the first column
-    command = f"cut -f1 {cells2clusters_file_name} | sort -u"
-    cells_from_cells_to_clusters = set(subprocess.check_output(command, shell=True).decode().split())
+    try:
+        # retrieve cells2clusters cell ids from the first column
+        command = f"cut -f1 {cells2clusters_file_name} | sort -u"
+        cells_from_cells_to_clusters = set(subprocess.check_output(command, shell=True).decode().split())
+    except subprocess.CalledProcessError as e:
+        if e.returncode != 1:  # 1 means grep found no matches
+            raise Exception(f"Command 'cut' (6) failed with the error: '{e}'!")
 
     # check the intersection
     cells_in_common_count = len(cells_from_matrix & cells_from_cells_to_clusters)
@@ -217,11 +225,10 @@ for data_set in data_sets:
         raise Exception(f"The cell identifiers (e.g. {cell_id_example}) don't correspond between the matrix and cells2cluster file for the '{data_set}' data set!")
     # some cell identifiers differ
     elif not((cells_in_common_count == cells_in_matrix_count or
-              cells_in_common_count == cells_in_matrix_count - 1) and   # in some cases the exported matrix is missing the first column (=index)
-              cells_in_common_count == cells_in_cells_to_clusters_count):
+            cells_in_common_count == cells_in_matrix_count - 1) and   # in some cases the exported matrix is missing the first column (=index)
+            cells_in_common_count == cells_in_cells_to_clusters_count):
         WARNING_MESSAGES.append(f"WARNING: The cell identifiers (e.g. {cell_id_example}) are not fully corresponding between the matrix and cells2cluster file for the '{data_set}' data set!")
 
-    
     # CHECK: cluster ID and identities must correspond between cells2clusters and cluster2ident files
     try:
         output = subprocess.check_output(f'bash -c "comm -3 <(cut -f1 {identities_file_name} | sort -u) <(cut -f2 {cells2clusters_file_name} | sort -u)"', shell=True)
@@ -229,7 +236,7 @@ for data_set in data_sets:
             raise Exception(f"Cluster identities differ between cells2cluster and identities files for the '{data_set}' data set!")
     except subprocess.CalledProcessError as e:
         if e.returncode != 1:  # 1 means grep found no matches
-            raise Exception(f"Command 'comm' (5) failed with the error: '{e}'!")
+            raise Exception(f"Command 'comm' (7) failed with the error: '{e}'!")
 
 
     # CHECK: only up-regulated markers should be present
@@ -239,7 +246,7 @@ for data_set in data_sets:
             raise Exception(f"Down-regulated markers detected for the '{data_set}' data set!")
     except subprocess.CalledProcessError as e:
         if e.returncode != 1:  # 1 means grep found no matches
-            raise Exception(f"Command 'cut' (6) failed with the error: '{e}'!")
+            raise Exception(f"Command 'cut' (8) failed with the error: '{e}'!")
     
 
     # CHECK: if the enrichment background is provided, then it must have at least one gene id in common with the expressed genes
@@ -250,7 +257,7 @@ for data_set in data_sets:
                 raise Exception(f"The enrichment background has no genes in common with the expressed genes in the '{data_set}' data set!")
         except subprocess.CalledProcessError as e:
             if e.returncode != 1:  # 1 means grep found no matches
-                raise Exception(f"Command 'comm' (7) failed with the error: '{e}'!")
+                raise Exception(f"Command 'comm' (9) failed with the error: '{e}'!")
 
 
     # collect statistics
