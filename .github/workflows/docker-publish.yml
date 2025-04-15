@@ -20,6 +20,6 @@ jobs:
         with:
           push: true
           tags: |
-            vibpsb/mini-ex:latest
-            vibpsb/mini-ex:v3.1
-            vibpsb/mini-ex:dev
+            psbdock/mini-ex:latest
+            psbdock/mini-ex:v3.1
+            psbdock/mini-ex:dev
