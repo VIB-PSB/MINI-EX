@@ -147,7 +147,7 @@ def regMap(regulons, cluster_matrix, clusters, cluster_grouping, group_colors,
     ax = plt.subplot(grid[3, 2])
     plt.sca(ax)
     cax = plt.colorbar(cm.ScalarMappable(norm=mcolors.Normalize(vmin=1, vmax=rank_threshold), cmap='Greys_r'), cax=ax)
-    cax.set_ticks([1]+[i for i in range(int(rank_threshold/5),rank_threshold+1,int(rank_threshold/5))])
+    cax.set_ticks([1]+[i for i in range(max(1,int(rank_threshold/5)),rank_threshold+1,max(1,int(rank_threshold/5)))])
     ax.set_ylabel("Borda rank\n(within cluster)")
     ax.invert_yaxis()
 
