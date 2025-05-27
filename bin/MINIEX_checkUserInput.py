@@ -72,6 +72,18 @@ if not value_is_a_positive_integer(EXPRESSION_FILTER) or int(EXPRESSION_FILTER) 
 if path_is_dummy(GO_FILE):
     if not path_is_dummy(TERMS_OF_INTEREST):
         raise Exception("When the GO file is set to 'null', the terms of interest file should also be set to null!")
+    
+
+# CHECK: if the TF info file is null, then the motif mapping step must be disabled
+if path_is_dummy(INFO_TF):
+    if DO_MOTIF_ANALYSIS == "true":
+        raise Exception("When the TF info file is set to 'null', the motif mapping step should be disabled! (doMotifAnalysis = false)")
+
+
+# CHECK: if the motif mapping file is null, then the motif mapping step must be disabled
+if path_is_dummy(FEATURE_FILE_MOTIFS):
+    if DO_MOTIF_ANALYSIS == "true":
+        raise Exception("When the motif mapping file is set to 'null', the motif mapping step should be disabled! (doMotifAnalysis = false)")
 
 
 # CHECK: equal number of files was provided for each file category, one per dataset

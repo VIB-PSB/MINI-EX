@@ -211,7 +211,7 @@ process filter_expression {
     publishDir regulonsDir, mode: 'copy'
 
     input:
-    path infoTf
+    path tfList
     val expressionFilter
     tuple val(datasetId), path(expressionMatrix), path(cellClusters), path(regulons)
 
@@ -219,7 +219,7 @@ process filter_expression {
     tuple val("${datasetId}"), path("${datasetId}_regulons.tsv")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterExpression.py" "$expressionMatrix" $infoTf $cellClusters "$expressionFilter" "$regulons" "${datasetId}_regulons.tsv"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterExpression.py" "$expressionMatrix" $tfList $cellClusters "$expressionFilter" "$regulons" "${datasetId}_regulons.tsv"
     """
 }
 
@@ -429,7 +429,8 @@ workflow {
     // handle files with null values (cannot be provided as parameters to a Nextflow process -> replaced with dummy names)
     terms_of_interest_file     = params.termsOfInterest      != null ? Channel.fromPath(params.termsOfInterest, checkIfExists:true).collect()      : "/.dummy_path_terms_of_interest"
     grnboost_file              = params.grnboostOut          != null ? Channel.fromPath(params.grnboostOut, checkIfExists:true).collect()          : "/.dummy_path_grnboost"
-    motif_mapping_file         = params.doMotifAnalysis      == true ? Channel.fromPath(params.featureFileMotifs, checkIfExists:true).collect()    : "/.dummy_path_motif_mapping"
+    motif_mapping_file         = params.featureFileMotifs    != null ? Channel.fromPath(params.featureFileMotifs, checkIfExists:true).collect()    : "/.dummy_path_motif_mapping"
+    info_tf_file               = params.infoTf               != null ? Channel.fromPath(params.infoTf, checkIfExists:true).collect()               : "/.dummy_path_info_tf"
     go_file                    = params.goFile               != null ? Channel.fromPath(params.goFile, checkIfExists:true).collect()               : "/.dummy_path_go_annotations"
     gene_aliases_file          = params.geneAliases          != null ? Channel.fromPath(params.geneAliases, checkIfExists:true).collect()          : "/.dummy_path_gene_aliases"
     enrichment_background_file = params.enrichmentBackground != null ? Channel.fromPath(params.enrichmentBackground, checkIfExists:true).collect() : "/.dummy_path_enrichment_background"
@@ -443,7 +444,7 @@ workflow {
         terms_of_interest_file,
         grnboost_file,
         motif_mapping_file,
-        Channel.fromPath(params.infoTf, checkIfExists:true).collect(),
+        info_tf_file,
         go_file,
         gene_aliases_file,
         enrichment_background_file,
@@ -474,7 +475,7 @@ workflow {
         grnboost_combined_ch = grnboost_ch.combine(enrichment_background_ch)
     }
     
-    if (params.doMotifAnalysis){
+    if (params.doMotifAnalysis && params.featureFileMotifs != null && params.infoTf != null){
         unzip_motif_mappings(params.featureFileMotifs)
         run_enricher_motifs(scriptEnricher,unzip_motif_mappings.out,grnboost_combined_ch)
         
