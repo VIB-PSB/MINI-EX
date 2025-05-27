@@ -475,7 +475,7 @@ workflow {
         grnboost_combined_ch = grnboost_ch.combine(enrichment_background_ch)
     }
     
-    if (params.doMotifAnalysis && params.featureFileMotifs != null){
+    if (params.doMotifAnalysis && params.featureFileMotifs != null && params.infoTf != null){
         unzip_motif_mappings(params.featureFileMotifs)
         run_enricher_motifs(scriptEnricher,unzip_motif_mappings.out,grnboost_combined_ch)
         
