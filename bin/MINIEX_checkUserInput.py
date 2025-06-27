@@ -149,7 +149,7 @@ def check_dataset_file(file_name: str):
     # the only exception is the Seurat markers file, so it is not checked
     if file_name not in MARKERS_OUT:
         try:
-            output = subprocess.check_output(f"cut -f1 {file_name} | sort | uniq -d", shell=True)
+            output = subprocess.check_output(f"cut -f1 {file_name} | sort -T . | uniq -d", shell=True)
             if output.strip():
                 raise Exception(f"Duplicated indexes detected in file '{file_name}'!")
         except subprocess.CalledProcessError as e:
@@ -207,7 +207,7 @@ for data_set in data_sets:
     # CHECK: cell ids correspond between the matrix and cells2clusters files
     try:
         # retrieve matrix cell ids from column names
-        command = f"head -n1 {matrix_file_name}| tr '\t' '\n' | sort -u"
+        command = f"head -n1 {matrix_file_name}| tr '\t' '\n' | sort -T . -u"
         cells_from_matrix = set(subprocess.check_output(command, shell=True).decode().split())
     except subprocess.CalledProcessError as e:
         if e.returncode != 1:  # 1 means grep found no matches
@@ -215,7 +215,7 @@ for data_set in data_sets:
 
     try:
         # retrieve cells2clusters cell ids from the first column
-        command = f"cut -f1 {cells2clusters_file_name} | sort -u"
+        command = f"cut -f1 {cells2clusters_file_name} | sort -T . -u"
         cells_from_cells_to_clusters = set(subprocess.check_output(command, shell=True).decode().split())
     except subprocess.CalledProcessError as e:
         if e.returncode != 1:  # 1 means grep found no matches
@@ -243,7 +243,7 @@ for data_set in data_sets:
 
     # CHECK: cluster ID and identities must correspond between cells2clusters and cluster2ident files
     try:
-        output = subprocess.check_output(f'bash -c "comm -3 <(cut -f1 {identities_file_name} | sort -u) <(cut -f2 {cells2clusters_file_name} | sort -u)"', shell=True)
+        output = subprocess.check_output(f'bash -c "comm -3 <(cut -f1 {identities_file_name} | sort -T . -u) <(cut -f2 {cells2clusters_file_name} | sort -T . -u)"', shell=True)
         if output:
             raise Exception(f"Cluster identities differ between cells2cluster and identities files for the '{data_set}' data set!")
     except subprocess.CalledProcessError as e:
@@ -264,7 +264,7 @@ for data_set in data_sets:
     # CHECK: if the enrichment background is provided, then it must have at least one gene id in common with the expressed genes
     if not path_is_dummy(ENRICHMENT_BACKGROUND):
         try:
-            output = subprocess.check_output(f'bash -c "comm -12 <(cut -f1 {matrix_file_name} | sort -u) <(cut -f1 {ENRICHMENT_BACKGROUND} | sort -u)"', shell=True)
+            output = subprocess.check_output(f'bash -c "comm -12 <(cut -f1 {matrix_file_name} | sort -T . -u) <(cut -f1 {ENRICHMENT_BACKGROUND} | sort -T . -u)"', shell=True)
             if not output:
                 raise Exception(f"The enrichment background has no genes in common with the expressed genes in the '{data_set}' data set!")
         except subprocess.CalledProcessError as e:
@@ -276,7 +276,7 @@ for data_set in data_sets:
     stats_df.loc[data_set, 'cells'] = int(subprocess.check_output(f"head -n 1 {matrix_file_name} | cut -f1- | wc -w", shell=True).strip()) - 1
     stats_df.loc[data_set, 'genes'] = int(subprocess.check_output(f"cat {matrix_file_name} | wc -l", shell=True).strip()) - 1
     stats_df.loc[data_set, 'clusters'] = int(subprocess.check_output(f"cat {identities_file_name} | wc -l", shell=True).strip())
-    stats_df.loc[data_set, 'tissues'] = int(subprocess.check_output(f"cut -f2 {identities_file_name} | sort | uniq | wc -l", shell=True).strip())
+    stats_df.loc[data_set, 'tissues'] = int(subprocess.check_output(f"cut -f2 {identities_file_name} | sort -T . | uniq | wc -l", shell=True).strip())
 
 
 # if the process is here, that means that all the tests passed, otherwise an exception is raized and the process is interrupted
