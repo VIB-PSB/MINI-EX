@@ -13,10 +13,11 @@ from arboreto.core import to_tf_matrix, target_gene_indices, infer_partial_netwo
 
 
 
-tfsList = sys.argv[1]
-expressionMatrix = sys.argv[2]
+tf_list = sys.argv[1]
+expression_matrix = sys.argv[2]
 num_workers = int(sys.argv[3])
 output = sys.argv[4]
+target_gene_subset_indices = [int(i) for i in sys.argv[5].split(",")]
 
 
 
@@ -41,12 +42,12 @@ def run_infer_partial_network(target_gene_index):
 if __name__ == '__main__':
 
     start_time = time.time()
-    ex_matrix = pandas.read_csv(expressionMatrix, sep='\t', header=0, index_col=0).T
+    ex_matrix = pandas.read_csv(expression_matrix, sep='\t', header=0, index_col=0).T
     gene_names = ex_matrix.columns
     
     end_time = time.time()
     print(f'Loaded expression matrix of {ex_matrix.shape[0]} cells and {ex_matrix.shape[1]} genes in {end_time - start_time} seconds...')
-    tf_names = load_tf_names(tfsList)
+    tf_names = load_tf_names(tf_list)
     print(f'Loaded {len(tf_names)} TFs...')
 
     ex_matrix, gene_names, tf_names = _prepare_input(ex_matrix, gene_names, tf_names)
@@ -55,10 +56,10 @@ if __name__ == '__main__':
 
     with Pool(num_workers) as p:
         adjs = list(tqdm.tqdm(p.imap(run_infer_partial_network,
-                                     target_gene_indices(gene_names, target_genes='all'),
+                                     target_gene_indices(gene_names, target_genes=target_gene_subset_indices),
                                      chunksize=1
                                      ),
-                              total=len(gene_names)))
+                              total=len(target_gene_subset_indices)))
 
     adj = pandas.concat(adjs).sort_values(by='importance', ascending=False)
 

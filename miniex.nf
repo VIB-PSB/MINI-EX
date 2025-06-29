@@ -89,18 +89,63 @@ process get_expressed_genes {
 }
 
 
+process split_grnboost_jobs {
+
+    input:
+    tuple val(datasetId), path(matrix)
+    
+    output:
+    tuple val("${datasetId}"), path("${matrix}"), path("${datasetId}_*.txt")
+
+    """
+    number_of_genes=\$(tail -n+2 ${matrix} | wc -l)
+
+    # Divide matrix row indices (the genes) into chunks
+    for interval_start in \$(seq 0 ${params.grnboostChunkSize} \$number_of_genes); do
+
+        # Calculate end of the interval
+        interval_end=\$((interval_start + ${params.grnboostChunkSize} - 1))
+        
+        # Make sure that 'interval_end' does not exceed the largest possible index
+        max_index=\$((number_of_genes - 1))
+        if (( interval_end > max_index )); then
+            interval_end=\$max_index
+        fi
+
+        # Write all indices within the interval to a file
+        echo \$(seq -s, \$interval_start 1 \$interval_end) > ${datasetId}_\${interval_start}.txt
+    done
+
+    """
+}
+
+
 process run_grnboost {
-    publishDir grnboostDir, mode: 'copy'
 
     input:
     path tfList
-    tuple val(datasetId), path(matrix)
+    tuple val(datasetId), path(matrix), path(chunk)
+    
+    output:
+    tuple val("${datasetId}"), path("*_grnboost2.tsv")
+
+    """
+    OMP_NUM_THREADS=1 python3 ${baseDir}/bin/MINIEX_runGrnboost.py ${tfList} ${matrix} ${task.cpus} \$(basename ${chunk} .txt)_grnboost2.tsv \$(cat ${chunk})
+    """
+}
+
+
+process merge_grnboost_jobs {
+    publishDir grnboostDir, mode: 'copy'
+
+    input:
+    tuple val(datasetId), path(grnboostOutputFiles)
     
     output:
     tuple val("${datasetId}"), path("${datasetId}_grnboost2.tsv")
 
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_runGrnboost.py" $tfList "$matrix" "${task.cpus}" "${datasetId}_grnboost2.tsv"
+    cat ${grnboostOutputFiles} | sort -k3,3 -r -g -T . > ${datasetId}_grnboost2.tsv
     """
 }
 
@@ -459,8 +504,12 @@ workflow {
     matrix_ch = Channel.fromPath(params.expressionMatrix).map { n -> [ n.baseName.split("_")[0], n ] }
     
     if (params.grnboostOut == null){
-        run_grnboost(params.tfList,matrix_ch)
-        grnboost_ch = run_grnboost.out
+        split_grnboost_jobs(matrix_ch)
+        // Transform [id, matrix, [chunk1, chunk2,...]] into [[id, matrix, chunk1], [id, matrix, chunk2], ...]
+        grnboost_input_ch = split_grnboost_jobs.out.flatMap{ id, matrix, chunks -> chunks.collect { chunk -> [ id, matrix, chunk ] } }
+        run_grnboost(params.tfList,grnboost_input_ch)
+        merge_grnboost_jobs(run_grnboost.out.groupTuple())
+        grnboost_ch = merge_grnboost_jobs.out
     }
     if (params.grnboostOut != null){
         grnboost_ch = Channel.fromPath(params.grnboostOut).map { n -> [ n.baseName.split("_")[0], n ] }
