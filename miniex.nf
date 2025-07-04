@@ -57,6 +57,7 @@ process check_user_input {
     val expressionFilter
     val motifFilter
     val topRegulons
+    val grnboostSubjobs
 
     output:
     stdout emit: stdoutLog
@@ -68,7 +69,7 @@ process check_user_input {
     OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkUserInput.py" "$expressionMatrix" "$markersOut" "$cellsToClusters" "$clustersToIdentities" \
                                                                   "$tfList" "$termsOfInterest" "$grnboostOut" "$featureFileMotifs" "$infoTf" \
                                                                   "$goFile" "$geneAliases" "$enrichmentBackground" "$doMotifAnalysis" "$topMarkers" \
-                                                                   "$expressionFilter" "$motifFilter" "$topRegulons" >> "processLog.log"
+                                                                   "$expressionFilter" "$motifFilter" "$topRegulons" "$grnboostSubjobs" >> "processLog.log"
     # print input validation statistics on stdout
     awk '/== INPUT VALIDATION/,/== INPUT FILES/ {if (!/== INPUT (VALIDATION|FILES)/) print}' processLog.log
     """
@@ -92,29 +93,39 @@ process get_expressed_genes {
 process split_grnboost_jobs {
 
     input:
+    path tfList
     tuple val(datasetId), path(matrix)
     
     output:
-    tuple val("${datasetId}"), path("${matrix}"), path("${datasetId}_*.txt")
+    tuple val("${datasetId}"), path("tf_matrix.npy"), path("tf_names.txt"), path("${datasetId}_grnboost_chunk_*.tsv")
 
     """
-    number_of_genes=\$(tail -n+2 ${matrix} | wc -l)
+    # Subset the expression matrix for only TFs
+    grep -F -f ${tfList} ${matrix} > tf_matrix_with_rownames.tsv
 
-    # Divide matrix row indices (the genes) into chunks
-    for interval_start in \$(seq 0 ${params.grnboostChunkSize} \$number_of_genes); do
+    # Split the rownames (gene IDs) and the expression counts
+    cut -f2- tf_matrix_with_rownames.tsv > tf_matrix_without_rownames.tsv
+    cut -f1 tf_matrix_with_rownames.tsv > tf_names.txt
+    rm tf_matrix_with_rownames.tsv
 
-        # Calculate end of the interval
-        interval_end=\$((interval_start + ${params.grnboostChunkSize} - 1))
-        
-        # Make sure that 'interval_end' does not exceed the largest possible index
-        max_index=\$((number_of_genes - 1))
-        if (( interval_end > max_index )); then
-            interval_end=\$max_index
-        fi
+    # Determine the maximum value in the matrix
+    max_count=\$(awk 'BEGIN{max=0}{for(i=1;i<=NF;i++)if(\$i>max)max=\$i}END{print max}' tf_matrix_without_rownames.tsv)
 
-        # Write all indices within the interval to a file
-        echo \$(seq -s, \$interval_start 1 \$interval_end) > ${datasetId}_\${interval_start}.txt
-    done
+    # Determine the number of rows and columns of the matrix
+    number_of_rows=\$(cat tf_matrix_without_rownames.tsv | wc -l)
+    number_of_columns=\$(head -1 tf_matrix_without_rownames.tsv | tr '\\t' '\\n' | wc -l)
+
+    # Convert the TF expression matrix to a numpy array
+    OMP_NUM_THREADS=1 python3 ${baseDir}/bin/MINIEX_prepareTfMatrix.py tf_matrix_without_rownames.tsv tf_matrix.npy \$max_count \$number_of_rows \$number_of_columns
+
+    # Split the expression matrix into chunks
+    split -a 6 -d -n l/${params.grnboostSubjobs} --additional-suffix .tsv ${matrix} ${datasetId}_grnboost_chunk_
+
+    # Remove the header from the first chunk
+    sed -i '1d' ${datasetId}_grnboost_chunk_000000.tsv
+
+    # Delete potential empty files (can be generated if number of subjobs is very high)
+    find . -type f -empty -delete
 
     """
 }
@@ -123,14 +134,24 @@ process split_grnboost_jobs {
 process run_grnboost {
 
     input:
-    path tfList
-    tuple val(datasetId), path(matrix), path(chunk)
+    tuple val(datasetId), path(tf_matrix), path(tf_names), path(chunk_matrix)
     
     output:
     tuple val("${datasetId}"), path("*_grnboost2.tsv")
 
     """
-    OMP_NUM_THREADS=1 python3 ${baseDir}/bin/MINIEX_runGrnboost.py ${tfList} ${matrix} ${task.cpus} \$(basename ${chunk} .txt)_grnboost2.tsv \$(cat ${chunk})
+    # Split the rownames (gene IDs) and the expression counts
+    cut -f2- ${chunk_matrix} > matrix_without_rownames.tsv
+    cut -f1 ${chunk_matrix} > gene_names.txt
+
+    # Determine the maximum value in the matrix
+    max_count=\$(awk 'BEGIN{max=0}{for(i=1;i<=NF;i++)if(\$i>max)max=\$i}END{print max}' matrix_without_rownames.tsv)
+
+    # Determine the number of rows and columns of the matrix
+    number_of_rows=\$(cat matrix_without_rownames.tsv | wc -l)
+    number_of_columns=\$(head -1 matrix_without_rownames.tsv | tr '\\t' '\\n' | wc -l)
+
+    OMP_NUM_THREADS=1 python3 ${baseDir}/bin/MINIEX_runGrnboost.py ${tf_matrix} ${tf_names} matrix_without_rownames.tsv gene_names.txt ${task.cpus} \$(basename ${chunk_matrix} .tsv)_grnboost2.tsv \$max_count \$number_of_rows \$number_of_columns
     """
 }
 
@@ -497,17 +518,19 @@ workflow {
         params.topMarkers,
         params.expressionFilter,
         params.motifFilter,
-        params.topRegulons)
+        params.topRegulons,
+        params.grnboostSubjobs)
 
     check_user_input.out.stdoutLog.view()  // print the output of check_user_input to the terminal
 
     matrix_ch = Channel.fromPath(params.expressionMatrix).map { n -> [ n.baseName.split("_")[0], n ] }
     
     if (params.grnboostOut == null){
-        split_grnboost_jobs(matrix_ch)
-        // Transform [id, matrix, [chunk1, chunk2,...]] into [[id, matrix, chunk1], [id, matrix, chunk2], ...]
-        grnboost_input_ch = split_grnboost_jobs.out.flatMap{ id, matrix, chunks -> chunks.collect { chunk -> [ id, matrix, chunk ] } }
-        run_grnboost(params.tfList,grnboost_input_ch)
+        split_grnboost_jobs(params.tfList,matrix_ch)
+        // Transform [id, tf_matrix, tf_names [chunk1, chunk2,...]] 
+        // into [[id, tf_matrix, tf_names, chunk1], [id, tf_matrix, tf_names, chunk2], ...]
+        grnboost_input_ch = split_grnboost_jobs.out.flatMap{ id, tf_matrix, tf_names, chunks -> chunks.collect { chunk -> [ id, tf_matrix, tf_names, chunk ] } }
+        run_grnboost(grnboost_input_ch)
         merge_grnboost_jobs(run_grnboost.out.groupTuple())
         grnboost_ch = merge_grnboost_jobs.out
     }
