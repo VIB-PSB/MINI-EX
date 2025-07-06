@@ -90,14 +90,14 @@ process get_expressed_genes {
 }
 
 
-process split_grnboost_jobs {
+process extract_tf_matrix {
 
     input:
     path tfList
     tuple val(datasetId), path(matrix)
     
     output:
-    tuple val("${datasetId}"), path("tf_matrix.npy"), path("tf_names.txt"), path("${datasetId}_grnboost_chunk_*.tsv")
+    tuple val("${datasetId}"), path("tf_matrix.npy"), path("tf_names.txt"), path("cell_names.txt")
 
     """
     # Subset the expression matrix for only TFs
@@ -118,6 +118,22 @@ process split_grnboost_jobs {
     # Convert the TF expression matrix to a numpy array
     OMP_NUM_THREADS=1 python3 ${baseDir}/bin/MINIEX_prepareTfMatrix.py tf_matrix_without_rownames.tsv tf_matrix.npy \$max_count \$number_of_rows \$number_of_columns
 
+    # Get the cell names
+    head -1 ${matrix} | tr '\\t' '\\n' > matrix_header.txt
+    tail -\$number_of_columns matrix_header.txt > cell_names.txt
+    """
+}
+
+
+process split_grnboost_jobs {
+
+    input:
+    tuple val(datasetId), path(matrix)
+    
+    output:
+    tuple val("${datasetId}"), path("${datasetId}_grnboost_chunk_*.tsv")
+
+    """
     # Split the expression matrix into chunks
     split -a 6 -d -n l/${params.grnboostSubjobs} --additional-suffix .tsv ${matrix} ${datasetId}_grnboost_chunk_
 
@@ -277,15 +293,14 @@ process filter_expression {
     publishDir regulonsDir, mode: 'copy'
 
     input:
-    path tfList
     val expressionFilter
-    tuple val(datasetId), path(expressionMatrix), path(cellClusters), path(regulons)
+    tuple val(datasetId), path(tfExpressionMatrix), path(tfNames), path(cellNames), path(cellClusters), path(regulons)
 
     output:
     tuple val("${datasetId}"), path("${datasetId}_regulons.tsv")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterExpression.py" "$expressionMatrix" $tfList $cellClusters "$expressionFilter" "$regulons" "${datasetId}_regulons.tsv"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterExpression.py" "$tfExpressionMatrix" "$tfNames" "$cellNames" $cellClusters "$expressionFilter" "$regulons" "${datasetId}_regulons.tsv"
     """
 }
 
@@ -524,12 +539,15 @@ workflow {
     check_user_input.out.stdoutLog.view()  // print the output of check_user_input to the terminal
 
     matrix_ch = Channel.fromPath(params.expressionMatrix).map { n -> [ n.baseName.split("_")[0], n ] }
+
+    extract_tf_matrix(params.tfList,matrix_ch)
     
     if (params.grnboostOut == null){
-        split_grnboost_jobs(params.tfList,matrix_ch)
-        // Transform [id, tf_matrix, tf_names [chunk1, chunk2,...]] 
-        // into [[id, tf_matrix, tf_names, chunk1], [id, tf_matrix, tf_names, chunk2], ...]
-        grnboost_input_ch = split_grnboost_jobs.out.flatMap{ id, tf_matrix, tf_names, chunks -> chunks.collect { chunk -> [ id, tf_matrix, tf_names, chunk ] } }
+        split_grnboost_jobs(matrix_ch)
+        // Join channels into [id, tf_matrix, tf_names, cell_names, [chunk1, chunk2,...]] 
+        tf_info_with_chunks_ch = extract_tf_matrix.out.join(split_grnboost_jobs.out)
+        // Transform into [[id, tf_matrix, tf_names, chunk1], [id, tf_matrix, tf_names, chunk2], ...]
+        grnboost_input_ch = tf_info_with_chunks_ch.flatMap{ id, tf_matrix, tf_names, cell_names, chunks -> chunks.collect { chunk -> [ id, tf_matrix, tf_names, chunk ] } }
         run_grnboost(grnboost_input_ch)
         merge_grnboost_jobs(run_grnboost.out.groupTuple())
         grnboost_ch = merge_grnboost_jobs.out
@@ -568,8 +586,8 @@ workflow {
     run_enricher_cluster(scriptEnricher,cluster_enrich_combined_ch)  
 
     cluster_ch = Channel.fromPath(params.cellsToClusters).map { n -> [ n.baseName.split("_")[0], n ] }
-    filter_combined_ch = matrix_ch.join(cluster_ch).join(run_enricher_cluster.out)
-    filter_expression(params.tfList,params.expressionFilter,filter_combined_ch)
+    filter_combined_ch = extract_tf_matrix.out.join(cluster_ch).join(run_enricher_cluster.out)
+    filter_expression(params.expressionFilter,filter_combined_ch)
     
     cluster_ids_ch = Channel.fromPath(params.clustersToIdentities).map { n -> [ n.baseName.split("_")[0], n ] }
     info_ch = matrix_ch.join(grnboost_ch).join(filter_motifs_ch).join(filter_expression.out).join(cluster_ch).join(cluster_ids_ch)
