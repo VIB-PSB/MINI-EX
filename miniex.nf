@@ -234,7 +234,11 @@ process filter_motifs {
     tuple val("${datasetId}"), path("${datasetId}_enrichedRegulonsFiltered.txt")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterMotifs.py" $infoTf "$enrichedRegulons" "${datasetId}_enrichedRegulonsFiltered.txt" "$motifFilter"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterMotifs.py" $infoTf "$enrichedRegulons" "${datasetId}_enrichedRegulonsFiltered_withDuplicates.txt" "$motifFilter"
+    
+    # Remove duplicates
+    cat ${datasetId}_enrichedRegulonsFiltered_withDuplicates.txt | sort -T . | uniq > ${datasetId}_enrichedRegulonsFiltered.txt
+    rm ${datasetId}_enrichedRegulonsFiltered_withDuplicates.txt
     """
 }
 
