@@ -46,24 +46,24 @@ if __name__ == '__main__':
 
     start_time = time.time()
 
-    # Read in TF matrix from binary numpy file
+    # read in TF matrix from binary numpy file
     tf_matrix = numpy.load(tf_expression_matrix)
 
-    # Read in the corresponding TF gene names
+    # read in the corresponding TF gene names
     with open(tf_list, 'r') as f:
         tf_names = [line.strip() for line in f]
 
-    # Check if the largest integer in the TG matrix is low enough to use int16 encoding, else use int32 
+    # check if the largest integer in the TG matrix is low enough to use int16 encoding, else use int32 
     encoding = numpy.uint16 if largest_int < 65536 else numpy.uint32
 
-    # Read in the expression matrix as a numpy array, assuming no header, transposing it
+    # read in the expression matrix as a numpy array, assuming no header, transposing it
     ex_matrix = numpy.empty((number_of_cells, number_of_genes), dtype=encoding)
     with open(tg_expression_matrix, 'r') as f:
         for i in range(number_of_genes):
             line = f.readline().split('\t')
             ex_matrix[:, i] = numpy.array(line, dtype=encoding)
 
-    # Read in the corresponding gene names
+    # read in the corresponding gene names
     with open(tg_list, 'r') as f:
         gene_names = [line.strip() for line in f]
     
