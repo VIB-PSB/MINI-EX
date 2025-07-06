@@ -220,10 +220,8 @@ if __name__ == '__main__':
     regulons['cluster'] = regulons['cluster'].apply(lambda x: '_'.join(x.split('_')[-2:]))
 
     # tf expression matrix
-    print(args.tf_name_file)
     with open(args.tf_name_file, 'r') as f:
         gene_names = [line.strip() for line in f]
-    print(args.cell_name_file)
     with open(args.cell_name_file, 'r') as f:
         cell_names = [line.strip() for line in f]
     cellmatrix = pd.DataFrame(np.load(args.tf_expression_matrix).T, index=gene_names, columns=cell_names)
