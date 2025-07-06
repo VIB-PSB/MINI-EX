@@ -6,14 +6,16 @@ Filters the regulons based on two criteria:
 
 import collections
 import pandas as pd
+import numpy as np
 import sys
 
-EXPRESSION_MATRIX_FILE  = sys.argv[1]
-TF_LIST_FILE            = sys.argv[2]
-CELLS_TO_CLUSTERS_FILE  = sys.argv[3]
-EXPRESSION_PERCENTAGE   = sys.argv[4]
-CLUSTER_ENRICHMENT_FILE = sys.argv[5]
-OUTPUT_FILE             = sys.argv[6]
+TF_EXPRESSION_MATRIX_FILE  = sys.argv[1]
+TF_NAME_FILE               = sys.argv[2]
+CELL_NAME_FILE             = sys.argv[3]
+CELLS_TO_CLUSTERS_FILE     = sys.argv[4]
+EXPRESSION_PERCENTAGE      = sys.argv[5]
+CLUSTER_ENRICHMENT_FILE    = sys.argv[6]
+OUTPUT_FILE                = sys.argv[7]
 
 
 cells_to_clusters_df = pd.read_csv(CELLS_TO_CLUSTERS_FILE, sep='\t', header=None, names=['cell', 'cluster'], dtype={'cluster': str})
@@ -21,12 +23,17 @@ cells_to_clusters_dict = cells_to_clusters_df.set_index('cell')['cluster'].to_di
 # how many cells in each cluster; ex: Counter({'clusterA': 150, 'clusterB': 728})
 cells_to_clusters_counter = collections.Counter(list(cells_to_clusters_dict.values()))
 
-tf_list = pd.read_csv(TF_LIST_FILE, sep='\t', header=None)[0].to_list()
+# read in the TF matrix gene names
+with open(TF_NAME_FILE, 'r') as f:
+    gene_names = [line.strip() for line in f]
+# read in the TF matrix cell names
+with open(CELL_NAME_FILE, 'r') as f:
+    cell_names = [line.strip() for line in f]
+# create a pandas dataframe using the count matrix, loaded from a numpy array, and the gene and cell names
+expression_matrix_df = pd.DataFrame(np.load(TF_EXPRESSION_MATRIX_FILE), index=cell_names, columns=gene_names)
 
-expression_matrix_df = pd.read_csv(EXPRESSION_MATRIX_FILE, sep='\t', index_col=0)
-expression_matrix_df = expression_matrix_df[expression_matrix_df.index.isin(tf_list)]  # subset matrix to only keep TFs
-expression_matrix_df = expression_matrix_df.transpose()
-expression_matrix_df = expression_matrix_df[expression_matrix_df.index.isin(cells_to_clusters_dict.keys())]  # subset matrix to only keep annotated cells
+# subset matrix to only keep annotated cells
+expression_matrix_df = expression_matrix_df[expression_matrix_df.index.isin(cells_to_clusters_dict.keys())]
 expressed_tfs = list(expression_matrix_df.columns)
 
 # identify valid clusters for each expressed TF (valid = TF is expressed in the specified percentage of cells of that cluster)
