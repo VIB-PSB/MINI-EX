@@ -309,7 +309,7 @@ process make_info_file {
     publishDir regulonsDir, mode: 'copy', pattern: '*.tsv'
 
     input:
-    tuple val(datasetId), path(expressionMatrix), path(grnboostRegulons), path(motifEnrichedRegulons), path(finalRegulons), path(cellClusters), path(clusterIdentities)
+    tuple val(datasetId), path(tfExpressionMatrix), path(tfNames), path(cellNames), path(grnboostRegulons), path(motifEnrichedRegulons), path(finalRegulons), path(cellClusters), path(clusterIdentities)
     path tfList
 
     output:
@@ -317,7 +317,7 @@ process make_info_file {
     tuple val("${datasetId}"), path("${datasetId}_regulonInfoLog.log"), emit: processLog
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeInfoFile.py" "$expressionMatrix" "$grnboostRegulons" "$motifEnrichedRegulons" "$finalRegulons" $tfList $cellClusters $clusterIdentities "${datasetId}_TF_info_file.tsv" > "${datasetId}_regulonInfoLog.log"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeInfoFile.py" "$tfExpressionMatrix" "$tfNames" "$cellNames" "$grnboostRegulons" "$motifEnrichedRegulons" "$finalRegulons" $tfList $cellClusters $clusterIdentities "${datasetId}_TF_info_file.tsv" > "${datasetId}_regulonInfoLog.log"
     """
 }
 
@@ -592,7 +592,7 @@ workflow {
     filter_expression(params.expressionFilter,filter_combined_ch)
     
     cluster_ids_ch = Channel.fromPath(params.clustersToIdentities).map { n -> [ n.baseName.split("_")[0], n ] }
-    info_ch = matrix_ch.join(grnboost_ch).join(filter_motifs_ch).join(filter_expression.out).join(cluster_ch).join(cluster_ids_ch)
+    info_ch = extract_tf_matrix.out.join(grnboost_ch).join(filter_motifs_ch).join(filter_expression.out).join(cluster_ch).join(cluster_ids_ch)
     make_info_file(info_ch,params.tfList)    
     
     regulons_ident_ch = cluster_ids_ch.join(filter_expression.out)
