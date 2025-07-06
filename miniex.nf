@@ -472,7 +472,7 @@ process make_regmaps {
     publishDir figuresDir, mode: 'copy'
     
     input:
-    tuple val(datasetId), path(expressionMatrix), path(cellClusters), path(clusterIdentities), path(rankedRegulons)
+    tuple val(datasetId), path(tfExpressionMatrix), path(tfNames), path(cellNames), path(cellClusters), path(clusterIdentities), path(rankedRegulons)
     val topRegulons
 
     output:
@@ -482,7 +482,9 @@ process make_regmaps {
     OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRegmaps.py" -c $cellClusters \
                                                                    -i $clusterIdentities \
                                                                    -r $rankedRegulons \
-                                                                   -m $expressionMatrix \
+                                                                   -m $tfExpressionMatrix \
+                                                                   -tn $tfNames \
+                                                                   -cn $cellNames \
                                                                    -t 10,25,50,100,$topRegulons \
                                                                    -d $datasetId
     """
@@ -628,7 +630,7 @@ workflow {
 
     make_top_regulons_heatmaps(make_borda.out.processOut,params.topRegulons)
 
-    make_regmaps_input_ch = matrix_ch.join(cluster_ch).join(cluster_ids_ch).join(make_borda.out.processOut)    
+    make_regmaps_input_ch = extract_tf_matrix.out.join(cluster_ch).join(cluster_ids_ch).join(make_borda.out.processOut)    
     make_regmaps(make_regmaps_input_ch, params.topRegulons)
 
     make_log_file(check_user_input.out.processLog.combine(make_ranking_dataframe.out.processLog.join(make_info_file.out.processLog).join(make_borda.out.processLog)))

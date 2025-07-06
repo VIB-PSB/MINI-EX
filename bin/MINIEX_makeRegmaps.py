@@ -172,7 +172,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-c", "--cells2clusters", dest="cells2clusters", type=str, default=None, help="cells2clusters file (MINI-EX INPUT)")
     parser.add_argument("-i", "--identities", dest="identities", type=str, default=None, help="identities file (MINI-EX INPUT)")
-    parser.add_argument("-m", "--matrix", dest="matrix", type=str, default=None, help="expression matrix file (MINI-EX INPUT)")
+    parser.add_argument("-m", "--matrix", dest="tf_expression_matrix", type=str, default=None, help="TF expression matrix file (numpy file)")
+    parser.add_argument("-tn", "--tf_name_file", dest="tf_name_file", type=str, default=None, help="TF gene name file (corresponding to TF expression matrix)")
+    parser.add_argument("-cn", "--cell_name_file", dest="cell_name_file", type=str, default=None, help="Cell name file (corresponding to TF expression matrix)")
     parser.add_argument("-r", "--regulons", dest="regulons", type=str, default=None, help="regulons file (MINI-EX OUTPUT)")
     parser.add_argument("-t", "--threshold", dest="threshold", type=str, default='25', help="borda_clusterRank threshold (integer or comma-separated integers)")
     parser.add_argument("-p", "--palette", dest="palette", type=str, default='Dark2', help="matplotlib color palette")
@@ -186,8 +188,8 @@ if __name__ == '__main__':
         raise AssertionError("cells2clusters argument must be specified. Run -h flag for help")
     if not args.identities:
         raise AssertionError("identities argument must be specified. Run -h flag for help")
-    if not args.matrix:
-        raise AssertionError("matrix argument must be specified. Run -h flag for help")
+    if not args.tf_expression_matrix:
+        raise AssertionError("tf_expression_matrix argument must be specified. Run -h flag for help")
     if not args.regulons:
         raise AssertionError("regulons argument must be specified. Run -h flag for help")
 
@@ -217,8 +219,14 @@ if __name__ == '__main__':
     regulons = pd.read_excel(args.regulons)
     regulons['cluster'] = regulons['cluster'].apply(lambda x: '_'.join(x.split('_')[-2:]))
 
-    # expression matrix
-    cellmatrix = pd.read_csv(args.matrix, sep='\t', index_col=0)
+    # tf expression matrix
+    print(args.tf_name_file)
+    with open(args.tf_name_file, 'r') as f:
+        gene_names = [line.strip() for line in f]
+    print(args.cell_name_file)
+    with open(args.cell_name_file, 'r') as f:
+        cell_names = [line.strip() for line in f]
+    cellmatrix = pd.DataFrame(np.load(args.tf_expression_matrix).T, index=gene_names, columns=cell_names)
     cellmatrix.index.name = 'geneid'
 
     # remove non-predicted clusters
