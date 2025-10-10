@@ -1,3 +1,7 @@
+"""
+Reads the TF expression matrix into memory as a numpy array, and saves it as a binary numpy file
+for quick access.
+"""
 
 import sys,numpy
 
