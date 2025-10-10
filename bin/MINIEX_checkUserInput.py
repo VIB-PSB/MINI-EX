@@ -19,6 +19,7 @@ TOP_MARKERS=sys.argv[14]
 EXPRESSION_FILTER=sys.argv[15]
 MOTIF_FILTER=sys.argv[16]
 TOP_REGULONS=sys.argv[17]
+GRNBOOST_SUBJOBS=sys.argv[18]
 
 WARNING_MESSAGES = [] # will store warning messages to be displayed in the log
 
@@ -55,6 +56,11 @@ if not value_is_a_positive_integer(TOP_MARKERS):
 
 if not value_is_a_positive_integer(TOP_REGULONS):
     raise Exception(f"Incorrect value provided for the parameter 'topRegulons': '{TOP_REGULONS}'! It can only have positive integer values.")
+
+if not value_is_a_positive_integer(GRNBOOST_SUBJOBS):
+    raise Exception(f"Incorrect value provided for the parameter 'grnboostSubjobs': '{GRNBOOST_SUBJOBS}'! It can only have positive integer values.")
+elif int(GRNBOOST_SUBJOBS) > 1000000:
+    raise Exception(f"The value provided for the parameter 'grnboostSubjobs' ({GRNBOOST_SUBJOBS}) exceeds 1,000,000 which is not allowed.")
 
 if DO_MOTIF_ANALYSIS != "true" and DO_MOTIF_ANALYSIS != "false":
     raise Exception(f"Incorrect value provided for the parameter 'doMotifAnalysis': '{DO_MOTIF_ANALYSIS}'. Only boolean values are allowed.")

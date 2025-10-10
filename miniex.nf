@@ -57,6 +57,7 @@ process check_user_input {
     val expressionFilter
     val motifFilter
     val topRegulons
+    val grnboostSubjobs
 
     output:
     stdout emit: stdoutLog
@@ -68,7 +69,7 @@ process check_user_input {
     OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_checkUserInput.py" "$expressionMatrix" "$markersOut" "$cellsToClusters" "$clustersToIdentities" \
                                                                   "$tfList" "$termsOfInterest" "$grnboostOut" "$featureFileMotifs" "$infoTf" \
                                                                   "$goFile" "$geneAliases" "$enrichmentBackground" "$doMotifAnalysis" "$topMarkers" \
-                                                                   "$expressionFilter" "$motifFilter" "$topRegulons" >> "processLog.log"
+                                                                   "$expressionFilter" "$motifFilter" "$topRegulons" "$grnboostSubjobs" >> "processLog.log"
     # print input validation statistics on stdout
     awk '/== INPUT VALIDATION/,/== INPUT FILES/ {if (!/== INPUT (VALIDATION|FILES)/) print}' processLog.log
     """
@@ -89,18 +90,99 @@ process get_expressed_genes {
 }
 
 
-process run_grnboost {
-    publishDir grnboostDir, mode: 'copy'
+process extract_tf_matrix {
 
     input:
     path tfList
     tuple val(datasetId), path(matrix)
     
     output:
+    tuple val("${datasetId}"), path("tf_matrix.npy"), path("tf_names.txt"), path("cell_names.txt")
+
+    """
+    # Subset the expression matrix for only TFs
+    grep -F -f ${tfList} ${matrix} > tf_matrix_with_rownames.tsv
+
+    # Split the rownames (gene IDs) and the expression counts
+    cut -f2- tf_matrix_with_rownames.tsv > tf_matrix_without_rownames.tsv
+    cut -f1 tf_matrix_with_rownames.tsv > tf_names.txt
+    rm tf_matrix_with_rownames.tsv
+
+    # Determine the maximum value in the matrix
+    max_count=\$(awk 'BEGIN{max=0}{for(i=1;i<=NF;i++)if(\$i>max)max=\$i}END{print max}' tf_matrix_without_rownames.tsv)
+
+    # Determine the number of rows and columns of the matrix
+    number_of_rows=\$(cat tf_matrix_without_rownames.tsv | wc -l)
+    number_of_columns=\$(head -1 tf_matrix_without_rownames.tsv | tr '\\t' '\\n' | wc -l)
+
+    # Convert the TF expression matrix to a numpy array
+    OMP_NUM_THREADS=1 python3 ${baseDir}/bin/MINIEX_prepareTfMatrix.py tf_matrix_without_rownames.tsv tf_matrix.npy \$max_count \$number_of_rows \$number_of_columns
+
+    # Get the cell names
+    head -1 ${matrix} | tr '\\t' '\\n' > matrix_header.txt
+    tail -\$number_of_columns matrix_header.txt > cell_names.txt
+    """
+}
+
+
+process split_grnboost_jobs {
+
+    input:
+    tuple val(datasetId), path(matrix)
+    
+    output:
+    tuple val("${datasetId}"), path("${datasetId}_grnboost_chunk_*.tsv")
+
+    """
+    # Split the expression matrix into chunks
+    split -a 6 -d -n l/${params.grnboostSubjobs} --additional-suffix .tsv ${matrix} ${datasetId}_grnboost_chunk_
+
+    # Remove the header from the first chunk
+    sed -i '1d' ${datasetId}_grnboost_chunk_000000.tsv
+
+    # Delete potential empty files (can be generated if number of subjobs is very high)
+    find . -type f -empty -delete
+
+    """
+}
+
+
+process run_grnboost {
+
+    input:
+    tuple val(datasetId), path(tf_matrix), path(tf_names), path(chunk_matrix)
+    
+    output:
+    tuple val("${datasetId}"), path("*_grnboost2.tsv")
+
+    """
+    # Split the rownames (gene IDs) and the expression counts
+    cut -f2- ${chunk_matrix} > matrix_without_rownames.tsv
+    cut -f1 ${chunk_matrix} > gene_names.txt
+
+    # Determine the maximum value in the matrix
+    max_count=\$(awk 'BEGIN{max=0}{for(i=1;i<=NF;i++)if(\$i>max)max=\$i}END{print max}' matrix_without_rownames.tsv)
+
+    # Determine the number of rows and columns of the matrix
+    number_of_rows=\$(cat matrix_without_rownames.tsv | wc -l)
+    number_of_columns=\$(head -1 matrix_without_rownames.tsv | tr '\\t' '\\n' | wc -l)
+
+    OMP_NUM_THREADS=1 python3 ${baseDir}/bin/MINIEX_runGrnboost.py ${tf_matrix} ${tf_names} matrix_without_rownames.tsv gene_names.txt ${task.cpus} \$(basename ${chunk_matrix} .tsv)_grnboost2.tsv \$max_count \$number_of_rows \$number_of_columns
+    """
+}
+
+
+process merge_grnboost_jobs {
+    publishDir grnboostDir, mode: 'copy'
+
+    input:
+    tuple val(datasetId), path(grnboostOutputFiles)
+    
+    output:
     tuple val("${datasetId}"), path("${datasetId}_grnboost2.tsv")
 
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_runGrnboost.py" $tfList "$matrix" "${task.cpus}" "${datasetId}_grnboost2.tsv"
+    cat ${grnboostOutputFiles} | sort -k3,3 -r -g -T . > ${datasetId}_grnboost2.tsv
     """
 }
 
@@ -152,7 +234,11 @@ process filter_motifs {
     tuple val("${datasetId}"), path("${datasetId}_enrichedRegulonsFiltered.txt")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterMotifs.py" $infoTf "$enrichedRegulons" "${datasetId}_enrichedRegulonsFiltered.txt" "$motifFilter"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterMotifs.py" $infoTf "$enrichedRegulons" "${datasetId}_enrichedRegulonsFiltered_withDuplicates.txt" "$motifFilter"
+    
+    # Remove duplicates
+    cat ${datasetId}_enrichedRegulonsFiltered_withDuplicates.txt | sort -T . | uniq > ${datasetId}_enrichedRegulonsFiltered.txt
+    rm ${datasetId}_enrichedRegulonsFiltered_withDuplicates.txt
     """
 }
 
@@ -211,15 +297,14 @@ process filter_expression {
     publishDir regulonsDir, mode: 'copy'
 
     input:
-    path tfList
     val expressionFilter
-    tuple val(datasetId), path(expressionMatrix), path(cellClusters), path(regulons)
+    tuple val(datasetId), path(tfExpressionMatrix), path(tfNames), path(cellNames), path(cellClusters), path(regulons)
 
     output:
     tuple val("${datasetId}"), path("${datasetId}_regulons.tsv")
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterExpression.py" "$expressionMatrix" $tfList $cellClusters "$expressionFilter" "$regulons" "${datasetId}_regulons.tsv"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_filterExpression.py" "$tfExpressionMatrix" "$tfNames" "$cellNames" $cellClusters "$expressionFilter" "$regulons" "${datasetId}_regulons.tsv"
     """
 }
 
@@ -228,7 +313,7 @@ process make_info_file {
     publishDir regulonsDir, mode: 'copy', pattern: '*.tsv'
 
     input:
-    tuple val(datasetId), path(expressionMatrix), path(grnboostRegulons), path(motifEnrichedRegulons), path(finalRegulons), path(cellClusters), path(clusterIdentities)
+    tuple val(datasetId), path(tfExpressionMatrix), path(tfNames), path(cellNames), path(grnboostRegulons), path(motifEnrichedRegulons), path(finalRegulons), path(cellClusters), path(clusterIdentities)
     path tfList
 
     output:
@@ -236,7 +321,7 @@ process make_info_file {
     tuple val("${datasetId}"), path("${datasetId}_regulonInfoLog.log"), emit: processLog
     
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeInfoFile.py" "$expressionMatrix" "$grnboostRegulons" "$motifEnrichedRegulons" "$finalRegulons" $tfList $cellClusters $clusterIdentities "${datasetId}_TF_info_file.tsv" > "${datasetId}_regulonInfoLog.log"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeInfoFile.py" "$tfExpressionMatrix" "$tfNames" "$cellNames" "$grnboostRegulons" "$motifEnrichedRegulons" "$finalRegulons" $tfList $cellClusters $clusterIdentities "${datasetId}_TF_info_file.tsv" > "${datasetId}_regulonInfoLog.log"
     """
 }
 
@@ -391,7 +476,7 @@ process make_regmaps {
     publishDir figuresDir, mode: 'copy'
     
     input:
-    tuple val(datasetId), path(expressionMatrix), path(cellClusters), path(clusterIdentities), path(rankedRegulons)
+    tuple val(datasetId), path(tfExpressionMatrix), path(tfNames), path(cellNames), path(cellClusters), path(clusterIdentities), path(rankedRegulons)
     val topRegulons
 
     output:
@@ -401,7 +486,9 @@ process make_regmaps {
     OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeRegmaps.py" -c $cellClusters \
                                                                    -i $clusterIdentities \
                                                                    -r $rankedRegulons \
-                                                                   -m $expressionMatrix \
+                                                                   -m $tfExpressionMatrix \
+                                                                   -tn $tfNames \
+                                                                   -cn $cellNames \
                                                                    -t 10,25,50,100,$topRegulons \
                                                                    -d $datasetId
     """
@@ -452,15 +539,24 @@ workflow {
         params.topMarkers,
         params.expressionFilter,
         params.motifFilter,
-        params.topRegulons)
+        params.topRegulons,
+        params.grnboostSubjobs)
 
     check_user_input.out.stdoutLog.view()  // print the output of check_user_input to the terminal
 
     matrix_ch = Channel.fromPath(params.expressionMatrix).map { n -> [ n.baseName.split("_")[0], n ] }
+
+    extract_tf_matrix(params.tfList,matrix_ch)
     
     if (params.grnboostOut == null){
-        run_grnboost(params.tfList,matrix_ch)
-        grnboost_ch = run_grnboost.out
+        split_grnboost_jobs(matrix_ch)
+        // Join channels into [id, tf_matrix, tf_names, cell_names, [chunk1, chunk2,...]] 
+        tf_info_with_chunks_ch = extract_tf_matrix.out.join(split_grnboost_jobs.out)
+        // Transform into [[id, tf_matrix, tf_names, chunk1], [id, tf_matrix, tf_names, chunk2], ...]
+        grnboost_input_ch = tf_info_with_chunks_ch.flatMap{ id, tf_matrix, tf_names, cell_names, chunks -> chunks.collect { chunk -> [ id, tf_matrix, tf_names, chunk ] } }
+        run_grnboost(grnboost_input_ch)
+        merge_grnboost_jobs(run_grnboost.out.groupTuple())
+        grnboost_ch = merge_grnboost_jobs.out
     }
     if (params.grnboostOut != null){
         grnboost_ch = Channel.fromPath(params.grnboostOut).map { n -> [ n.baseName.split("_")[0], n ] }
@@ -496,11 +592,11 @@ workflow {
     run_enricher_cluster(scriptEnricher,cluster_enrich_combined_ch)  
 
     cluster_ch = Channel.fromPath(params.cellsToClusters).map { n -> [ n.baseName.split("_")[0], n ] }
-    filter_combined_ch = matrix_ch.join(cluster_ch).join(run_enricher_cluster.out)
-    filter_expression(params.tfList,params.expressionFilter,filter_combined_ch)
+    filter_combined_ch = extract_tf_matrix.out.join(cluster_ch).join(run_enricher_cluster.out)
+    filter_expression(params.expressionFilter,filter_combined_ch)
     
     cluster_ids_ch = Channel.fromPath(params.clustersToIdentities).map { n -> [ n.baseName.split("_")[0], n ] }
-    info_ch = matrix_ch.join(grnboost_ch).join(filter_motifs_ch).join(filter_expression.out).join(cluster_ch).join(cluster_ids_ch)
+    info_ch = extract_tf_matrix.out.join(grnboost_ch).join(filter_motifs_ch).join(filter_expression.out).join(cluster_ch).join(cluster_ids_ch)
     make_info_file(info_ch,params.tfList)    
     
     regulons_ident_ch = cluster_ids_ch.join(filter_expression.out)
@@ -538,7 +634,7 @@ workflow {
 
     make_top_regulons_heatmaps(make_borda.out.processOut,params.topRegulons)
 
-    make_regmaps_input_ch = matrix_ch.join(cluster_ch).join(cluster_ids_ch).join(make_borda.out.processOut)    
+    make_regmaps_input_ch = extract_tf_matrix.out.join(cluster_ch).join(cluster_ids_ch).join(make_borda.out.processOut)    
     make_regmaps(make_regmaps_input_ch, params.topRegulons)
 
     make_log_file(check_user_input.out.processLog.combine(make_ranking_dataframe.out.processLog.join(make_info_file.out.processLog).join(make_borda.out.processLog)))
