@@ -4,13 +4,12 @@ import sys
 import time
 import numpy
 import pandas
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool
 import tqdm
 
-from arboreto.utils import load_tf_names
-from arboreto.algo import grnboost2, _prepare_input
+from arboreto.algo import _prepare_input
 from arboreto.core import SGBM_KWARGS, EARLY_STOP_WINDOW_LENGTH
-from arboreto.core import to_tf_matrix, target_gene_indices, infer_partial_network
+from arboreto.core import target_gene_indices, infer_partial_network
 
 
 tf_expression_matrix = sys.argv[1]
