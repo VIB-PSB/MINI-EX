@@ -100,6 +100,9 @@ process extract_tf_matrix {
     tuple val("${datasetId}"), path("tf_matrix.npy"), path("tf_names.txt"), path("cell_names.txt")
 
     """
+    # TF matrix is split into a list of TF names and the expression matrix, to avoid reading them as a Pandas dataframe
+    # --> they will always be used together in the subsequent steps
+    
     # Subset the expression matrix for only TFs
     grep -F -f ${tfList} ${matrix} > tf_matrix_with_rownames.tsv
 
