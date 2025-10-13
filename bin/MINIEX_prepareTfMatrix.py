@@ -14,7 +14,7 @@ number_of_cells = int(sys.argv[5])
 # check if the largest integer is low enough to use int16 encoding, else use int32 
 encoding = numpy.uint16 if largest_int < 65536 else numpy.uint32
 
-# read in the expression matrix as a numpy array, assuming no header, transposing it
+# read in the expression matrix as a numpy array, assuming no header, transposing it (since GRNBoost2 expects cells as rows and genes as columns)
 expression_matrix = numpy.empty((number_of_cells, number_of_genes), dtype=encoding)
 with open(matrix_file, 'r') as f:
     for i in range(number_of_genes):
