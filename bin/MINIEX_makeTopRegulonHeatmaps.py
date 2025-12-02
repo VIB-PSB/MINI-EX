@@ -60,7 +60,7 @@ def normalize_aliases(df: pd.DataFrame, max_aliases: int = 3) -> pd.DataFrame:
 
     Example:
         alias = 'a1/ a2/ a3/ a4', TF = 'TFX'
-        --> 'a1 / a2 / a3 / TFX'
+        --> 'a1/ a2/ a3/ TFX'
     """
     df = df.copy()
 
@@ -70,7 +70,8 @@ def normalize_aliases(df: pd.DataFrame, max_aliases: int = 3) -> pd.DataFrame:
 
         parts = [p.strip() for p in raw.split("/") if p.strip()]
         parts = parts[:max_aliases]
-        if tf_name not in parts: parts.append(tf_name)
+        if tf_name not in parts:
+            parts.append(tf_name)
 
         return "/ ".join(parts)
 
@@ -151,34 +152,55 @@ def build_heatmap_matrices(df, top_n):
     return plot_qval, plot_de, row_colors
 
 
-def compute_font_size(n_rows, n_cols, min_size=3, max_size=12):
+def compute_x_font_size(n_cols: int) -> int:
     """
-    Compute a font size that scales with the matrix dimensions.
-
-    The bigger the matrix, the smaller the labels.
+    Font size for x-axis (clusters). Usually few columns, so keep labels fairly large.
     """
-    max_dim = max(n_rows, n_cols)
+    if n_cols > 40:
+        return 8
+    if n_cols > 30:
+        return 10
+    if n_cols > 20:
+        return 12
+    return 14
 
-    if max_dim <= 20:
-        return max_size
-    if max_dim <= 50:
+
+def compute_y_font_size(n_rows: int) -> int:
+    """
+    Font size for y-axis (TF aliases). Shrink as number of rows grows.
+    """
+    if n_rows <= 20:
+        return 12
+    if n_rows <= 50:
         return 9
-    if max_dim <= 100:
+    if n_rows <= 100:
         return 7
-    if max_dim <= 200:
+    if n_rows <= 200:
         return 5
-    if max_dim <= 400:
+    if n_rows <= 400:
         return 4
-    return min_size
+    return 3
 
 
-def compute_figsize(n_rows, n_cols, base_width=6, base_height=6, max_width=20, max_height=20):
+def compute_figsize(
+    n_rows: int,
+    n_cols: int,
+    base_width: float = 6.0,
+    base_height: float = 6.0,
+    col_scale: float = 0.25,
+    row_scale: float = 0.05,
+    max_width: float = 12.0,
+    max_height: float = 20.0,
+):
     """
-    Compute a reasonable figure size based on the matrix dimensions.
-    Width scales with the number of columns, height scales with the number of rows.
+    Compute a reasonable figure size.
+
+    - Width scales with number of columns, but is capped at `max_width`.
+      This means: many columns → narrower cells, not an endlessly wide figure.
+    - Height scales with number of rows and is capped separately.
     """
-    width = base_width + n_cols * 0.2
-    height = base_height + n_rows * 0.05
+    width = base_width + n_cols * col_scale
+    height = base_height + n_rows * row_scale
 
     width = min(width, max_width)
     height = min(height, max_height)
@@ -186,7 +208,7 @@ def compute_figsize(n_rows, n_cols, base_width=6, base_height=6, max_width=20, m
     return (width, height)
 
 
-def add_go_legend_for_de(cg_de):
+def add_go_legend_for_de(cluster_grid_de):
     """
     Add legend describing GO term categories and DE statuses to the DE heatmap.
     The legend is placed just above the heatmap, with a light gray frame.
@@ -203,13 +225,13 @@ def add_go_legend_for_de(cg_de):
         Patch(facecolor=color, linewidth=0.5, edgecolor="#303030ff")
         for color in legend_colors.values()
     ]
-    leg = cg_de.ax_heatmap.legend(
+    leg = cluster_grid_de.ax_heatmap.legend(
         handles,
         legend_colors.keys(),
         title="Legend",
         loc="lower center",
         bbox_to_anchor=(0.5, 1.06),               # just above heatmap
-        bbox_transform=cg_de.ax_heatmap.transAxes,
+        bbox_transform=cluster_grid_de.ax_heatmap.transAxes,
         borderaxespad=0.0,
         frameon=True,
     )
@@ -235,7 +257,8 @@ plot_qval[plot_qval > 20] = 20  # cap very high -log10(q) values for better colo
 
 # derive final dimensions
 n_rows, n_cols = plot_qval.shape
-font_size = compute_font_size(n_rows, n_cols)
+x_font_size = compute_x_font_size(n_cols)
+y_font_size = compute_y_font_size(n_rows)
 figsize = compute_figsize(n_rows, n_cols)
 
 
@@ -259,12 +282,12 @@ cluster_grid_spec = sns.clustermap(
 )
 
 heat_ax = cluster_grid_spec.ax_heatmap
-heat_ax.set_facecolor("#b3b3b3ff")  # background color begind the heatmap cells
+heat_ax.set_facecolor("#b3b3b3ff")  # background color behind the heatmap cells
 cluster_grid_spec.ax_cbar.set_title("-log10(qval)")
 
-# adjust tick label sizes
-heat_ax.set_xticklabels(heat_ax.get_xticklabels(), rotation=90, ha="center", fontsize=font_size)
-heat_ax.set_yticklabels(heat_ax.get_yticklabels(), fontsize=font_size)
+# adjust tick label sizes (different for x and y)
+heat_ax.set_xticklabels(heat_ax.get_xticklabels(), rotation=90, ha="center", fontsize=x_font_size)
+heat_ax.set_yticklabels(heat_ax.get_yticklabels(), fontsize=y_font_size)
 
 # tidy row color axis
 cluster_grid_spec.ax_row_colors.tick_params(bottom=False)
@@ -303,19 +326,22 @@ legend_spec.get_frame().set_facecolor("white")
 legend_bbox_pixels = legend_spec.get_window_extent(renderer=renderer)
 legend_bbox_fig = legend_bbox_pixels.transformed(fig_spec.transFigure.inverted())
 
-cbar_width = 0.015   # narrow vertical bar
-gap = 0.05           # small gap between colorbar and legend
+cbar_width = 0.015     # keep narrow
+gap = 0.05             # space between colorbar and legend
 
+# make colorbar ~1.4× taller than legend
+cbar_h = legend_bbox_fig.height * 1.4
+
+# anchor the colorbar vertically so that its CENTER aligns with the legend center
+cbar_y_center = legend_bbox_fig.y0 + legend_bbox_fig.height / 2
+cbar_y0 = cbar_y_center - cbar_h / 2
 cbar_x0 = legend_bbox_fig.x0 - cbar_width - gap
-cbar_y0 = legend_bbox_fig.y0
-cbar_h = legend_bbox_fig.height
-
 cbar_ax = cluster_grid_spec.ax_cbar
 cbar_ax.set_position([cbar_x0, cbar_y0, cbar_width, cbar_h])
+cluster_grid_spec.ax_cbar.set_yticks([0, 5, 10, 15, 20])  # force ticks every 5
 
 # deduce row order from dendrogram to reuse in DE heatmap
 row_order = [plot_qval.index[i] for i in cluster_grid_spec.dendrogram_row.reordered_ind]
-
 
 # ------------------------------------------------------------------
 # DE heatmap (same order as specificity heatmap)
@@ -324,7 +350,8 @@ row_order = [plot_qval.index[i] for i in cluster_grid_spec.dendrogram_row.reorde
 plot_de = plot_de.reindex(row_order)
 plot_de = plot_de.loc[:, plot_qval.columns]  # ensure same column ordering
 n_rows_de, n_cols_de = plot_de.shape
-font_size_de = compute_font_size(n_rows_de, n_cols_de)
+x_font_size_de = compute_x_font_size(n_cols_de)
+y_font_size_de = compute_y_font_size(n_rows_de)
 figsize_de = compute_figsize(n_rows_de, n_cols_de)
 
 cluster_grid_de = sns.clustermap(
@@ -348,8 +375,8 @@ de_heat_ax.set_facecolor("#b3b3b3ff")
 # remove colorbar (DE is binary)
 cluster_grid_de.cax.set_visible(False)
 
-de_heat_ax.set_xticklabels(de_heat_ax.get_xticklabels(), rotation=90, ha="center", fontsize=font_size_de)
-de_heat_ax.set_yticklabels(heat_ax.get_yticklabels(), fontsize=font_size_de)  # keep same order as first plot
+de_heat_ax.set_xticklabels(de_heat_ax.get_xticklabels(), rotation=90, ha="center", fontsize=x_font_size_de)
+de_heat_ax.set_yticklabels(heat_ax.get_yticklabels(), fontsize=y_font_size_de)
 
 # tidy row color axis
 cluster_grid_de.ax_row_colors.tick_params(bottom=False)
@@ -357,7 +384,6 @@ cluster_grid_de.ax_row_colors.set_xticklabels("")
 
 # legend for DE heatmap (above heatmap, centered)
 add_go_legend_for_de(cluster_grid_de)
-
 
 # ------------------------------------------------------------------
 # Save figures
