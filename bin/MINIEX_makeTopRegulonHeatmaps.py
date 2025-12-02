@@ -32,7 +32,6 @@ TOP_N_TFS       = int(sys.argv[4])  # number of top TFs (by borda_rank) to plot
 # Helper functions
 # -------------------------------------------------------------------------
 
-
 def simplify_cluster_name(cluster_name):
     """If tissue name and cluster name are identical, simplify the redundant name."""
     if "_Cluster_" not in cluster_name:
@@ -50,6 +49,33 @@ def compute_min_nonzero_qval(df):
     if non_zero.empty:
         return 1e-300  # extreme fallback, should almost never happen
     return float(non_zero.min())
+
+
+def normalize_aliases(df: pd.DataFrame, max_aliases: int = 3) -> pd.DataFrame:
+    """
+    Normalize the 'alias' column:
+    - aliases come as 'alias1/ alias2/ alias3/ ...'
+    - keep at most `max_aliases` aliases
+    - then append the TF name at the end
+
+    Example:
+        alias = 'a1/ a2/ a3/ a4', TF = 'TFX'
+        --> 'a1 / a2 / a3 / TFX'
+    """
+    df = df.copy()
+
+    def _build_alias(row):
+        raw = str(row["alias"])
+        tf_name = str(row["TF"])
+
+        parts = [p.strip() for p in raw.split("/") if p.strip()]
+        parts = parts[:max_aliases]
+        if tf_name not in parts: parts.append(tf_name)
+
+        return "/ ".join(parts)
+
+    df["alias"] = df.apply(_build_alias, axis=1)
+    return df
 
 
 def build_heatmap_matrices(df, top_n):
@@ -198,6 +224,9 @@ def add_go_legend_for_de(cg_de):
 
 # load input table
 regulons_df = pd.read_excel(REGULONS_FILE)
+
+# normalize aliases: keep at most 3, then add TF name
+regulons_df = normalize_aliases(regulons_df, max_aliases=3)
 
 # prepare matrices for plotting
 plot_qval, plot_de, row_colors = build_heatmap_matrices(regulons_df, TOP_N_TFS)
