@@ -459,7 +459,7 @@ process score_edges {
 }
 
 
-process make_top_regulons_heatmaps {
+process make_top_regulon_heatmaps {
     publishDir figuresDir, mode: 'copy'
     
     input:
@@ -470,7 +470,7 @@ process make_top_regulons_heatmaps {
     tuple val(datasetId), path("${datasetId}_heatmapSpecificity.svg"), path("${datasetId}_heatmapSpecificity.png"), path("${datasetId}_heatmapDEcalls.svg"), path("${datasetId}_heatmapDEcalls.png")
      
     """
-    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeTopRegulonsHeatmap.py" "$rankedRegulons" "${datasetId}_heatmapSpecificity" "${datasetId}_heatmapDEcalls" "$topRegulons"
+    OMP_NUM_THREADS=1 python3 "$baseDir/bin/MINIEX_makeTopRegulonHeatmaps.py" "$rankedRegulons" "${datasetId}_heatmapSpecificity" "${datasetId}_heatmapDEcalls" "$topRegulons"
     """
 }
 
@@ -635,7 +635,7 @@ workflow {
     score_edges_ch = filter_expression.out.join(make_borda.out.processOut).join(grnboost_ch)
     score_edges(score_edges_ch)
 
-    make_top_regulons_heatmaps(make_borda.out.processOut,params.topRegulons)
+    make_top_regulon_heatmaps(make_borda.out.processOut,params.topRegulons)
 
     make_regmaps_input_ch = extract_tf_matrix.out.join(cluster_ch).join(cluster_ids_ch).join(make_borda.out.processOut)    
     make_regmaps(make_regmaps_input_ch, params.topRegulons)
