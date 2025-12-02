@@ -92,6 +92,33 @@ def getHandles(type_color):
         handles.append(mpatches.Patch(color=color, label=cl_type))
     return handles
 
+def normalize_aliases(df: pd.DataFrame, max_aliases: int = 3) -> pd.DataFrame:
+    """
+    Normalize the 'alias' column:
+    - aliases come as 'alias1/ alias2/ alias3/ ...'
+    - keep at most `max_aliases` aliases
+    - then append the TF name at the end
+
+    Example:
+        alias = 'a1/ a2/ a3/ a4', TF = 'TFX'
+        --> 'a1/ a2/ a3/ TFX'
+    """
+    df = df.copy()
+
+    def _build_alias(row):
+        raw = str(row["alias"])
+        tf_name = str(row["TF"])
+
+        parts = [p.strip() for p in raw.split("/") if p.strip()]
+        parts = parts[:max_aliases]
+        if tf_name not in parts:
+            parts.append(tf_name)
+
+        return "/ ".join(parts)
+
+    df["alias"] = df.apply(_build_alias, axis=1)
+    return df
+
 def regMap(regulons, cluster_matrix, clusters, cluster_grouping, group_colors, 
            rank_threshold, outdir, dataset_id, full_expression=False):
 
@@ -111,6 +138,7 @@ def regMap(regulons, cluster_matrix, clusters, cluster_grouping, group_colors,
     '''
 
     # extract alias info
+    regulons = normalize_aliases(regulons, 3)
     alias_info = regulons.drop_duplicates('TF').set_index('TF')['alias']
     
     # fetch data
