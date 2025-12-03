@@ -62,6 +62,7 @@ process check_user_input {
     output:
     stdout emit: stdoutLog
     path("processLog.log"), emit: processLog
+    val(true), emit: ok  // indicates that the process successfully finished and the pipeline can continue
 
     """
     echo -n "MINI-EX" "$miniexVersion" "\nPipeline started on: " > "processLog.log"
@@ -79,6 +80,7 @@ process check_user_input {
 process get_expressed_genes {
 
     input:
+    val _  // prevents the process from starting before check_user_input finished
     tuple val(datasetId), path(matrix)
 
     output:
@@ -93,6 +95,7 @@ process get_expressed_genes {
 process extract_tf_matrix {
 
     input:
+    val _  // prevents the process from starting before check_user_input finished
     path tfList
     tuple val(datasetId), path(matrix)
     
@@ -193,6 +196,7 @@ process merge_grnboost_jobs {
 process unzip_motif_mappings {
     
     input:
+    val _  // prevents the process from starting before check_user_input finished
     path featureFileMotifs
 
     output:
@@ -263,6 +267,7 @@ process filter_motifs_dummy {
 process get_top_degs {
     
     input:
+    val _  // prevents the process from starting before check_user_input finished
     val topMarkers
     tuple val(datasetId), path(allMarkers)
 
@@ -547,9 +552,11 @@ workflow {
 
     check_user_input.out.stdoutLog.view()  // print the output of check_user_input to the terminal
 
+    start_ok = check_user_input.out.ok  // start_ok indicates that "check_user_input" has finished successfully and that the pipeline can continue
+
     matrix_ch = Channel.fromPath(params.expressionMatrix).map { n -> [ n.baseName.split("_")[0], n ] }
 
-    extract_tf_matrix(params.tfList,matrix_ch)
+    extract_tf_matrix(start_ok, params.tfList,matrix_ch)
     
     if (params.grnboostOut == null){
         split_grnboost_jobs(matrix_ch)
@@ -567,7 +574,7 @@ workflow {
 
     if (params.enrichmentBackground == null){
         // use expressed genes as the enrichment background, if it is not specified by the user
-        enrichment_background_ch = get_expressed_genes(matrix_ch)
+        enrichment_background_ch = get_expressed_genes(start_ok, matrix_ch)
         grnboost_combined_ch = grnboost_ch.join(enrichment_background_ch)
     } else {
         enrichment_background_ch = Channel.fromPath(params.enrichmentBackground)
@@ -575,7 +582,7 @@ workflow {
     }
     
     if (params.doMotifAnalysis && params.featureFileMotifs != null && params.infoTf != null){
-        unzip_motif_mappings(params.featureFileMotifs)
+        unzip_motif_mappings(start_ok, params.featureFileMotifs)
         run_enricher_motifs(scriptEnricher,unzip_motif_mappings.out,grnboost_combined_ch)
         
         filter_motifs(params.infoTf,params.motifFilter,run_enricher_motifs.out)
@@ -586,7 +593,7 @@ workflow {
     }
 
     deg_ch = Channel.fromPath(params.markersOut).map { n -> [ n.baseName.split("_")[0], n ] }
-    cluster_enrich_ch = get_top_degs(params.topMarkers,deg_ch)
+    cluster_enrich_ch = get_top_degs(start_ok, params.topMarkers,deg_ch)
 
     // add enrichment background (use join in case of expressed genes (as dataset dependent) or combine in case of a user specified enrichment background)
     if (params.enrichmentBackground == null) { cluster_enrich_combined_ch = cluster_enrich_ch.join(filter_motifs_ch).join(enrichment_background_ch) }
