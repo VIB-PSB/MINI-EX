@@ -66,14 +66,14 @@ def normalize_aliases(df: pd.DataFrame, max_aliases: int = 3) -> pd.DataFrame:
 
     def _build_alias(row):
         raw = str(row["alias"])
-        tf_name = str(row["TF"])
+        tf_id = str(row["TF"])
 
-        parts = [p.strip() for p in raw.split("/") if p.strip()]
-        parts = parts[:max_aliases]
-        if tf_name not in parts:
-            parts.append(tf_name)
+        names = [name.strip() for name in raw.split("/") if name.strip()]
+        names = names[:max_aliases]
+        if tf_id not in names:
+            names.append(tf_id)
 
-        return "/ ".join(parts)
+        return "/ ".join(names)
 
     df["alias"] = df.apply(_build_alias, axis=1)
     return df
