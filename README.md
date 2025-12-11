@@ -7,6 +7,7 @@ The pipeline is built using Nextflow DSL2 and has the purpose of infer cell-type
 MINI-EX uses a [dual license](https://github.com/VIB-PSB/MINI-EX/blob/main/LICENSE) to offer the distribution of the software under a proprietary model as well as an open source model.
 
 **MINI-EX v3.\* is released!** Main features:
+* MINI-EX can now run on large datasets of over 100,000 cells! (since v3.2)
 * Added new metrics:
   * transcription factor cluster specificity
   * median coexpression score of transcription factors and their target genes
@@ -16,7 +17,7 @@ MINI-EX uses a [dual license](https://github.com/VIB-PSB/MINI-EX/blob/main/LICEN
 * Improved TF prioritization in the Reference procedure (used when a list of (GO) terms of interest is specified by the user)
 * New parameter: users can now specify a custom background for the enrichment analysis (when not specified, the background defaults to the list of genes that are present in the expression matrix)
 * Expanded input options: terms of interest can now also be specified as ontology terms (e.g., GO:0009819), in addition to (or instead of) plain English words (e.g., drought)
-* The complete list of new features can be found in the release notes for [v3.0](https://github.com/VIB-PSB/MINI-EX/releases/tag/v3.0) and [v3.1](https://github.com/VIB-PSB/MINI-EX/releases/tag/v3.1)
+* The complete list of new features can be found in the release notes for [v3.0](https://github.com/VIB-PSB/MINI-EX/releases/tag/v3.0), [v3.1](https://github.com/VIB-PSB/MINI-EX/releases/tag/v3.1) and [v3.2](https://github.com/VIB-PSB/MINI-EX/releases/tag/v3.2)
 
 ## Pipeline summary
 **1\.** Run expression-based gene regulatory network (GRN) inference ([GRNBoost2](https://arboreto.readthedocs.io/en/latest/algorithms.html#grnboost2)) given a list of transcription factors (TFs) and a gene-to-cell count matrix<br/>
