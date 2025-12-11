@@ -16,7 +16,7 @@ if (params.doMotifAnalysis){
     motifLog = "Skipping motif enrichment filtering"
 }
 
-miniexVersion = "v3.1"
+miniexVersion = "v3.2"
 log.info"""\
          Motif-Informed Network Inference from gene EXpression ${miniexVersion}
          ===========================================================
