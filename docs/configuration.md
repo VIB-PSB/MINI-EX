@@ -103,14 +103,14 @@ The **fifth block** consists of technical settings that affect visualization or 
 
 * `topRegulons` defines the top regulons to show in the two output heatmaps. It can be changed according to the user needs.
 
-* `grnboostSubjobs` defines in how many subjobs the grnboost process is divided. Those subjobs run independently, and can themselves make use of multiple CPUs (this can be defined in the process scope below). 
+* `grnboostSubjobs` defines in how many subjobs the GRNBoost2 process is divided. Those subjobs run independently, and can themselves make use of multiple CPUs (this can be defined in the process scope below). 
 
 ```	
     // TECHNICAL SETTINGS (these do not affect results) //
     topRegulons = "150"
     // --> to specify up to how many regulons are visualized (only affects visualization)
     grnboostSubjobs = "20"
-    // --> defines in how many subjobs the grnboost process is divided
+    // --> defines in how many subjobs the GRNBoost2 process is divided
 ```
 The **last block** specifies the output directory.  
 
@@ -121,7 +121,7 @@ The **last block** specifies the output directory.
 ```
 
 ## **Process scope**
-The process scope allows the user to define the configuration (memory, parallel environment) for each of the processes run by MINI-EX.  
+The process scope allows the user to define the configuration (memory, parallel environment, maximum time) for each of the processes run by MINI-EX.  
 These can be changed according to the resources availabe/needed. 
    
 ```	
