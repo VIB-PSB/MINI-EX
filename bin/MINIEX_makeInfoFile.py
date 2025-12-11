@@ -1,14 +1,16 @@
-import pandas,collections,statistics,natsort,sys
+import numpy,pandas,collections,statistics,natsort,sys
 
 
-MATRIX=sys.argv[1]
-GRNBOOST_GRN=sys.argv[2]
-MOTIF_ENRICHMENT_GRN=sys.argv[3]
-EXPRESSION_FILTERED_GRN=sys.argv[4]
-TF_FILE=sys.argv[5]
-CELLS=sys.argv[6]
-CLUSTER_IDS=sys.argv[7]
-OUT=sys.argv[8]
+TF_MATRIX=sys.argv[1]
+TF_NAMES=sys.argv[2]
+CELL_NAMES=sys.argv[3]
+GRNBOOST_GRN=sys.argv[4]
+MOTIF_ENRICHMENT_GRN=sys.argv[5]
+EXPRESSION_FILTERED_GRN=sys.argv[6]
+TF_FILE=sys.argv[7]
+CELLS=sys.argv[8]
+CLUSTER_IDS=sys.argv[9]
+OUT=sys.argv[10]
 
 ####################
 ### READ IN DATA ###
@@ -18,7 +20,11 @@ OUT=sys.argv[8]
 tfs_all = set(pandas.read_csv(TF_FILE, header=None, sep='\t')[0])
 
 # Read in count matrix
-count_matrix = pandas.read_csv(MATRIX, sep='\t', index_col=0)
+with open(TF_NAMES, 'r') as f:
+    gene_names = [line.strip() for line in f]
+with open(CELL_NAMES, 'r') as f:
+    cell_names = [line.strip() for line in f]
+count_matrix = pandas.DataFrame(numpy.load(TF_MATRIX).T, index=gene_names, columns=cell_names)
 
 # Read in GRNBoost2 output as TF-to-nb_of_TGs dict
 tf2nb_of_tgs_grnboost = collections.Counter(pandas.read_csv(GRNBOOST_GRN, header=None, sep='\t')[0])
@@ -49,7 +55,7 @@ cluster_ids_df.set_index("cluster_id", inplace=True)
 ################################
 
 # Get all expressed TFs
-tfs_expressed = set(count_matrix.index) & tfs_all
+tfs_expressed = count_matrix.index
 
 # Get all TFs of the final expression filtered regulons
 tfs_expression_filtered = set().union(*([set(tf2nb.keys()) for tf2nb in cluster2tf2nb_of_tgs_expression_filtered.values()]))
@@ -74,8 +80,7 @@ for tf in filtering_info_df.index:
 ### CREATE EXPRESSION INFO DF ###
 #################################
 
-# Subset matrix to only keep TFs and annotated cells
-count_matrix = count_matrix[count_matrix.index.isin(tfs_all)]  
+# Subset TF matrix to only keep annotated cells
 count_matrix = count_matrix.transpose()
 count_matrix = count_matrix[count_matrix.index.isin(cell_cluster_df.index)]
 

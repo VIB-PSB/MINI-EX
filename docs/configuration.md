@@ -15,19 +15,22 @@ executor {
 }
 
 // SINGULARITY CONTAINERS SETTINGS // (not to be adapted)
-process.container = "vibpsb/mini-ex:latest"
+process.container = "psbdock/mini-ex:v3.1"
 singularity {
     enabled = true
     cacheDir = "singularity_cache"
     autoMounts = true
 }
+
+workDir = "$baseDir/work"
+// --> directory of choice to write intermediate results to
 ```
 
 **name**, **queueSize** and [optional settings](https://www.nextflow.io/docs/latest/config.html) can be changed according to resource availability. 
 
 ## **Params scope**
 The params section is meant to define parameters and paths that will be used by the pipeline scripts.  
-The **first block** defines the paths to the single-cell [input files](https://github.com/VIB-PSB/MINI-EX/tree/main/example/INPUTS) required and provided by the user. 
+The **first block** defines the paths to the single-cell [input files](https://github.com/VIB-PSB/MINI-EX/tree/main/example/INPUTS) required and provided by the user (see also our [guide on data preparation](../docs/data_preparation.md)). 
 
 ```
     // INPUT FILES DERIVED FROM SINGLE-CELL DATASETS //
@@ -77,8 +80,6 @@ The **fourth block** consists of MINI-EX parameters that can be adapted to chang
 
 * `motifFilter` can be set to either **TF-F_motifs** (default) or **TF_motifs**. The default option keeps regulons in the motif filtering step (step 2) if the regulon is enriched for any motif of that TF family. When setting the parameter to **TF_motifs**, then only regulons are retained if they are enriched for direct TF-motifs.
 
-* `topRegulons` defines the top regulons to show in the two output heatmaps. It can be changed according to the user needs.
-
 * The `enrichmentBackground` is the path to a user-defined file containing a list of genes to be used as the background for the enrichment analysis. The file should have one gene id per line. If set to `null`, the background defaults to the list of genes that are present in the expression matrix.
 
 ```	
@@ -98,7 +99,19 @@ The **fourth block** consists of MINI-EX parameters that can be adapted to chang
     // --> to specify an enrichment background: enrichmentBackground = "pathToTheFile", with file containing one gene id per line
     //     (when not specified, the background defaults to the list of genes that are present in the expression matrix)
 ```
+The **fifth block** consists of technical settings that affect visualization or parallelization, but not the final results:
 
+* `topRegulons` defines the top regulons to show in the two output heatmaps. It can be changed according to the user needs.
+
+* `grnboostSubjobs` defines in how many subjobs the GRNBoost2 process is divided. Those subjobs run independently, and can themselves make use of multiple CPUs (this can be defined in the process scope below). 
+
+```	
+    // TECHNICAL SETTINGS (these do not affect results) //
+    topRegulons = "150"
+    // --> to specify up to how many regulons are visualized (only affects visualization)
+    grnboostSubjobs = "20"
+    // --> defines in how many subjobs the GRNBoost2 process is divided
+```
 The **last block** specifies the output directory.  
 
 ```	
@@ -108,7 +121,7 @@ The **last block** specifies the output directory.
 ```
 
 ## **Process scope**
-The process scope allows the user to define the configuration (memory, parallel environment) for each of the processes run by MINI-EX.  
+The process scope allows the user to define the configuration (memory, parallel environment, maximum time) for each of the processes run by MINI-EX.  
 These can be changed according to the resources availabe/needed. 
    
 ```	
@@ -117,6 +130,7 @@ process {
     withName: run_grnboost {
         memory = '20 GB'
         cpus = 5
+        time = '1 h'
     }
     ...
 }
