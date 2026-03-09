@@ -40,6 +40,46 @@ def find_symbol_in_file(file_name, symbol):
             raise Exception(f"Command 'grep' (1) failed with the error: '{e}'!")
     return result
 
+def prepare_diff_message(comm_command_output: str, first_file_name: str, second_file_name: str):
+    """
+    Summarizes the output of the 'comm -3' command.
+    The output contains two columns:
+    - the first column contains all the elements in the first file but not in the second
+    - the second column contains all the elements in the second file but not in the first
+
+    Parameters
+    ----------
+    comm_command_output : str
+        output of the 'comm -3' command
+    first_file_name : str
+        name of the first file
+    second_file_name : str
+        name of the second file
+
+    Returns
+    -------
+    str
+        First 5 lines from the first file and first 5 lines from the second file
+    """
+    lines = comm_command_output.decode("utf-8").splitlines()
+    lines_in_file_1 = 0
+    lines_in_file_2 = 0
+    max_lines_per_file = 5
+    diff_messages = []
+    for line in lines:
+        if not line.startswith("\t"):
+            if lines_in_file_1 < max_lines_per_file:
+                diff_messages.append(f"Only in {first_file_name}: {line.lstrip()}")
+                lines_in_file_1 += 1
+        else:
+            if lines_in_file_2 < max_lines_per_file:
+                diff_messages.append(f"Only in {second_file_name}: {line.lstrip()}")
+                lines_in_file_2 += 1
+        if lines_in_file_1 == max_lines_per_file and lines_in_file_2 == max_lines_per_file:
+            break
+    diff_message = "\n".join(diff_messages)
+    return diff_message
+
 
 ########## NUMERICAL PARAMETERS ##########
 
@@ -191,13 +231,14 @@ for data_set in data_sets:
     cells2clusters_column_cnt = int(subprocess.check_output(f"head -n 1 {cells2clusters_file_name} | cut -f1- | wc -w", shell=True).strip())
     if cells2clusters_column_cnt != 2:
         raise Exception(f"Incorrect number of columns in the file '{cells2clusters_file_name}': {cells2clusters_column_cnt} instead of 2!")
-    markers_columns = subprocess.check_output(f"head -n 1 {markers_file_name}", shell=True).strip().decode('utf-8').split('\t')
+    markers_columns = subprocess.check_output(f"head -n 1 {markers_file_name}", shell=True).rstrip().decode('utf-8').split('\t')
     if not "p_val_adj" in markers_columns:
         raise Exception(f"The column 'p_val_adj' is missing in the file {markers_file_name}!")
     if not "cluster" in markers_columns:
         raise Exception(f"The column 'cluster' is missing in the file {markers_file_name}!")
     if not "gene" in markers_columns:
         raise Exception(f"The column 'gene' is missing in the file {markers_file_name}!")
+    cluster_column_idx = markers_columns.index('cluster') + 1  # will be used later to check the content of this column
         
 
     # CHECK: no underscores allowed in cluster names
@@ -249,9 +290,20 @@ for data_set in data_sets:
 
     # CHECK: cluster ID and identities must correspond between cells2clusters and cluster2ident files
     try:
-        output = subprocess.check_output(f'bash -c "comm -3 <(cut -f1 {identities_file_name} | sort -T . -u) <(cut -f2 {cells2clusters_file_name} | sort -T . -u)"', shell=True)
+        output = subprocess.check_output(f'bash -c "comm -3 <(cut -f2 {cells2clusters_file_name} | sort -T . -u) <(cut -f1 {identities_file_name} | sort -T . -u)"', shell=True)
         if output:
-            raise Exception(f"Cluster identities differ between cells2cluster and identities files for the '{data_set}' data set!")
+            raise Exception(f"Cluster identities differ between the cells2cluster file and the identities file for the '{data_set}' data set! Example non matching clusters:\n{prepare_diff_message(output, cells2clusters_file_name, identities_file_name)}")
+    except subprocess.CalledProcessError as e:
+        if e.returncode != 1:  # 1 means grep found no matches
+            raise Exception(f"Command 'comm' (7) failed with the error: '{e}'!")
+        
+
+    # CHECK: cluster ID and identities must correspond between allMarkers and cluster2ident files
+    try:
+        # index of the column 'cluster' was retrieved previously, 'tail -n +2' skips the header
+        output = subprocess.check_output(f'bash -c "comm -3 <(cut -f{cluster_column_idx} {markers_file_name} | tail -n +2 | sort -T . -u) <(cut -f1 {identities_file_name} | sort -T . -u)"', shell=True)
+        if output:
+            raise Exception(f"Cluster identities differ between the markers file and the identities file for the '{data_set}' data set! Example non matching clusters:\n{prepare_diff_message(output, markers_file_name, identities_file_name)}")
     except subprocess.CalledProcessError as e:
         if e.returncode != 1:  # 1 means grep found no matches
             raise Exception(f"Command 'comm' (7) failed with the error: '{e}'!")
