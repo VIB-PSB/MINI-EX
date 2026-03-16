@@ -61,6 +61,8 @@ All input files should have specific extensions and names as shown in our [guide
 ##   
 A detailed overview on necessary input files and expected output files can be found [here](example/).
 
+##
+A practical example workflow using a real dataset (Wendrich *et al*. 2020) is described in our [MINI-EX book chapter](https://doi.org/10.1007/978-1-0716-4972-5_12) (also available through [bioRxiv](https://doi.org:10.1101/2023.12.24.573246)). The corresponding input files, including Seurat object, are available through [Zenodo](https://zenodo.org/records/10423816?token=eyJhbGciOiJIUzUxMiJ9.eyJpZCI6ImUzZmQyYmRhLWUwMTItNGY1My04NDI4LTk0MThlZjRhYzE1OSIsImRhdGEiOnt9LCJyYW5kb20iOiJhZTM2ZjI2ZjA5YTQzMWQ2NjIxZDQwNTEwMzQxNTExZSJ9.Ge8ym9h2nTvFZPreJz85PBrelLaiGXh3b_CjOW9xzLod-Bi89ZVlWczrW3MlMVWGX55rOKEcP70PI8n2qegQEw).
 
 ## Requirements
 
