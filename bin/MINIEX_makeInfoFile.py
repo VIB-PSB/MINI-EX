@@ -46,7 +46,7 @@ with open(EXPRESSION_FILTERED_GRN) as file:
 cell_cluster_df = pandas.read_csv(CELLS, sep='\t', header=None, names=["cell_id", "cluster"], usecols=["cell_id", "cluster"], index_col="cell_id", dtype={"cluster":"str"})
 
 # Read in cluster (number) and tissue identity and merge into one string (e.g. "xylem-28")
-cluster_ids_df = pandas.read_csv(CLUSTER_IDS, sep='\t', header=None, names=["cluster_id", "tissue"], dtype={"cluster_id":"str", "tissue":"str"})
+cluster_ids_df = pandas.read_csv(CLUSTER_IDS, sep='\t', header=None, usecols=[0, 1], names=["cluster_id", "tissue"], dtype={"cluster_id":"str", "tissue":"str"})
 cluster_ids_df["merged_cluster_name"] = cluster_ids_df['tissue'].astype(str) + '-' + cluster_ids_df['cluster_id'].astype(str)
 cluster_ids_df.set_index("cluster_id", inplace=True)
 

@@ -59,7 +59,7 @@ def retrieve_gene_aliases(ranking_df: pd.DataFrame):
 
 def retrieve_cluster_annotations(ranking_df: pd.DataFrame):
     # load cluster annotation data
-    cluster_id_annotation_df = pd.read_csv(CLUSTER_ID_FILE, sep='\t', names=['clusterId', 'celltype'], dtype={'clusterId': 'str', 'celltype': 'str'})
+    cluster_id_annotation_df = pd.read_csv(CLUSTER_ID_FILE, sep='\t', header=None, usecols=[0, 1], names=['clusterId', 'celltype'], dtype={'clusterId': 'str', 'celltype': 'str'})
 
     # collect the relevant columns: 'cellType' and 'cluster'
     merged_df = ranking_df.merge(cluster_id_annotation_df, on='clusterId', how='left')
